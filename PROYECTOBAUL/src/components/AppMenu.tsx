@@ -18,14 +18,14 @@ import {
   mailOutline,
   logOutOutline
 } from 'ionicons/icons';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 export const AppMenu: React.FC = () => {
-  const navigate = useNavigate();
+  const history = useHistory();
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
-    navigate('/login', { replace: true });
+    history.replace('/login');
   };
 
   return (
@@ -39,22 +39,23 @@ export const AppMenu: React.FC = () => {
       <IonContent>
         <IonList>
           <IonMenuToggle autoHide={false}>
-            <IonItem button onClick={() => navigate('/dashboard')}>
+            <IonItem button onClick={() => history.push('/dashboard')}>
               <IonIcon slot="start" icon={homeOutline} />
               <IonLabel>Inicio (Dashboard)</IonLabel>
             </IonItem>
 
-            <IonItem button onClick={() => navigate('/dashboard')}>
+            <IonItem button onClick={() => history.push('/dashboard')}>
+
               <IonIcon slot="start" icon={shieldCheckmarkOutline} />
               <IonLabel>Pólizas y Seguros</IonLabel>
             </IonItem>
 
-            <IonItem button onClick={() => navigate('/dashboard')}>
+            <IonItem button onClick={() => history.push('/dashboard')}>
               <IonIcon slot="start" icon={peopleOutline} />
               <IonLabel>Albaceas Designados</IonLabel>
             </IonItem>
 
-            <IonItem button onClick={() => navigate('/dashboard')}>
+            <IonItem button onClick={() => history.push('/dashboard')}>
               <IonIcon slot="start" icon={mailOutline} />
               <IonLabel>Mensajes Póstumos</IonLabel>
             </IonItem>
