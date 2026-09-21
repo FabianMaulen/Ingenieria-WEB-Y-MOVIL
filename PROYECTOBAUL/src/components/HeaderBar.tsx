@@ -18,14 +18,14 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({ title }) => {
   return (
     <IonHeader translucent={true}>
       <IonToolbar color="primary">
-        {/* Botón hamburguesa que abre la barra lateral */}
+        {}
         <IonButtons slot="start">
           <IonMenuButton />
         </IonButtons>
 
         <IonTitle>{title}</IonTitle>
 
-        {/* Iconos de Notificaciones y Perfil */}
+        {}
         <IonButtons slot="end">
           <IonButton onClick={() => alert('No tienes notificaciones pendientes')}>
             <IonIcon slot="icon-only" icon={notificationsOutline} />
