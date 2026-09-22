@@ -268,5 +268,3 @@ El servidor quedará activo en la URL local indicada en la consola (por defecto:
 
 ### 11.2. Recursos Visuales del Prototipo en Figma
 Los wireframes, paleta cromática corporativa y mockups en alta fidelidad tanto para versión móvil (390 × 844 px) como para versión web de escritorio (1440 × 900 px) se encuentran disponibles en el prototipo interactivo público del equipo:
-
-* Enlace al prototipo interactivo: **[Abrir Prototipo Baúl Eterno en Figma](https://www.figma.com/)**
