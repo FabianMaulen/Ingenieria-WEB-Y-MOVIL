@@ -1,7 +1,7 @@
 # Baúl Eterno - Plataforma de Legado Personal
 
 > **Proyecto Semestral:** Relicario / Legado / Baúl Eterno  
-> **Recursos:** [Documento de Consideraciones Ionic](https://docs.google.com/document/d/1ikC9UjnSPEvII5PEouwMIieB4Uo4obu91eAkVA_MMxw/edit?usp=sharing)
+> **Recursos:** [Documento de Consideraciones Ionic](https://docs.google.com/document/d/1ikC9UjnSPEvII5PEouwMIieB4Uo4obu91eAkVA_MMxw/edit?usp=sharing) / [Presentacion Mockup](https://www.figma.com/proto/EHdQG7y7aMbGVkIzi36fNZ/baul-eterno--copia-?node-id=2-12&p=f&t=wlTDDaTyPpFu6PzI-1&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=2%3A12)
 
 ---
 
