@@ -248,7 +248,7 @@ El servidor quedará activo en la URL local indicada en la consola (por defecto:
 
 ---
 
-## 11. Diagramas, Mockups y Recursos Visuales
+## 11. Diagramas
 
 ### 11.1. Diagrama de Flujo de Navegación (Task Flow)
 
