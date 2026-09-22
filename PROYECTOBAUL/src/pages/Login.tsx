@@ -16,9 +16,11 @@ import {
   IonText
 } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
+//import { useHistory  } from 'react-router-dom';
 
 export const Login: React.FC = () => {
-const navigate = useNavigate();
+  const navigate = useNavigate();
+  //const history = useHistory ();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -40,6 +42,7 @@ const navigate = useNavigate();
     // Simulación de autenticación exitosa
     localStorage.setItem('auth_token', 'session_activa_token');
     navigate('/dashboard', { replace: true });
+    //history('/dashboard', { replace: true });
   };
 
   return (

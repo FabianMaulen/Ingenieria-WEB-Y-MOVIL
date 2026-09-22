@@ -23,11 +23,13 @@ import {
   peopleOutline,
   settingsOutline
 } from 'ionicons/icons';
+import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
 import { VaultStatusCard } from '../components/VaultStatusCard';
 import { AppMenu } from '../components/AppMenu';
 
 export const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [daysLeft, setDaysLeft] = useState(140);
   const [showToast, setShowToast] = useState(false);
 
@@ -38,10 +40,10 @@ export const Dashboard: React.FC = () => {
 
   return (
     <>
-      {/* Menú lateral desplegable */}
+      {}
       <AppMenu />
 
-      {/* Pantalla principal enlazada al menú por id="main-content" */}
+      {}
       <IonPage id="main-content">
         <HeaderBar title="Baúl de Roberto" />
 
@@ -49,14 +51,14 @@ export const Dashboard: React.FC = () => {
           <IonGrid className="ion-no-padding">
             <IonRow>
               <IonCol size="12">
-                {/* Widget principal de estado y check-in */}
+                {}
                 <VaultStatusCard 
                   daysLeft={daysLeft} 
                   status="PROTEGIDA" 
                   onCheckin={handleCheckin} 
                 />
 
-                {/* Métricas lado a lado: size="6" asegura 2 columnas en móvil */}
+                {}
                 <IonRow>
                   <IonCol size="6">
                     <IonCard className="ion-no-margin ion-margin-bottom" style={{ height: '90%' }}>
@@ -66,7 +68,12 @@ export const Dashboard: React.FC = () => {
                       </IonCardHeader>
                       <IonCardContent className="ion-no-padding ion-padding-horizontal ion-padding-bottom">
                         <p style={{ fontSize: '0.8rem', margin: '6px 0' }}>Vida, salud y créditos.</p>
-                        <IonButton fill="clear" size="small" className="ion-no-padding">
+                        <IonButton 
+                          fill="clear" 
+                          size="small" 
+                          className="ion-no-padding"
+                          onClick={() => navigate('/polizas')}
+                        >
                           Ver Bóveda →
                         </IonButton>
                       </IonCardContent>
@@ -89,7 +96,7 @@ export const Dashboard: React.FC = () => {
                   </IonCol>
                 </IonRow>
 
-                {/* Tarjeta de Mensajes Póstumos */}
+                {}
                 <IonCard className="ion-no-margin ion-margin-bottom">
                   <IonCardHeader>
                     <IonCardSubtitle>Memorias y Cartas</IonCardSubtitle>
@@ -99,7 +106,12 @@ export const Dashboard: React.FC = () => {
                     <p style={{ fontSize: '0.85rem' }}>
                       Asignados individualmente por RUT. Permanecen bajo custodia cifrada hasta la apertura de la bóveda.
                     </p>
-                    <IonButton fill="outline" size="small" className="ion-margin-top">
+                    <IonButton 
+                      fill="outline" 
+                      size="small" 
+                      className="ion-margin-top"
+                      onClick={() => navigate('/mensajes')}
+                    >
                       Redactar Mensaje
                     </IonButton>
                   </IonCardContent>
@@ -117,26 +129,46 @@ export const Dashboard: React.FC = () => {
           />
         </IonContent>
 
-        {/* Barra de navegación inferior móvil */}
+        {}
         <IonFooter>
           <IonToolbar color="light">
             <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-              <IonButton fill="clear" color="primary" style={{ display: 'flex', flexDirection: 'column' }}>
+              <IonButton 
+                fill="clear" 
+                color="primary" 
+                style={{ display: 'flex', flexDirection: 'column' }}
+                onClick={() => navigate('/dashboard')}
+              >
                 <IonIcon icon={homeOutline} />
                 <IonLabel style={{ fontSize: '0.7rem' }}>Inicio</IonLabel>
               </IonButton>
 
-              <IonButton fill="clear" color="medium" style={{ display: 'flex', flexDirection: 'column' }}>
+              <IonButton 
+                fill="clear" 
+                color="medium" 
+                style={{ display: 'flex', flexDirection: 'column' }}
+                onClick={() => navigate('/polizas')}
+              >
                 <IonIcon icon={shieldCheckmarkOutline} />
                 <IonLabel style={{ fontSize: '0.7rem' }}>Pólizas</IonLabel>
               </IonButton>
 
-              <IonButton fill="clear" color="medium" style={{ display: 'flex', flexDirection: 'column' }}>
+              <IonButton 
+                fill="clear" 
+                color="medium" 
+                style={{ display: 'flex', flexDirection: 'column' }}
+                onClick={() => navigate('/dashboard')}
+              >
                 <IonIcon icon={peopleOutline} />
                 <IonLabel style={{ fontSize: '0.7rem' }}>Albaceas</IonLabel>
               </IonButton>
 
-              <IonButton fill="clear" color="medium" style={{ display: 'flex', flexDirection: 'column' }}>
+              <IonButton 
+                fill="clear" 
+                color="medium" 
+                style={{ display: 'flex', flexDirection: 'column' }}
+                onClick={() => navigate('/dashboard')}
+              >
                 <IonIcon icon={settingsOutline} />
                 <IonLabel style={{ fontSize: '0.7rem' }}>Ajustes</IonLabel>
               </IonButton>
