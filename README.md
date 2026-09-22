@@ -2,7 +2,7 @@
 
 Plataforma web y móvil de gestión patrimonial preventiva y preservación de memoria digital. Permite a los usuarios registrar en vida sus pólizas de seguro, bienes e instrucciones clave, además de cartas y recuerdos póstumos, liberándolos de manera controlada a sus albaceas designados ante una contingencia.
 
-* **Prototipo Interactivo en Figma:** [Ver Prototipo UI/UX en Figma](https://www.figma.com/)
+* **Prototipo Interactivo en Figma:** [Ver Prototipo UI/UX en Figma](https://www.figma.com/proto/EHdQG7y7aMbGVkIzi36fNZ/baul-eterno--copia-?node-id=2-12&starting-point-node-id=2%3A12&t=VKCSrSZArWJPDgmJ-1)
 * **Documentación Técnica Adicional:** [Documento de Consideraciones Ionic](https://docs.google.com/document/d/1ikC9UjnSPEvII5PEouwMIieB4Uo4obu91eAkVA_MMxw/edit?usp=sharing)
 
 ---
