@@ -265,6 +265,3 @@ El servidor quedará activo en la URL local indicada en la consola (por defecto:
               ├──► [ /mensajes ] ── (Redacción de cartas selladas)
               └──► [ Cerrar Sesión ] ──► Limpia token y vuelve a /login
 ```
-
-### 11.2. Recursos Visuales del Prototipo en Figma
-Los wireframes, paleta cromática corporativa y mockups en alta fidelidad tanto para versión móvil (390 × 844 px) como para versión web de escritorio (1440 × 900 px) se encuentran disponibles en el prototipo interactivo público del equipo:
