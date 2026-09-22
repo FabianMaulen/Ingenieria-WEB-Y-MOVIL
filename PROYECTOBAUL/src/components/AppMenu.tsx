@@ -16,12 +16,18 @@ import {
   shieldCheckmarkOutline,
   peopleOutline,
   mailOutline,
-  settingsOutline
+  settingsOutline,
+  logOutOutline
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 
 export const AppMenu: React.FC = () => {
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    navigate('/login', { replace: true });
+  };
 
   return (
     <IonMenu contentId="main-content" type="overlay">
@@ -56,6 +62,11 @@ export const AppMenu: React.FC = () => {
             <IonItem button onClick={() => navigate('/dashboard')}>
               <IonIcon slot="start" icon={settingsOutline} />
               <IonLabel>Configuración</IonLabel>
+            </IonItem>
+
+            <IonItem button onClick={handleLogout} lines="none">
+              <IonIcon slot="start" icon={logOutOutline} color="danger" />
+              <IonLabel color="danger">Cerrar Sesión</IonLabel>
             </IonItem>
           </IonMenuToggle>
         </IonList>
