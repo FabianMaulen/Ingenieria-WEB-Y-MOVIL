@@ -29,6 +29,8 @@ app.get('/api/health', async (req, res) => {
 // Rutas de autenticación (registro y login)
 app.use('/api/auth', require('./routes/auth.routes'));
 
+app.use('/api/polizas', require('./routes/polizas.routes'));
+
 // Ruta protegida de prueba: verifica que el JWT funciona
 app.get('/api/perfil', verificarToken, (req, res) => {
     res.json({ mensaje: 'Token válido', usuario: req.user });
