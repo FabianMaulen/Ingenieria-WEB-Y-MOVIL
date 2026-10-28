@@ -36,6 +36,11 @@ app.use('/api/albaceas', require('./routes/albaceas.routes'));
 app.use('/api/checkin', require('./routes/checkin.routes'));
 // Ruta protegida de prueba: verifica que el JWT funciona
 app.use('/api/mensajes', require('./routes/mensajes.routes'));
+
+// Rutas del flujo de apertura
+app.use('/api/solicitudes', require('./routes/solicitudes.routes'));
+app.use('/api/guia', require('./routes/guia.routes'));
+
 app.get('/api/perfil', verificarToken, (req, res) => {
     res.json({ mensaje: 'Token válido', usuario: req.user });
 });

@@ -56,3 +56,14 @@ CREATE TABLE AUDITORIA (
   direccion_ip VARCHAR(50) NOT NULL,
   id_usuario INT REFERENCES USUARIO(id_usuario)
 );
+
+-- Cambios de esquema para RF-05, RF-06 y RF-07
+
+-- RF-07: checklist de pólizas ya tramitadas
+ALTER TABLE POLIZA
+  ADD COLUMN tramitada BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- RF-05 / RF-06: estados válidos de una solicitud de apertura
+ALTER TABLE SOLICITUD_APERTURA
+  ADD CONSTRAINT chk_estado_solicitud
+  CHECK (estado_solicitud IN ('PENDIENTE', 'CANCELADA', 'APROBADA'));
