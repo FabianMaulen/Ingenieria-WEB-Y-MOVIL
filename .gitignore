@@ -3,7 +3,13 @@ node_modules/
 /.pnp
 .pnp.js
 
+# Ignorar carpetas de archivos subidos (Multer)
 uploads/
+backend/uploads/
+backend/uploads/certificados/
+
+# Ignorar archivos temporales o adjuntos de prueba
+*.pdf
 # testing
 /coverage
 
