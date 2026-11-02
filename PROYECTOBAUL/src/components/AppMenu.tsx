@@ -16,51 +16,55 @@ import {
   shieldCheckmarkOutline,
   peopleOutline,
   mailOutline,
+  settingsOutline,
   logOutOutline
 } from 'ionicons/icons';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export const AppMenu: React.FC = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
-    history.replace('/login');
+    navigate('/login', { replace: true });
   };
 
   return (
     <IonMenu contentId="main-content" type="overlay">
       <IonHeader>
         <IonToolbar color="primary">
-          <IonTitle>Baúl Eterno</IonTitle>
+          <IonTitle>Menú Principal</IonTitle>
         </IonToolbar>
       </IonHeader>
-
       <IonContent>
         <IonList>
           <IonMenuToggle autoHide={false}>
-            <IonItem button onClick={() => history.push('/dashboard')}>
+            <IonItem button onClick={() => navigate('/dashboard')}>
               <IonIcon slot="start" icon={homeOutline} />
               <IonLabel>Inicio (Dashboard)</IonLabel>
             </IonItem>
 
-            <IonItem button onClick={() => history.push('/dashboard')}>
-
+            <IonItem button onClick={() => navigate('/polizas')}>
               <IonIcon slot="start" icon={shieldCheckmarkOutline} />
               <IonLabel>Pólizas y Seguros</IonLabel>
             </IonItem>
 
-            <IonItem button onClick={() => history.push('/dashboard')}>
+            <IonItem button onClick={() => navigate('/dashboard')}>
               <IonIcon slot="start" icon={peopleOutline} />
               <IonLabel>Albaceas Designados</IonLabel>
             </IonItem>
 
-            <IonItem button onClick={() => history.push('/dashboard')}>
+            <IonItem button onClick={() => navigate('/mensajes')}>
               <IonIcon slot="start" icon={mailOutline} />
               <IonLabel>Mensajes Póstumos</IonLabel>
             </IonItem>
 
-            <IonItem button onClick={handleLogout} lines="none" className="ion-margin-top">
+            <IonItem button onClick={() => navigate('/dashboard')}>
+              <IonIcon slot="start" icon={settingsOutline} />
+              <IonLabel>Configuración</IonLabel>
+            </IonItem>
+
+            <IonItem button onClick={handleLogout} lines="none">
               <IonIcon slot="start" icon={logOutOutline} color="danger" />
               <IonLabel color="danger">Cerrar Sesión</IonLabel>
             </IonItem>

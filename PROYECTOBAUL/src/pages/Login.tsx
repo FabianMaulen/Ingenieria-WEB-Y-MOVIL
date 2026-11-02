@@ -1,4 +1,4 @@
-import React, { use, useState } from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonContent,
@@ -13,17 +13,20 @@ import {
   IonLabel,
   IonInput,
   IonButton,
-  IonText
+  IonText,
+  IonSpinner
 } from '@ionic/react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { loginApi } from '../services/api'; // Importa el servicio que conecta con Axios
 
 export const Login: React.FC = () => {
-const history = useHistory();
+  const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [cargando, setCargando] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!identifier.trim() || !password.trim()) {
@@ -37,9 +40,37 @@ const history = useHistory();
     }
 
     setErrorMessage('');
-    // Simulación de autenticación exitosa
-    localStorage.setItem('auth_token', 'session_activa_token');
-    history.replace('/dashboard');
+    setCargando(true);
+
+    try {
+      // 1. Petición real al backend
+      const data = await loginApi({
+        correo_usuario: identifier.trim().toLowerCase(),
+        password: password
+      });
+
+      // 2. Almacenamiento de credenciales y datos
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user_rol', data.usuario.rol);
+      localStorage.setItem('user_nombre', data.usuario.nombre);
+
+      // 3. Redirección estricta por rol (Criterio de Privacidad)
+      if (data.usuario.rol === 'ALBACEA') {
+        navigate('/guia', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+      
+    } catch (error: any) {
+      // Captura el error exacto que envía Node.js (ej: "Credenciales inválidas")
+      setErrorMessage(
+        error.response?.data?.error || 
+        error.message || 
+        'Error de conexión con el servidor.'
+      );
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -85,8 +116,19 @@ const history = useHistory();
                     )}
 
                     <div className="ion-margin-top ion-padding-top">
-                      <IonButton expand="block" type="submit" color="primary">
-                        Ingresar a tu Baúl
+                      <IonButton expand="block" type="submit" color="primary" disabled={cargando}>
+                        {cargando ? <IonSpinner name="crescent" /> : 'Ingresar a tu Baúl'}
+                      </IonButton>
+
+                      {/* Enlace habilitado para redirigir al formulario de Registro */}
+                      <IonButton 
+                        expand="block" 
+                        fill="clear" 
+                        routerLink="/register" 
+                        className="ion-margin-top"
+                        style={{ fontSize: '0.85rem', textTransform: 'none' }}
+                      >
+                        ¿No tienes cuenta? Registra tu Baúl aquí
                       </IonButton>
                     </div>
                   </form>
