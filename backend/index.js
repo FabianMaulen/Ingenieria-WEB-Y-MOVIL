@@ -3,10 +3,11 @@ const cors = require('cors');
 require('dotenv').config();
 const db = require('./db');
 const { verificarToken } = require('./middlewares/auth');
-
+const morgan = require("morgan");
 const app = express();
 
 // Middlewares
+app.use(morgan("tiny"));
 app.use(cors());
 app.use(express.json());
 
