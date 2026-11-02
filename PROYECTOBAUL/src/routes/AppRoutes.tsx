@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, Redirect } from 'react-router-dom';
+import { Route, Navigate } from 'react-router-dom';
 import { IonRouterOutlet, IonSplitPane } from '@ionic/react';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
@@ -11,53 +11,47 @@ import { Albaceas } from '../pages/Albaceas';
 import { Inventario } from '../pages/Inventario';
 import { Guia } from '../pages/Guia';
 
-const ProtectedRoute: React.FC<{ component: React.ComponentType<any>; path: string; exact?: boolean }> = ({ component: Component, ...rest }) => {
+// Layout protegido con verificación de autenticación
+const ProtectedLayout: React.FC<{ component: React.ComponentType<any> }> = ({ component: Component }) => {
   const isAuth = localStorage.getItem('auth_token') !== null;
 
+  if (!isAuth) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
-    <Route
-      {...rest}
-      render={(props) =>
-        isAuth ? (
-          <IonSplitPane 
-            contentId="main-content" 
-            when="md"
-            style={{
-              '--side-width': '220px',
-              '--side-min-width': '220px',
-              '--side-max-width': '220px'
-            } as any}
-          >
-            <Component {...props} />
-          </IonSplitPane>
-        ) : (
-          <Redirect to="/login" />
-        )
-      }
-    />
+    <IonSplitPane 
+      contentId="main-content" 
+      when="md"
+      style={{
+        '--side-width': '220px',
+        '--side-min-width': '220px',
+        '--side-max-width': '220px'
+      } as any}
+    >
+      <Component />
+    </IonSplitPane>
   );
 };
 
 export const AppRoutes: React.FC = () => {
   return (
     <IonRouterOutlet>
-      {}
-      <Route path="/login" component={Login} exact={true} />
-      <Route path="/register" component={Register} exact={true} />
+      {/* Rutas Públicas */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-      {}
-      <ProtectedRoute path="/dashboard" component={Dashboard} exact={true} />
-      <ProtectedRoute path="/polizas" component={Polizas} exact={true} />
-      <ProtectedRoute path="/albaceas" component={Albaceas} exact={true} />
-      <ProtectedRoute path="/mensajes" component={Mensajes} exact={true} />
-      <ProtectedRoute path="/inventario" component={Inventario} exact={true} />
-      <ProtectedRoute path="/apertura" component={Apertura} exact={true} />
-      <ProtectedRoute path="/guia" component={Guia} exact={true} />
+      {/* Rutas Protegidas */}
+      <Route path="/dashboard" element={<ProtectedLayout component={Dashboard} />} />
+      <Route path="/polizas" element={<ProtectedLayout component={Polizas} />} />
+      <Route path="/albaceas" element={<ProtectedLayout component={Albaceas} />} />
+      <Route path="/mensajes" element={<ProtectedLayout component={Mensajes} />} />
+      <Route path="/inventario" element={<ProtectedLayout component={Inventario} />} />
+      <Route path="/apertura" element={<ProtectedLayout component={Apertura} />} />
+      <Route path="/guia" element={<ProtectedLayout component={Guia} />} />
 
-      {}
-      <Route exact path="/">
-        <Redirect to="/login" />
-      </Route>
+      {/* Redirección por defecto */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
     </IonRouterOutlet>
   );
 };

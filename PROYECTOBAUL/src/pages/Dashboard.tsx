@@ -31,7 +31,7 @@ import { VaultStatusCard } from '../components/VaultStatusCard';
 import { AppMenu } from '../components/AppMenu';
 
 // Conexión con los servicios entregados en el zip
-import { mensajeError } from '../services/api';
+import  mensajeError  from '../services/api';
 import { renovarCheckin } from '../services/checkin.service';
 import { listarAlertas, cancelarSolicitud } from '../services/solicitudes.service';
 

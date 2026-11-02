@@ -29,6 +29,9 @@ export const solicitarApertura = async (rut_titular: string, certificado: File) 
   return (await api.post('/solicitudes', form)).data;
 };
 
+// Alias para resolver la importación de 'crearSolicitud' en las vistas
+export const crearSolicitud = solicitarApertura;
+
 export const misSolicitudes = async () => (await api.get<SolicitudAlbacea[]>('/solicitudes/mias')).data;
 
 // RF-06

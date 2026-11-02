@@ -74,3 +74,5 @@ export const AppMenu: React.FC = () => {
     </IonMenu>
   );
 };
+
+export default AppMenu;

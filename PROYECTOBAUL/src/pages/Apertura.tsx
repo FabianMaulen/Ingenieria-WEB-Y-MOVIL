@@ -15,9 +15,9 @@ import { closeCircleOutline } from 'ionicons/icons';
 import AppMenu from '../components/AppMenu';
 
 // --- IMPORTACIONES DE CONEXIÓN AL BACKEND ---
-import { mensajeError } from '../services/api';
+import  mensajeError  from '../services/api';
 import { crearSolicitud } from '../services/solicitudes.service';
-import { normalizarRut } from '../utils/rut';
+import { normalizarRut } from '../services/utils/rut';
 
 export const Apertura: React.FC = () => {
   const [rutTitular, setRutTitular] = useState('');

@@ -15,7 +15,7 @@ import AppMenu from '../components/AppMenu';
 
 // Importaciones de los servicios entregados en el zip de integración
 import { getAlbaceas, agregarAlbacea } from '../services/albaceas.service';
-import { mensajeError } from '../services/api';
+import  mensajeError  from '../services/api';
 
 export const Albaceas: React.FC = () => {
   const [albaceas, setAlbaceas] = useState<any[]>([]);
