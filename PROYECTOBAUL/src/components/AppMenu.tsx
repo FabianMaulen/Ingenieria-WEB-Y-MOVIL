@@ -18,7 +18,8 @@ import {
   peopleOutline,
   mailOutline,
   settingsOutline,
-  logOutOutline
+  logOutOutline,
+  helpCircleOutline
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -41,12 +42,13 @@ export const AppMenu: React.FC = () => {
   };
 
   const inicial = nombre.charAt(0).toUpperCase();
+  const esAlbacea = rol === 'ALBACEA';
 
   return (
     <IonMenu contentId="main-content" type="overlay">
       <IonHeader>
         <IonToolbar color="primary">
-          <IonTitle>Menú Principal</IonTitle>
+          <IonTitle>{esAlbacea ? 'Panel Albacea' : 'Menú Principal'}</IonTitle>
         </IonToolbar>
       </IonHeader>
 
@@ -57,8 +59,8 @@ export const AppMenu: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          backgroundColor: 'var(--header-avatar-bg, #f8fafc)',
-          borderBottom: '1px solid var(--header-avatar-border, #e2e8f0)',
+          backgroundColor: 'var(--ion-color-step-100, var(--header-avatar-bg, #f8fafc))',
+          borderBottom: '1px solid var(--ion-color-step-200, var(--header-avatar-border, #e2e8f0))',
           color: 'var(--ion-text-color, #0f172a)'
         }}>
           <IonAvatar style={{
@@ -97,27 +99,40 @@ export const AppMenu: React.FC = () => {
 
         <IonList lines="none" style={{ background: 'transparent' }}>
           <IonMenuToggle autoHide={false}>
-            <IonItem button onClick={() => navigate('/dashboard')}>
-              <IonIcon slot="start" icon={homeOutline} />
-              <IonLabel>Inicio (Resumen)</IonLabel>
-            </IonItem>
+            {/* Opciones del TITULAR */}
+            {!esAlbacea && (
+              <>
+                <IonItem button onClick={() => navigate('/dashboard')}>
+                  <IonIcon slot="start" icon={homeOutline} />
+                  <IonLabel>Inicio (Resumen)</IonLabel>
+                </IonItem>
 
-            <IonItem button onClick={() => navigate('/polizas')}>
-              <IonIcon slot="start" icon={shieldCheckmarkOutline} />
-              <IonLabel>Pólizas y Seguros</IonLabel>
-            </IonItem>
+                <IonItem button onClick={() => navigate('/polizas')}>
+                  <IonIcon slot="start" icon={shieldCheckmarkOutline} />
+                  <IonLabel>Pólizas y Seguros</IonLabel>
+                </IonItem>
 
-            <IonItem button onClick={() => navigate('/albaceas')}>
-              <IonIcon slot="start" icon={peopleOutline} />
-              <IonLabel>Albaceas Designados</IonLabel>
-            </IonItem>
+                <IonItem button onClick={() => navigate('/albaceas')}>
+                  <IonIcon slot="start" icon={peopleOutline} />
+                  <IonLabel>Albaceas Designados</IonLabel>
+                </IonItem>
 
-            <IonItem button onClick={() => navigate('/mensajes')}>
-              <IonIcon slot="start" icon={mailOutline} />
-              <IonLabel>Mensajes Póstumos</IonLabel>
-            </IonItem>
+                <IonItem button onClick={() => navigate('/mensajes')}>
+                  <IonIcon slot="start" icon={mailOutline} />
+                  <IonLabel>Mensajes Póstumos</IonLabel>
+                </IonItem>
+              </>
+            )}
 
-            {/* Redirección hacia /configuracion con la etiqueta 'Ajustes' */}
+            {/* Opciones del ALBACEA */}
+            {esAlbacea && (
+              <IonItem button onClick={() => navigate('/guia')}>
+                <IonIcon slot="start" icon={helpCircleOutline} />
+                <IonLabel>Guía y Solicitudes</IonLabel>
+              </IonItem>
+            )}
+
+            {/* Opciones Comunes */}
             <IonItem button onClick={() => navigate('/configuracion')}>
               <IonIcon slot="start" icon={settingsOutline} />
               <IonLabel>Ajustes</IonLabel>
