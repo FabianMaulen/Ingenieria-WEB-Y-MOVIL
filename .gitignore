@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Ignorar carpetas de archivos subidos (Multer)
+uploads/
+backend/uploads/
+backend/uploads/certificados/
+
+# Ignorar archivos temporales o adjuntos de prueba
+*.pdf
+# testing
+/coverage
+
+# production
+/dist
+.vite/
+
+# misc
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+/.nx
+/.nx/cache
+/.vscode/*
+!/.vscode/extensions.json
+.idea
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Optional eslint cache
+.eslintcachegit rm -r --cached .
