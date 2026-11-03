@@ -117,9 +117,10 @@ export const AppMenu: React.FC = () => {
               <IonLabel>Mensajes Póstumos</IonLabel>
             </IonItem>
 
-            <IonItem button onClick={() => navigate('/dashboard')}>
+            {/* Redirección hacia /configuracion con la etiqueta 'Ajustes' */}
+            <IonItem button onClick={() => navigate('/configuracion')}>
               <IonIcon slot="start" icon={settingsOutline} />
-              <IonLabel>Configuración</IonLabel>
+              <IonLabel>Ajustes</IonLabel>
             </IonItem>
 
             <IonItem button onClick={handleLogout} style={{ marginTop: '16px' }}>

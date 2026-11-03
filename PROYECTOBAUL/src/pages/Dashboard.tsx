@@ -24,11 +24,7 @@ import {
   shieldCheckmarkOutline,
   peopleOutline,
   settingsOutline,
-  warningOutline,
-  mailOutline,
-  shieldOutline,
-  checkmarkCircleOutline,
-  alertCircleOutline
+  warningOutline
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
@@ -357,10 +353,11 @@ export const Dashboard: React.FC = () => {
               <IonLabel style={{ fontSize: '0.7rem' }}>Albaceas</IonLabel>
             </IonButton>
 
+            {/* Redirección hacia /configuracion */}
             <IonButton 
               fill="clear" 
               style={{ display: 'flex', flexDirection: 'column', '--color': 'var(--ion-text-color)' }}
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/configuracion')}
             >
               <IonIcon icon={settingsOutline} />
               <IonLabel style={{ fontSize: '0.7rem' }}>Ajustes</IonLabel>
