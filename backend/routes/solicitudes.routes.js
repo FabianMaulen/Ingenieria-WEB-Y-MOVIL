@@ -123,7 +123,7 @@ router.get('/mias', verificarToken, soloRol('ALBACEA'), async (req, res) => {
              FROM SOLICITUD_APERTURA s
              JOIN DIRECTORIO_ALBACEAS d ON d.id_directorio = s.id_albacea
              JOIN USUARIO t ON t.id_usuario = s.id_usuario
-             WHERE d.id_usuario_invitado = $1
+             WHERE d.id_usuario_invitado = $1 AND s.estado_solicitud = 'PENDIENTE'
              ORDER BY s.fecha_solicitud DESC`,
             [req.user.id, PLAZO_HORAS]
         );
