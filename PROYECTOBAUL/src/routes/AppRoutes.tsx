@@ -12,6 +12,7 @@ import { Mensajes } from '../pages/Mensajes';
 import { Inventario } from '../pages/Inventario';
 import { Apertura } from '../pages/Apertura';
 import { Guia } from '../pages/Guia';
+import { Configuracion } from '../pages/Configuracion'; // <--- Importación agregada
 
 // Layout protegido: Mantiene un solo IonSplitPane y AppMenu para todas las rutas privadas
 const ProtectedLayout: React.FC = () => {
@@ -44,6 +45,7 @@ const ProtectedLayout: React.FC = () => {
           <Route path="/inventario" element={<Inventario />} />
           <Route path="/apertura" element={<Apertura />} />
           <Route path="/guia" element={<Guia />} />
+          <Route path="/configuracion" element={<Configuracion />} /> 
         </Routes>
       </IonRouterOutlet>
     </IonSplitPane>
