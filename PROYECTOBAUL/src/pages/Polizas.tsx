@@ -6,6 +6,7 @@ import {
   IonSpinner,
   IonToast,
   IonButton,
+  IonAlert,
   useIonViewWillEnter
 } from '@ionic/react';
 import { 
@@ -27,6 +28,9 @@ export const Polizas: React.FC = () => {
   const [enviando, setEnviando] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Estado para la alerta de confirmación de eliminación
+  const [idEliminar, setIdEliminar] = useState<number | null>(null);
 
   // Formulario de nueva póliza
   const [tipoSeguro, setTipoSeguro] = useState('Seguro de Vida Individual');
@@ -84,13 +88,16 @@ export const Polizas: React.FC = () => {
     }
   };
 
-  const handleEliminar = async (id: number) => {
+  const confirmarEliminar = async () => {
+    if (!idEliminar) return;
     try {
-      await eliminarPoliza(id);
+      await eliminarPoliza(idEliminar);
       setToastMsg('Póliza eliminada de la bóveda.');
       await cargarDatos();
     } catch (error) {
       setToastMsg(mensajeError(error));
+    } finally {
+      setIdEliminar(null);
     }
   };
 
@@ -257,7 +264,7 @@ export const Polizas: React.FC = () => {
 
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                  Monto Referencial ($ CLP)
+                  Monto Referencial (\$ CLP)
                 </label>
                 <input
                   type="number"
@@ -373,14 +380,14 @@ export const Polizas: React.FC = () => {
                       whiteSpace: 'nowrap'
                     }}
                   >
-                    ${Number(p.monto_referencial || 0).toLocaleString('es-CL')}
+                    \${Number(p.monto_referencial || 0).toLocaleString('es-CL')}
                   </span>
 
                   <IonButton
                     fill="clear"
                     color="danger"
                     size="small"
-                    onClick={() => handleEliminar(p.id_poliza)}
+                    onClick={() => setIdEliminar(p.id_poliza)}
                     title="Eliminar póliza"
                   >
                     <IonIcon slot="icon-only" icon={trashOutline} />
@@ -391,6 +398,25 @@ export const Polizas: React.FC = () => {
           )}
 
         </div>
+
+        {/* Modal Alerta de Confirmación de Borrado */}
+        <IonAlert
+          isOpen={!!idEliminar}
+          onDidDismiss={() => setIdEliminar(null)}
+          header="Confirmar eliminación"
+          message="¿Estás seguro de que deseas eliminar esta póliza? Esta acción eliminará el registro de la bóveda patrimonial."
+          buttons={[
+            {
+              text: 'Cancelar',
+              role: 'cancel'
+            },
+            {
+              text: 'Eliminar',
+              role: 'confirm',
+              handler: () => confirmarEliminar()
+            }
+          ]}
+        />
 
         <IonToast
           isOpen={!!toastMsg}

@@ -99,7 +99,7 @@ export const AppMenu: React.FC = () => {
           <IonMenuToggle autoHide={false}>
             <IonItem button onClick={() => navigate('/dashboard')}>
               <IonIcon slot="start" icon={homeOutline} />
-              <IonLabel>Inicio (Dashboard)</IonLabel>
+              <IonLabel>Inicio (Resumen)</IonLabel>
             </IonItem>
 
             <IonItem button onClick={() => navigate('/polizas')}>
