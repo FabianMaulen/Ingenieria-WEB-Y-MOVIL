@@ -43,7 +43,7 @@ export const Dashboard: React.FC = () => {
   
   // Estados dinámicos
   const [nombreTitular, setNombreTitular] = useState('Usuario');
-  const [daysLeft, setDaysLeft] = useState(140);
+  const [daysLeft, setDaysLeft] = useState(180);
   const [alertas, setAlertas] = useState<any[]>([]);
   const [cargandoCheckin, setCargandoCheckin] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -77,14 +77,21 @@ export const Dashboard: React.FC = () => {
         getMensajes().catch(() => [])
       ]);
 
-      setAlertas(Array.isArray(dataAlertas) ? dataAlertas : []);
+      // Filtro defensivo: se conservan únicamente las solicitudes activas en estado PENDIENTE
+      const alertasPendientes = (Array.isArray(dataAlertas) ? dataAlertas : []).filter(
+        (a: any) => a.estado_solicitud === 'PENDIENTE'
+      );
+
+      setAlertas(alertasPendientes);
       setCantPolizas(Array.isArray(dataPolizas) ? dataPolizas.length : 0);
       setCantAlbaceas(Array.isArray(dataAlbaceas) ? dataAlbaceas.length : 0);
       setCantMensajes(Array.isArray(dataMensajes) ? dataMensajes.length : 0);
 
-      // Si hay aperturas pendientes en curso, el estado pasa a "EN_REVISION"
-      if (Array.isArray(dataAlertas) && dataAlertas.length > 0) {
-        setDaysLeft(7); // Días de plazo de gracia crítico
+      // Si existen aperturas pendientes en curso, se reduce el contador a 7 días de gracia
+      if (alertasPendientes.length > 0) {
+        setDaysLeft(7);
+      } else {
+        setDaysLeft(180);
       }
     } catch (error) {
       console.error('Error al cargar datos del dashboard:', mensajeError(error));
@@ -97,7 +104,7 @@ export const Dashboard: React.FC = () => {
       setCargandoCheckin(true);
       await renovarCheckin();
       
-      // Si existía alguna solicitud de apertura, la cancelamos automáticamente al renovar presencia
+      // Si existía alguna solicitud de apertura pendiente, la cancelamos en el servidor
       if (alertas.length > 0) {
         for (const a of alertas) {
           await cancelarSolicitud(a.id_solicitud).catch(() => {});
@@ -122,6 +129,7 @@ export const Dashboard: React.FC = () => {
       await cancelarSolicitud(idSolicitud);
       setToastMsg('Solicitud de apertura anulada exitosamente. Tu bóveda sigue bajo tu custodia.');
       setShowToast(true);
+      // Al volver a pedir datos, el filtro descartará la solicitud cancelada y removerá el bloque rojo
       await cargarDatosDashboard();
     } catch (error) {
       setToastMsg(mensajeError(error));
@@ -138,7 +146,7 @@ export const Dashboard: React.FC = () => {
           <IonRow>
             <IonCol size="12">
               
-              {/* ALERTA CRÍTICA DE APERTURA EN CURSO (RF-06) */}
+              {/* ALERTA CRÍTICA DE APERTURA EN CURSO (Solo activas con estado PENDIENTE) */}
               {alertas.map((alerta) => (
                 <IonCard key={alerta.id_solicitud} color="danger" className="ion-margin-bottom" style={{ borderRadius: '14px' }}>
                   <IonCardHeader>
@@ -153,10 +161,10 @@ export const Dashboard: React.FC = () => {
                   <IonCardContent color="light">
                     <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)', padding: '14px', borderRadius: '8px', marginBottom: '14px', color: '#fff' }}>
                       <p style={{ margin: '0 0 6px 0', fontSize: '0.9rem' }}>
-                        <strong>Albacea Solicitante:</strong> RUT {alerta.rut_albacea || alerta.rut || 'Contacto registrado'}
+                        <strong>Albacea Solicitante:</strong> RUT {alerta.rut_albacea || 'Contacto registrado'} ({alerta.nombre_albacea || 'Nombre no disponible'})
                       </p>
                       <p style={{ margin: '0 0 6px 0', fontSize: '0.9rem' }}>
-                        <strong>Estado del Trámite:</strong> {alerta.estado_solicitud || 'PENDIENTE EN PERIODO DE GRACIA'}
+                        <strong>Estado del Trámite:</strong> PENDIENTE (En Periodo de Gracia)
                       </p>
                       <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9 }}>
                         🛡️ <strong>Periodo de Gracia Activo:</strong> Tienes este plazo para anular la apertura si se trata de un error o una prueba.
@@ -166,6 +174,7 @@ export const Dashboard: React.FC = () => {
                     <IonButton 
                       expand="block" 
                       color="light" 
+                      disabled={cargandoCheckin}
                       style={{ fontWeight: '700', color: '#dc2626' }}
                       onClick={() => handleCancelarApertura(alerta.id_solicitud)}
                     >
@@ -182,7 +191,7 @@ export const Dashboard: React.FC = () => {
                 onCheckin={handleCheckin} 
               />
 
-              {/* MÓDULOS DE RESUMEN E INVITACIÓN */}
+              {/* MÓDULOS DE RESUMEN E INVITACIÓN AL USUARIO */}
               <IonRow>
                 
                 {/* 1. Módulo de Pólizas */}
@@ -321,7 +330,7 @@ export const Dashboard: React.FC = () => {
         />
       </IonContent>
 
-      {/* Footer Inferior */}
+      {/* Footer Inferior Navegable */}
       <IonFooter>
         <IonToolbar style={{ '--background': 'var(--ion-card-background, #ffffff)', '--color': 'var(--ion-text-color, #0f172a)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
@@ -353,7 +362,6 @@ export const Dashboard: React.FC = () => {
               <IonLabel style={{ fontSize: '0.7rem' }}>Albaceas</IonLabel>
             </IonButton>
 
-            {/* Redirección hacia /configuracion */}
             <IonButton 
               fill="clear" 
               style={{ display: 'flex', flexDirection: 'column', '--color': 'var(--ion-text-color)' }}

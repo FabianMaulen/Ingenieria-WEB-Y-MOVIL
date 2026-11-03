@@ -6,7 +6,7 @@ export interface EstadoCheckin {
 }
 
 export const obtenerCheckin = async () => (await api.get<EstadoCheckin>('/checkin')).data;
-export const confirmarCheckin = async () => (await api.put('/checkin')).data;
 
-// Exportar renovarCheckin para resolver la importación en Dashboard.tsx
-export const renovarCheckin = async () => (await api.put('/checkin')).data;
+// RF-04: Confirmar presencia en la bóveda (POST /api/checkin)
+export const renovarCheckin = async () => (await api.post<{ mensaje: string; fecha_checkin: string }>('/checkin')).data;
+export const confirmarCheckin = renovarCheckin;

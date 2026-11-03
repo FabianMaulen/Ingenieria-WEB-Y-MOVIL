@@ -6,6 +6,7 @@ import {
   IonSpinner,
   IonToast,
   IonButton,
+  IonAlert,
   useIonViewWillEnter
 } from '@ionic/react';
 import { 
@@ -14,8 +15,7 @@ import {
   sparklesOutline, 
   trashOutline, 
   heartOutline, 
-  documentTextOutline,
-  peopleOutline
+  documentTextOutline
 } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
 
@@ -31,6 +31,9 @@ export const Mensajes: React.FC = () => {
   const [toastMsg, setToastMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Estado para la alerta de confirmación de eliminación
+  const [idEliminar, setIdEliminar] = useState<number | null>(null);
+
   // Formulario
   const [rutDestinatario, setRutDestinatario] = useState('');
   const [contenido, setContenido] = useState('');
@@ -45,7 +48,6 @@ export const Mensajes: React.FC = () => {
       setMensajes(Array.isArray(dataMensajes) ? dataMensajes : []);
       setAlbaceas(Array.isArray(dataAlbaceas) ? dataAlbaceas : []);
       
-      // Auto-seleccionar el primer albacea si existe
       if (Array.isArray(dataAlbaceas) && dataAlbaceas.length > 0) {
         setRutDestinatario(dataAlbaceas[0].rut);
       }
@@ -71,7 +73,6 @@ export const Mensajes: React.FC = () => {
 
     try {
       setEnviando(true);
-      // Llama al servicio con los 2 argumentos separados como requiere tu service
       await crearMensaje(rutDestinatario.trim(), contenido.trim());
 
       setContenido('');
@@ -84,13 +85,16 @@ export const Mensajes: React.FC = () => {
     }
   };
 
-  const handleEliminar = async (id: number) => {
+  const confirmarEliminar = async () => {
+    if (!idEliminar) return;
     try {
-      await eliminarMensaje(id);
+      await eliminarMensaje(idEliminar);
       setToastMsg('Mensaje póstumo eliminado.');
       await cargarDatos();
     } catch (error) {
       setToastMsg(mensajeError(error));
+    } finally {
+      setIdEliminar(null);
     }
   };
 
@@ -107,20 +111,20 @@ export const Mensajes: React.FC = () => {
 
           {/* Banner de Contexto y Legado */}
           <div style={{
-            backgroundColor: 'var(--ion-color-step-50, #eff6ff)',
+            backgroundColor: 'var(--ion-color-step-100, rgba(37, 99, 235, 0.08))',
             border: '1px solid var(--ion-color-primary, #2563eb)',
             borderRadius: '14px',
             padding: '20px 24px',
             marginBottom: '28px',
-            color: 'var(--ion-text-color, #0f172a)'
+            color: 'var(--ion-text-color)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <IonIcon icon={heartOutline} style={{ fontSize: '1.4rem', color: 'var(--ion-color-primary, #2563eb)' }} />
-              <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '700' }}>
+              <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '700', color: 'var(--ion-text-color)' }}>
                 Tu Legado de Palabras
               </h2>
             </div>
-            <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.85, lineHeight: '1.5' }}>
+            <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.85, lineHeight: '1.5', color: 'var(--ion-text-color)' }}>
               Los mensajes póstumos se cifran con <strong>AES-256</strong>. Solo los destinatarios designados en tu Directorio de Albaceas podrán desbloquearlas una vez activada la apertura oficial de tu bóveda.
             </p>
           </div>
@@ -129,22 +133,23 @@ export const Mensajes: React.FC = () => {
           <form 
             onSubmit={handleGuardar}
             style={{
-              backgroundColor: 'var(--ion-card-background, #ffffff)',
-              color: 'var(--ion-text-color, #0f172a)',
+              backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
+              color: 'var(--ion-text-color)',
               borderRadius: '14px',
-              border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
+              border: '1px solid var(--ion-color-step-150, #cbd5e1)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
               padding: '24px 28px',
               marginBottom: '32px'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: 'var(--ion-text-color)' }}>
                 ✍️ Redactar Nueva Carta Sellada
               </h3>
               <span style={{ 
                 fontSize: '0.75rem', 
-                backgroundColor: 'var(--ion-color-step-100, #f1f5f9)', 
+                backgroundColor: 'var(--ion-color-step-150, #e2e8f0)', 
+                color: 'var(--ion-text-color)',
                 padding: '4px 10px', 
                 borderRadius: '20px',
                 display: 'flex',
@@ -158,7 +163,7 @@ export const Mensajes: React.FC = () => {
 
             {/* Desplegable de Albaceas Autorizados */}
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'block', marginBottom: '6px', color: 'var(--ion-text-color)' }}>
                 Destinatario (Contactos de tu Directorio de Albaceas) *
               </label>
               
@@ -166,8 +171,8 @@ export const Mensajes: React.FC = () => {
                 <div style={{
                   padding: '12px 14px',
                   borderRadius: '8px',
-                  backgroundColor: 'var(--ion-color-step-100, #fef3c7)',
-                  color: '#92400e',
+                  backgroundColor: 'var(--ion-color-warning-step-100, #fef3c7)',
+                  color: 'var(--ion-color-warning-shade, #92400e)',
                   fontSize: '0.85rem'
                 }}>
                   ⚠️ No tienes albaceas registrados. Debes agregar al menos un contacto en la sección <strong>Albaceas</strong> para poder asignarle cartas selladas.
@@ -181,14 +186,21 @@ export const Mensajes: React.FC = () => {
                     padding: '12px 14px',
                     borderRadius: '8px',
                     border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    backgroundColor: 'var(--ion-background-color, #f8fafc)',
-                    color: 'var(--ion-text-color, #0f172a)',
+                    backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color))',
+                    color: 'var(--ion-text-color)',
                     outline: 'none',
                     boxSizing: 'border-box'
                   }}
                 >
                   {albaceas.map((a) => (
-                    <option key={a.id_directorio} value={a.rut}>
+                    <option 
+                      key={a.id_directorio} 
+                      value={a.rut}
+                      style={{
+                        backgroundColor: 'var(--ion-card-background, var(--ion-background-color))',
+                        color: 'var(--ion-text-color)'
+                      }}
+                    >
                       {a.nombre_usuario} (RUT: {a.rut}) - {a.parentesco}
                     </option>
                   ))}
@@ -196,9 +208,17 @@ export const Mensajes: React.FC = () => {
               )}
             </div>
 
-            {/* Inspiración rápida */}
-            <div style={{ marginBottom: '14px' }}>
-              <span style={{ fontSize: '0.78rem', color: 'var(--ion-color-step-600, #64748b)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+            {/* Inspiración rápida (Compatible Modo Claro y Oscuro) */}
+            <div style={{ marginBottom: '16px' }}>
+              <span style={{ 
+                fontSize: '0.78rem', 
+                color: 'var(--ion-color-step-600)', 
+                fontWeight: '600', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '4px', 
+                marginBottom: '8px' 
+              }}>
                 <IonIcon icon={sparklesOutline} /> Ideas para iniciar tu redacción:
               </span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -206,13 +226,17 @@ export const Mensajes: React.FC = () => {
                   type="button"
                   onClick={() => aplicarPlantilla('Quiero darte las gracias por todo el tiempo compartido y recordarte que...')}
                   style={{
-                    backgroundColor: 'var(--ion-color-step-100, #f1f5f9)',
-                    border: 'none',
+                    backgroundColor: 'var(--ion-color-step-100)',
+                    color: 'var(--ion-text-color)',
+                    border: '1px solid var(--ion-color-step-200)',
                     borderRadius: '20px',
-                    padding: '6px 12px',
+                    padding: '8px 14px',
                     fontSize: '0.78rem',
-                    color: 'var(--ion-text-color, #334155)',
-                    cursor: 'pointer'
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
                   }}
                 >
                   ❤️ Palabras de Agradecimiento
@@ -221,13 +245,17 @@ export const Mensajes: React.FC = () => {
                   type="button"
                   onClick={() => aplicarPlantilla('Respecto a mis pertenencias y documentos personales, mi deseo es que...')}
                   style={{
-                    backgroundColor: 'var(--ion-color-step-100, #f1f5f9)',
-                    border: 'none',
+                    backgroundColor: 'var(--ion-color-step-100)',
+                    color: 'var(--ion-text-color)',
+                    border: '1px solid var(--ion-color-step-200)',
                     borderRadius: '20px',
-                    padding: '6px 12px',
+                    padding: '8px 14px',
                     fontSize: '0.78rem',
-                    color: 'var(--ion-text-color, #334155)',
-                    cursor: 'pointer'
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
                   }}
                 >
                   📋 Instrucciones Personales
@@ -236,13 +264,17 @@ export const Mensajes: React.FC = () => {
                   type="button"
                   onClick={() => aplicarPlantilla('Las llaves y accesos digitales principales los guardo en...')}
                   style={{
-                    backgroundColor: 'var(--ion-color-step-100, #f1f5f9)',
-                    border: 'none',
+                    backgroundColor: 'var(--ion-color-step-100)',
+                    color: 'var(--ion-text-color)',
+                    border: '1px solid var(--ion-color-step-200)',
                     borderRadius: '20px',
-                    padding: '6px 12px',
+                    padding: '8px 14px',
                     fontSize: '0.78rem',
-                    color: 'var(--ion-text-color, #334155)',
-                    cursor: 'pointer'
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
                   }}
                 >
                   🔑 Accesos y Claves
@@ -250,7 +282,7 @@ export const Mensajes: React.FC = () => {
               </div>
             </div>
 
-            {/* Áreas de texto para mensaje */}
+            {/* Área de texto para mensaje */}
             <div style={{ marginBottom: '20px' }}>
               <textarea
                 rows={6}
@@ -263,8 +295,8 @@ export const Mensajes: React.FC = () => {
                   padding: '14px 16px',
                   borderRadius: '8px',
                   border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                  backgroundColor: 'var(--ion-background-color, #f8fafc)',
-                  color: 'var(--ion-text-color, #0f172a)',
+                  backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color))',
+                  color: 'var(--ion-text-color)',
                   outline: 'none',
                   boxSizing: 'border-box',
                   resize: 'vertical',
@@ -285,7 +317,7 @@ export const Mensajes: React.FC = () => {
               style={{
                 width: '100%',
                 padding: '14px',
-                backgroundColor: albaceas.length === 0 ? '#94a3b8' : 'var(--ion-color-primary, #2563eb)',
+                backgroundColor: albaceas.length === 0 ? 'var(--ion-color-step-300, #94a3b8)' : 'var(--ion-color-primary, #2563eb)',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
@@ -307,7 +339,7 @@ export const Mensajes: React.FC = () => {
           </form>
 
           {/* Lista de Mensajes Custodiados */}
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--ion-text-color, #0f172a)', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--ion-text-color)', marginBottom: '16px' }}>
             📬 Cartas bajo Custodia ({mensajes.length})
           </h3>
 
@@ -319,10 +351,10 @@ export const Mensajes: React.FC = () => {
             <div style={{
               textAlign: 'center',
               padding: '36px',
-              backgroundColor: 'var(--ion-card-background, #ffffff)',
+              backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
               borderRadius: '12px',
-              border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-              color: 'var(--ion-text-color, #64748b)'
+              border: '1px solid var(--ion-color-step-150, #cbd5e1)',
+              color: 'var(--ion-color-step-600, #64748b)'
             }}>
               <IonIcon icon={mailOpenOutline} style={{ fontSize: '2.2rem', marginBottom: '8px', opacity: 0.5 }} />
               <p style={{ margin: 0, fontSize: '0.9rem' }}>No tienes mensajes póstumos registrados aún.</p>
@@ -332,10 +364,10 @@ export const Mensajes: React.FC = () => {
               <div
                 key={m.id_mensaje}
                 style={{
-                  backgroundColor: 'var(--ion-card-background, #ffffff)',
-                  color: 'var(--ion-text-color, #0f172a)',
+                  backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
+                  color: 'var(--ion-text-color)',
                   borderRadius: '12px',
-                  border: '1px solid var(--ion-color-step-150, #e2e8f0)',
+                  border: '1px solid var(--ion-color-step-150, #cbd5e1)',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                   padding: '18px 22px',
                   marginBottom: '14px',
@@ -349,7 +381,7 @@ export const Mensajes: React.FC = () => {
                     width: '40px',
                     height: '40px',
                     borderRadius: '10px',
-                    backgroundColor: 'var(--ion-color-step-50, #eff6ff)',
+                    backgroundColor: 'var(--ion-color-step-100, rgba(37, 99, 235, 0.1))',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -357,7 +389,7 @@ export const Mensajes: React.FC = () => {
                     <IonIcon icon={documentTextOutline} style={{ fontSize: '1.3rem', color: 'var(--ion-color-primary, #2563eb)' }} />
                   </div>
                   <div>
-                    <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700' }}>
+                    <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: 'var(--ion-text-color)' }}>
                       Carta para: {m.nombre_destinatario || `RUT ${m.rut_destinatario}`}
                     </h4>
                     <span style={{ fontSize: '0.78rem', color: 'var(--ion-color-step-600, #64748b)' }}>
@@ -370,7 +402,7 @@ export const Mensajes: React.FC = () => {
                   fill="clear"
                   color="danger"
                   size="small"
-                  onClick={() => handleEliminar(m.id_mensaje)}
+                  onClick={() => setIdEliminar(m.id_mensaje)}
                   title="Eliminar carta"
                 >
                   <IonIcon slot="icon-only" icon={trashOutline} />
@@ -380,6 +412,25 @@ export const Mensajes: React.FC = () => {
           )}
 
         </div>
+
+        {/* Modal Alerta de Confirmación de Borrado */}
+        <IonAlert
+          isOpen={!!idEliminar}
+          onDidDismiss={() => setIdEliminar(null)}
+          header="Confirmar eliminación"
+          message="¿Estás seguro de que deseas eliminar este mensaje póstumo? La carta sellada será borrada de la bóveda permanentemente."
+          buttons={[
+            {
+              text: 'Cancelar',
+              role: 'cancel'
+            },
+            {
+              text: 'Eliminar',
+              role: 'confirm',
+              handler: () => confirmarEliminar()
+            }
+          ]}
+        />
 
         <IonToast
           isOpen={!!toastMsg}

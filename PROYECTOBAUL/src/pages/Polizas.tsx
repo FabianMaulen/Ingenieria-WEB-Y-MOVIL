@@ -113,14 +113,14 @@ export const Polizas: React.FC = () => {
               <h2 style={{ 
                 fontSize: '1.35rem', 
                 fontWeight: '700', 
-                color: 'var(--ion-text-color, #0f172a)', 
+                color: 'var(--ion-text-color)', 
                 margin: '0 0 4px 0' 
               }}>
                 Pólizas Registradas
               </h2>
               <p style={{ 
                 fontSize: '0.88rem', 
-                color: 'var(--ion-text-color, #64748b)', 
+                color: 'var(--ion-text-color)', 
                 opacity: 0.8,
                 margin: 0 
               }}>
@@ -132,8 +132,8 @@ export const Polizas: React.FC = () => {
               type="button"
               onClick={() => setMostrandoForm(!mostrandoForm)}
               style={{
-                backgroundColor: mostrandoForm ? 'var(--ion-color-step-200, #e2e8f0)' : 'var(--ion-color-primary, #2563eb)',
-                color: mostrandoForm ? 'var(--ion-text-color, #0f172a)' : '#ffffff',
+                backgroundColor: mostrandoForm ? 'var(--ion-color-step-200, #cbd5e1)' : 'var(--ion-color-primary, #2563eb)',
+                color: mostrandoForm ? 'var(--ion-text-color)' : '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '10px 16px',
@@ -155,21 +155,21 @@ export const Polizas: React.FC = () => {
             <form
               onSubmit={handleAgregar}
               style={{
-                backgroundColor: 'var(--ion-card-background, #ffffff)',
-                color: 'var(--ion-text-color, #0f172a)',
+                backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
+                color: 'var(--ion-text-color)',
                 borderRadius: '14px',
-                border: '1px solid var(--ion-color-step-150, #e2e8f0)',
+                border: '1px solid var(--ion-color-step-150, #cbd5e1)',
                 boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
                 padding: '24px',
                 marginBottom: '28px'
               }}
             >
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '1.05rem', fontWeight: '700' }}>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '1.05rem', fontWeight: '700', color: 'var(--ion-text-color)' }}>
                 + Registrar Póliza de Seguro
               </h3>
 
               <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px', color: 'var(--ion-text-color)' }}>
                   Tipo de Seguro *
                 </label>
                 <select
@@ -180,23 +180,23 @@ export const Polizas: React.FC = () => {
                     padding: '10px 14px',
                     borderRadius: '8px',
                     border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    backgroundColor: 'var(--ion-background-color, #f8fafc)',
-                    color: 'var(--ion-text-color, #0f172a)',
+                    backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color))',
+                    color: 'var(--ion-text-color)',
                     outline: 'none',
                     boxSizing: 'border-box'
                   }}
                 >
-                  <option value="Seguro de Vida Individual">Seguro de Vida Individual</option>
-                  <option value="Seguro Desgravamen">Seguro Desgravamen</option>
-                  <option value="Seguro Complementario de Salud">Seguro Complementario de Salud</option>
-                  <option value="Seguro Automotriz">Seguro Automotriz</option>
-                  <option value="Seguro de Incendio y Sismo">Seguro de Incendio y Sismo</option>
+                  <option value="Seguro de Vida Individual" style={{ backgroundColor: 'var(--ion-card-background, var(--ion-background-color))', color: 'var(--ion-text-color)' }}>Seguro de Vida Individual</option>
+                  <option value="Seguro Desgravamen" style={{ backgroundColor: 'var(--ion-card-background, var(--ion-background-color))', color: 'var(--ion-text-color)' }}>Seguro Desgravamen</option>
+                  <option value="Seguro Complementario de Salud" style={{ backgroundColor: 'var(--ion-card-background, var(--ion-background-color))', color: 'var(--ion-text-color)' }}>Seguro Complementario de Salud</option>
+                  <option value="Seguro Automotriz" style={{ backgroundColor: 'var(--ion-card-background, var(--ion-background-color))', color: 'var(--ion-text-color)' }}>Seguro Automotriz</option>
+                  <option value="Seguro de Incendio y Sismo" style={{ backgroundColor: 'var(--ion-card-background, var(--ion-background-color))', color: 'var(--ion-text-color)' }}>Seguro de Incendio y Sismo</option>
                 </select>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px', color: 'var(--ion-text-color)' }}>
                     Compañía Aseguradora *
                   </label>
                   <input
@@ -209,8 +209,8 @@ export const Polizas: React.FC = () => {
                       padding: '10px 14px',
                       borderRadius: '8px',
                       border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                      backgroundColor: 'var(--ion-background-color, #f8fafc)',
-                      color: 'var(--ion-text-color, #0f172a)',
+                      backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color))',
+                      color: 'var(--ion-text-color)',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
@@ -218,7 +218,7 @@ export const Polizas: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px', color: 'var(--ion-text-color)' }}>
                     N° de Póliza *
                   </label>
                   <input
@@ -231,8 +231,8 @@ export const Polizas: React.FC = () => {
                       padding: '10px 14px',
                       borderRadius: '8px',
                       border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                      backgroundColor: 'var(--ion-background-color, #f8fafc)',
-                      color: 'var(--ion-text-color, #0f172a)',
+                      backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color))',
+                      color: 'var(--ion-text-color)',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
@@ -241,7 +241,7 @@ export const Polizas: React.FC = () => {
               </div>
 
               <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px', color: 'var(--ion-text-color)' }}>
                   Ubicación Física del Documento *
                 </label>
                 <input
@@ -254,8 +254,8 @@ export const Polizas: React.FC = () => {
                     padding: '10px 14px',
                     borderRadius: '8px',
                     border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    backgroundColor: 'var(--ion-background-color, #f8fafc)',
-                    color: 'var(--ion-text-color, #0f172a)',
+                    backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color))',
+                    color: 'var(--ion-text-color)',
                     outline: 'none',
                     boxSizing: 'border-box'
                   }}
@@ -263,8 +263,8 @@ export const Polizas: React.FC = () => {
               </div>
 
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                  Monto Referencial (\$ CLP)
+                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px', color: 'var(--ion-text-color)' }}>
+                  Monto Referencial ($ CLP)
                 </label>
                 <input
                   type="number"
@@ -276,8 +276,8 @@ export const Polizas: React.FC = () => {
                     padding: '10px 14px',
                     borderRadius: '8px',
                     border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    backgroundColor: 'var(--ion-background-color, #f8fafc)',
-                    color: 'var(--ion-text-color, #0f172a)',
+                    backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color))',
+                    color: 'var(--ion-text-color)',
                     outline: 'none',
                     boxSizing: 'border-box'
                   }}
@@ -318,10 +318,10 @@ export const Polizas: React.FC = () => {
             <div style={{
               textAlign: 'center',
               padding: '36px',
-              backgroundColor: 'var(--ion-card-background, #ffffff)',
+              backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
               borderRadius: '12px',
-              border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-              color: 'var(--ion-text-color, #64748b)'
+              border: '1px solid var(--ion-color-step-150, #cbd5e1)',
+              color: 'var(--ion-color-step-600, #64748b)'
             }}>
               <IonIcon icon={shieldCheckmarkOutline} style={{ fontSize: '2.4rem', marginBottom: '8px', opacity: 0.5 }} />
               <p style={{ margin: 0, fontSize: '0.9rem' }}>No tienes pólizas registradas en tu bóveda patrimonial.</p>
@@ -331,10 +331,10 @@ export const Polizas: React.FC = () => {
               <div 
                 key={p.id_poliza} 
                 style={{
-                  backgroundColor: 'var(--ion-card-background, #ffffff)',
-                  color: 'var(--ion-text-color, #0f172a)',
+                  backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
+                  color: 'var(--ion-text-color)',
                   borderRadius: '12px',
-                  border: '1px solid var(--ion-color-step-150, #e2e8f0)',
+                  border: '1px solid var(--ion-color-step-150, #cbd5e1)',
                   boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
                   padding: '20px 24px',
                   marginBottom: '14px',
@@ -348,7 +348,7 @@ export const Polizas: React.FC = () => {
                     width: '42px',
                     height: '42px',
                     borderRadius: '10px',
-                    backgroundColor: 'var(--ion-color-step-50, #eff6ff)',
+                    backgroundColor: 'var(--ion-color-step-100, rgba(37, 99, 235, 0.1))',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -356,7 +356,7 @@ export const Polizas: React.FC = () => {
                     <IonIcon icon={documentTextOutline} style={{ fontSize: '1.4rem', color: 'var(--ion-color-primary, #2563eb)' }} />
                   </div>
                   <div>
-                    <h3 style={{ fontWeight: '700', fontSize: '1.05rem', color: 'var(--ion-text-color, #0f172a)', margin: '0 0 4px 0' }}>
+                    <h3 style={{ fontWeight: '700', fontSize: '1.05rem', color: 'var(--ion-text-color)', margin: '0 0 4px 0' }}>
                       {p.aseguradora} — <span style={{ fontWeight: '500' }}>{p.tipo_seguro}</span>
                     </h3>
                     <p style={{ fontSize: '0.82rem', color: 'var(--ion-color-step-600, #64748b)', margin: '0 0 2px 0' }}>
@@ -371,8 +371,8 @@ export const Polizas: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span 
                     style={{ 
-                      backgroundColor: '#dcfce7', 
-                      color: '#166534', 
+                      backgroundColor: 'var(--ion-color-success-step-100, #dcfce7)', 
+                      color: 'var(--ion-color-success-shade, #166534)', 
                       fontWeight: '700', 
                       fontSize: '0.85rem', 
                       padding: '8px 16px', 
@@ -380,7 +380,7 @@ export const Polizas: React.FC = () => {
                       whiteSpace: 'nowrap'
                     }}
                   >
-                    \${Number(p.monto_referencial || 0).toLocaleString('es-CL')}
+                    ${Number(p.monto_referencial || 0).toLocaleString('es-CL')}
                   </span>
 
                   <IonButton
