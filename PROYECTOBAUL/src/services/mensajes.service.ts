@@ -9,6 +9,7 @@ export interface MensajeResumen {
 
 // El backend nunca devuelve el contenido: los mensajes quedan sellados hasta la apertura.
 export const listarMensajes = async () => (await api.get<MensajeResumen[]>('/mensajes')).data;
+export const getMensajes = listarMensajes;
 export const crearMensaje = async (rut_destinatario: string, contenido: string) =>
   (await api.post('/mensajes', { rut_destinatario, contenido })).data;
 export const actualizarMensaje = async (id: number, contenido: string) =>

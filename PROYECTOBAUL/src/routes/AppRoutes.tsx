@@ -1,18 +1,20 @@
 import React from 'react';
-import { Route, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import { IonRouterOutlet, IonSplitPane } from '@ionic/react';
+import { AppMenu } from '../components/AppMenu';
+
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
 import { Dashboard } from '../pages/Dashboard';
 import { Polizas } from '../pages/Polizas';
-import { Apertura } from '../pages/Apertura';
-import { Mensajes } from '../pages/Mensajes';
 import { Albaceas } from '../pages/Albaceas';
+import { Mensajes } from '../pages/Mensajes';
 import { Inventario } from '../pages/Inventario';
+import { Apertura } from '../pages/Apertura';
 import { Guia } from '../pages/Guia';
 
-// Layout protegido con verificación de autenticación
-const ProtectedLayout: React.FC<{ component: React.ComponentType<any> }> = ({ component: Component }) => {
+// Layout protegido: Mantiene un solo IonSplitPane y AppMenu para todas las rutas privadas
+const ProtectedLayout: React.FC = () => {
   const isAuth = localStorage.getItem('auth_token') !== null;
 
   if (!isAuth) {
@@ -29,30 +31,38 @@ const ProtectedLayout: React.FC<{ component: React.ComponentType<any> }> = ({ co
         '--side-max-width': '220px'
       } as any}
     >
-      <Component />
+      {/* El menú lateral único para toda la app protegida */}
+      <AppMenu />
+
+      {/* Salida donde se intercambian las páginas sin destruir el menú */}
+      <IonRouterOutlet id="main-content">
+        <Routes>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/polizas" element={<Polizas />} />
+          <Route path="/albaceas" element={<Albaceas />} />
+          <Route path="/mensajes" element={<Mensajes />} />
+          <Route path="/inventario" element={<Inventario />} />
+          <Route path="/apertura" element={<Apertura />} />
+          <Route path="/guia" element={<Guia />} />
+        </Routes>
+      </IonRouterOutlet>
     </IonSplitPane>
   );
 };
 
 export const AppRoutes: React.FC = () => {
   return (
-    <IonRouterOutlet>
-      {/* Rutas Públicas */}
+    <Routes>
+      {/* Rutas Públicas (Sin menú lateral) */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Rutas Protegidas */}
-      <Route path="/dashboard" element={<ProtectedLayout component={Dashboard} />} />
-      <Route path="/polizas" element={<ProtectedLayout component={Polizas} />} />
-      <Route path="/albaceas" element={<ProtectedLayout component={Albaceas} />} />
-      <Route path="/mensajes" element={<ProtectedLayout component={Mensajes} />} />
-      <Route path="/inventario" element={<ProtectedLayout component={Inventario} />} />
-      <Route path="/apertura" element={<ProtectedLayout component={Apertura} />} />
-      <Route path="/guia" element={<ProtectedLayout component={Guia} />} />
+      {/* Rutas Protegidas (Con menú lateral global) */}
+      <Route path="/*" element={<ProtectedLayout />} />
 
       {/* Redirección por defecto */}
       <Route path="/" element={<Navigate to="/login" replace />} />
-    </IonRouterOutlet>
+    </Routes>
   );
 };
 

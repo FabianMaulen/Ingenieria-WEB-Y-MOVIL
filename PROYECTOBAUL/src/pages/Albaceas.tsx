@@ -1,39 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonButtons,
-  IonMenuButton,
-  IonTitle,
   IonContent,
   IonIcon,
-  IonSpinner
+  IonSpinner,
+  IonToast,
+  IonButton
 } from '@ionic/react';
-import { personOutline } from 'ionicons/icons';
-import AppMenu from '../components/AppMenu';
+import { personOutline, trashOutline } from 'ionicons/icons';
+import { AppMenu } from '../components/AppMenu';
+import { HeaderBar } from '../components/HeaderBar';
 
-// Importaciones de los servicios entregados en el zip de integración
-import { getAlbaceas, agregarAlbacea } from '../services/albaceas.service';
-import  mensajeError  from '../services/api';
+import { getAlbaceas, agregarAlbacea, eliminarAlbacea, Albacea } from '../services/albaceas.service';
+import { mensajeError } from '../services/api';
 
 export const Albaceas: React.FC = () => {
-  const [albaceas, setAlbaceas] = useState<any[]>([]);
+  const [albaceas, setAlbaceas] = useState<Albacea[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [toastMsg, setToastMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Estados para el formulario
+  // Formulario
   const [rut, setRut] = useState('');
-  const [nombre, setNombre] = useState('');
-  const [correo, setCorreo] = useState('');
+  const [parentesco, setParentesco] = useState('Familiar');
 
   const cargarDatos = async () => {
     try {
       setCargando(true);
       const data = await getAlbaceas();
-      setAlbaceas(data);
+      setAlbaceas(Array.isArray(data) ? data : []);
     } catch (error) {
-      setErrorMsg(mensajeError(error));
+      setToastMsg(mensajeError(error));
     } finally {
       setCargando(false);
     }
@@ -47,111 +44,183 @@ export const Albaceas: React.FC = () => {
     e.preventDefault();
     setErrorMsg('');
     
-    if (!rut.trim() || !nombre.trim() || !correo.trim()) {
-      setErrorMsg('Todos los campos son obligatorios');
+    if (!rut.trim()) {
+      setErrorMsg('El RUT del albacea es obligatorio.');
       return;
     }
 
     try {
       await agregarAlbacea({
         rut_invitado: rut.trim(),
-        nombre_usuario: nombre.trim(),
-        correo_usuario: correo.trim(),
-        parentesco: 'Familiar' // Valor por defecto si el backend lo requiere
+        parentesco: parentesco.trim() || 'Familiar'
       });
       
       setRut('');
-      setNombre('');
-      setCorreo('');
-      await cargarDatos(); // Recarga la lista tras agregar
+      setParentesco('Familiar');
+      setToastMsg('Albacea agregado exitosamente.');
+      await cargarDatos();
     } catch (error) {
       setErrorMsg(mensajeError(error));
+    }
+  };
+
+  const handleEliminar = async (id_directorio: number) => {
+    try {
+      await eliminarAlbacea(id_directorio);
+      setToastMsg('Albacea eliminado del directorio.');
+      await cargarDatos();
+    } catch (error) {
+      setToastMsg(mensajeError(error));
     }
   };
 
   return (
     <>
       <AppMenu />
-      <IonPage id="main-content">
-        <IonHeader className="ion-no-border">
-          <IonToolbar style={{ '--background': '#1b2431', '--color': '#ffffff' } as any}>
-            <IonButtons slot="start">
-              <IonMenuButton color="light" />
-            </IonButtons>
-            <IonTitle style={{ fontSize: '1rem', fontWeight: '600', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-              Albaceas Designados
-            </IonTitle>
-          </IonToolbar>
-        </IonHeader>
 
-        <IonContent style={{ '--background': '#f8fafc' } as any} className="ion-padding">
+      <IonPage id="main-content">
+        <HeaderBar title="Albaceas Designados" />
+
+        <IonContent className="ion-padding">
           <div style={{ maxWidth: '800px', margin: '0 auto', padding: '12px 0' }}>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: '700', color: '#0f172a', marginBottom: '4px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+            <h2 style={{ 
+              fontSize: '1.35rem', 
+              fontWeight: '700', 
+              color: 'var(--ion-text-color, #0f172a)', 
+              marginBottom: '4px' 
+            }}>
               Contactos de Confianza
             </h2>
-            <p style={{ fontSize: '0.88rem', color: '#64748b', marginBottom: '24px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-              Personas autorizadas para solicitar la apertura de la bóveda.
+            <p style={{ 
+              fontSize: '0.88rem', 
+              color: 'var(--ion-text-color, #64748b)', 
+              opacity: 0.8,
+              marginBottom: '24px' 
+            }}>
+              Personas autorizadas para solicitar la apertura de la bóveda (Máximo 3).
             </p>
 
-            {/* Formulario con tu mismo diseño de tarjeta */}
+            {/* Formulario de registro */}
             <form 
               onSubmit={handleAgregar} 
               style={{
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--ion-card-background, #ffffff)',
+                color: 'var(--ion-text-color, #0f172a)',
                 borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
+                border: '1px solid var(--ion-color-step-150, #e2e8f0)',
+                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.04)',
                 padding: '20px 24px',
                 marginBottom: '24px'
               }}
             >
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: '600', color: '#0f172a' }}>+ Añadir Nuevo Albacea</h3>
+              <h3 style={{ 
+                margin: '0 0 16px 0', 
+                fontSize: '1rem', 
+                fontWeight: '600', 
+                color: 'var(--ion-text-color, #0f172a)' 
+              }}>
+                + Designar Nuevo Albacea
+              </h3>
               
-              <input 
-                type="text" 
-                placeholder="RUT (Ej: 12.345.678-9)" 
-                value={rut}
-                onChange={(e) => setRut(e.target.value)}
-                style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-              />
-              <input 
-                type="text" 
-                placeholder="Nombre Completo" 
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-              />
-              <input 
-                type="email" 
-                placeholder="Correo Electrónico" 
-                value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
-                style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-              />
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
+                  RUT del Usuario Registrado *
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="Ej: 98765432-1" 
+                  value={rut}
+                  onChange={(e) => setRut(e.target.value)}
+                  style={{ 
+                    width: '100%', 
+                    padding: '10px 14px', 
+                    borderRadius: '8px', 
+                    border: '1px solid var(--ion-color-step-200, #cbd5e1)',
+                    backgroundColor: 'var(--ion-background-color, #f8fafc)',
+                    color: 'var(--ion-text-color, #0f172a)',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
+                  Parentesco / Relación *
+                </label>
+                <select
+                  value={parentesco}
+                  onChange={(e) => setParentesco(e.target.value)}
+                  style={{ 
+                    width: '100%', 
+                    padding: '10px 14px', 
+                    borderRadius: '8px', 
+                    border: '1px solid var(--ion-color-step-200, #cbd5e1)',
+                    backgroundColor: 'var(--ion-background-color, #f8fafc)',
+                    color: 'var(--ion-text-color, #0f172a)',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <option value="Hijo/a">Hijo/a</option>
+                  <option value="Hermano/a">Hermano/a</option>
+                  <option value="Cónyuge">Cónyuge</option>
+                  <option value="Familiar">Familiar</option>
+                  <option value="Abogado/a">Abogado/a</option>
+                  <option value="Amigo/a">Amigo/a de Confianza</option>
+                </select>
+              </div>
               
-              {errorMsg && <p style={{ color: '#ef4444', fontSize: '0.85rem', margin: '0 0 12px 0' }}>{errorMsg}</p>}
+              {errorMsg && (
+                <p style={{ color: 'var(--ion-color-danger, #ef4444)', fontSize: '0.85rem', margin: '0 0 12px 0' }}>
+                  {errorMsg}
+                </p>
+              )}
               
               <button 
                 type="submit" 
-                style={{ width: '100%', padding: '12px', backgroundColor: '#f59e0b', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600' }}
+                style={{ 
+                  width: '100%', 
+                  padding: '12px', 
+                  backgroundColor: 'var(--ion-color-warning, #f59e0b)', 
+                  color: '#ffffff', 
+                  border: 'none', 
+                  borderRadius: '8px', 
+                  fontWeight: '700',
+                  cursor: 'pointer' 
+                }}
               >
-                REGISTRAR CONTACTO
+                REGISTRAR ALBACEA
               </button>
             </form>
 
-            {/* Lista Dinámica */}
+            {/* Listado dinámico desde la BD */}
             {cargando ? (
-              <div style={{ textAlign: 'center', marginTop: '20px' }}><IonSpinner name="crescent" /></div>
+              <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <IonSpinner name="crescent" />
+              </div>
+            ) : albaceas.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '32px',
+                backgroundColor: 'var(--ion-card-background, #ffffff)',
+                borderRadius: '12px',
+                border: '1px solid var(--ion-color-step-150, #e2e8f0)',
+                color: 'var(--ion-text-color, #64748b)'
+              }}>
+                <p style={{ margin: 0 }}>No tienes albaceas asignados actualmente.</p>
+              </div>
             ) : (
               albaceas.map((a) => (
                 <div
-                  key={a.id_albacea || a.rut_invitado}
+                  key={a.id_directorio}
                   style={{
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--ion-card-background, #ffffff)',
+                    color: 'var(--ion-text-color, #0f172a)',
                     borderRadius: '12px',
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid var(--ion-color-step-150, #e2e8f0)',
                     boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
-                    padding: '20px 24px',
+                    padding: '18px 24px',
                     marginBottom: '14px',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -160,43 +229,74 @@ export const Albaceas: React.FC = () => {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
+                      width: '42px',
+                      height: '42px',
                       borderRadius: '50%',
-                      backgroundColor: '#eff6ff',
+                      backgroundColor: 'var(--ion-color-step-50, #eff6ff)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
-                      <IonIcon icon={personOutline} style={{ fontSize: '1.4rem', color: '#2563eb' }} />
+                      <IonIcon icon={personOutline} style={{ fontSize: '1.4rem', color: 'var(--ion-color-primary, #2563eb)' }} />
                     </div>
                     <div>
-                      <h3 style={{ fontWeight: '700', fontSize: '1.05rem', color: '#0f172a', margin: '0 0 4px 0', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                        {a.nombre_usuario || 'Albacea sin nombre'}
+                      <h3 style={{ 
+                        fontWeight: '700', 
+                        fontSize: '1.05rem', 
+                        color: 'var(--ion-text-color, #0f172a)', 
+                        margin: '0 0 4px 0' 
+                      }}>
+                        {a.nombre_usuario}
                       </h3>
-                      <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                        RUT: {a.rut_invitado} | {a.correo_usuario}
+                      <p style={{ 
+                        fontSize: '0.82rem', 
+                        color: 'var(--ion-text-color, #64748b)', 
+                        opacity: 0.8,
+                        margin: 0 
+                      }}>
+                        RUT: {a.rut} | {a.correo_usuario}
                       </p>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--ion-color-primary, #2563eb)' }}>
+                        Relación: {a.parentesco}
+                      </span>
                     </div>
                   </div>
 
-                  <span
-                    style={{
-                      backgroundColor: a.estado === 'Confirmado' ? '#e6f4ea' : '#fef3c7',
-                      color: a.estado === 'Confirmado' ? '#0f9d58' : '#d97706',
-                      fontWeight: '700',
-                      fontSize: '0.82rem',
-                      padding: '6px 14px',
-                      borderRadius: '20px',
-                      fontFamily: 'system-ui, -apple-system, sans-serif'
-                    }}
-                  >
-                    {a.estado || 'Pendiente'}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span
+                      style={{
+                        backgroundColor: a.estado_validacion === 'APROBADO' ? '#dcfce7' : '#fef3c7',
+                        color: a.estado_validacion === 'APROBADO' ? '#166534' : '#92400e',
+                        fontWeight: '700',
+                        fontSize: '0.8rem',
+                        padding: '6px 12px',
+                        borderRadius: '20px'
+                      }}
+                    >
+                      {a.estado_validacion}
+                    </span>
+
+                    <IonButton
+                      fill="clear"
+                      color="danger"
+                      size="small"
+                      onClick={() => handleEliminar(a.id_directorio)}
+                      title="Quitar albacea"
+                    >
+                      <IonIcon slot="icon-only" icon={trashOutline} />
+                    </IonButton>
+                  </div>
                 </div>
               ))
             )}
           </div>
+
+          <IonToast
+            isOpen={!!toastMsg}
+            onDidDismiss={() => setToastMsg('')}
+            message={toastMsg}
+            duration={3000}
+          />
         </IonContent>
       </IonPage>
     </>

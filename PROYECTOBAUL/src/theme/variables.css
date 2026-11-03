@@ -1,2 +1,48 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+/* ==========================================
+   CONFIGURACIÓN DE TEMAS CLARO / OSCURO
+   ========================================== */
+
+/* TEMA CLARO (Default) */
+body:not(.dark) {
+  --ion-background-color: #f1f5f9;
+  --ion-background-color-rgb: 241, 245, 249;
+  --ion-text-color: #0f172a;
+  --ion-text-color-rgb: 15, 23, 42;
+  --ion-item-background: #ffffff;
+  --ion-card-background: #ffffff;
+  --header-avatar-bg: #f8fafc;
+  --header-avatar-border: #e2e8f0;
+}
+
+/* TEMA OSCURO */
+body.dark {
+  --ion-background-color: #0f172a;
+  --ion-background-color-rgb: 15, 23, 42;
+  --ion-text-color: #f8fafc;
+  --ion-text-color-rgb: 248, 250, 252;
+  --ion-item-background: #1e293b;
+  --ion-card-background: #1e293b;
+  --header-avatar-bg: #1e293b;
+  --header-avatar-border: #334155;
+}
+
+/* Asegurar que las listas e ítems respeten el tema */
+ion-menu ion-content {
+  --background: var(--ion-background-color);
+}
+
+ion-menu ion-list {
+  background: transparent !important;
+}
+
+ion-menu ion-item {
+  --background: var(--ion-item-background);
+  --color: var(--ion-text-color);
+  margin-bottom: 2px;
+}
+
+@media (min-width: 768px) {
+  ion-tab-bar {
+    display: none !important;
+  }
+}

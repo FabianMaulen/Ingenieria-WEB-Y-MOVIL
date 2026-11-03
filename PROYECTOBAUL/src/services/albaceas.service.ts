@@ -9,8 +9,17 @@ export interface Albacea {
   estado_validacion: string;
 }
 
-export const listarAlbaceas = async () => (await api.get<Albacea[]>('/albaceas')).data;
-export const getAlbaceas = listarAlbaceas;
-export const agregarAlbacea = async (rut_invitado: string, parentesco: string) =>
-  (await api.post('/albaceas', { rut_invitado, parentesco })).data;
-export const eliminarAlbacea = async (id: number) => { await api.delete(`/albaceas/${id}`); };
+// GET /api/albaceas -> Trae la lista de albaceas del titular
+export const getAlbaceas = async (): Promise<Albacea[]> => {
+  return (await api.get<Albacea[]>('/albaceas')).data;
+};
+
+// POST /api/albaceas -> Registra albacea enviando { rut_invitado, parentesco }
+export const agregarAlbacea = async (datos: { rut_invitado: string; parentesco: string }) => {
+  return (await api.post('/albaceas', datos)).data;
+};
+
+// DELETE /api/albaceas/:id -> Elimina el vínculo por id_directorio
+export const eliminarAlbacea = async (id_directorio: number) => {
+  await api.delete(`/albaceas/${id_directorio}`);
+};

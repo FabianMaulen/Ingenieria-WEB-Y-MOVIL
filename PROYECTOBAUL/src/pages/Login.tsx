@@ -52,7 +52,7 @@ export const Login: React.FC = () => {
       // 2. Almacenamiento de credenciales y datos
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('user_rol', data.usuario.rol);
-      localStorage.setItem('user_nombre', data.usuario.nombre);
+      localStorage.setItem('user_nombre', data.usuario.nombre || data.usuario.nombre_usuario || 'Usuario');
 
       // 3. Redirección estricta por rol (Criterio de Privacidad)
       if (data.usuario.rol === 'ALBACEA') {

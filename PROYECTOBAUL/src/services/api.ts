@@ -21,6 +21,9 @@ api.interceptors.request.use((config) => {
 
 // 2. Helper de errores para las páginas
 export const mensajeError = (error: any): string => {
+  if (error.response?.data?.error) {
+    return error.response.data.error;
+  }
   if (error.response?.data?.mensaje) {
     return error.response.data.mensaje;
   }
