@@ -18,12 +18,13 @@ Este proyecto incluye un **frontend en Ionic + React** y un **backend en Node.js
 |---|---|---|---|
 | Registro de usuarios | `POST /api/auth/register` | `/register` (`Register.tsx`) | Implementado |
 | Inicio de sesión y JWT | `POST /api/auth/login` | `/login` (`Login.tsx`) | Implementado |
-| Protección por roles | Middleware JWT | `AppRoutes.tsx` / `RutaProtegida.tsx` | Implementado |
+| Protección por rutas y roles | Middleware JWT | `AppRoutes.tsx` / `RutaProtegida.tsx` | Implementado |
 | Check-in (Vigencia) | `POST /api/checkin` | `/dashboard` (`Dashboard.tsx`) | Implementado |
-| Gestión de Albaceas | `GET` / `POST /api/albaceas`| `/albaceas` (`Albaceas.tsx`) | Implementado |
+| Gestión de Albaceas | `GET` / `POST /api/albaceas` | `/albaceas` (`Albaceas.tsx`) | Implementado |
 | Mensajes Póstumos | `GET` / `POST /api/mensajes` | `/mensajes` (`Mensajes.tsx`) | Implementado |
 | Solicitud Apertura | `POST /api/solicitudes` | `/apertura` (`Apertura.tsx`) | Implementado (FormData) |
-| Alertas / Cancelación| `GET` / `DELETE /api/solicitudes...` | `/dashboard` (`Dashboard.tsx`) | Implementado |
+| Alertas / Cancelación | `GET` / `DELETE /api/solicitudes...` | `/dashboard` (`Dashboard.tsx`) | Implementado |
+| Cambio de Contraseña | Pendiente endpoint backend | `/configuracion` (`Configuracion.tsx`) | Vista maquetada (Conexión pendiente) |
 
 ---
 
@@ -41,27 +42,29 @@ Este proyecto incluye un **frontend en Ionic + React** y un **backend en Node.js
 
 ---
 
-## 3. Tecnologías
+## 3. Tecnologías y alineación de dependencias
 
 | Capa | Tecnología utilizada en Baúl Eterno |
 |---|---|
-| Frontend | Ionic 8 + React 18 + React Router DOM (v6) |
+| Frontend | Ionic 9 + React 19 + React Router DOM (v6.30.6) + `@ionic/react-router` (^9.0.10) |
 | Backend | Node.js + Express |
 | Base de datos | PostgreSQL |
-| Autenticación | JSON Web Tokens (`jsonwebtoken`) |
+| Autenticación | JSON Web Tokens (`jsonwebtoken`) + `bcrypt` |
 | Comunicación | `axios` para HTTP requests (multipart y JSON) |
 | Configuración CORS | Paquete `cors` en Express |
 
+> **Nota de compatibilidad en Frontend:** Se utiliza `@ionic/react-router` en su versión 9 junto a `react-router-dom` v6 para habilitar el uso nativo del hook `useNavigate` en todo el proyecto frontend sin conflictos de compilación en Vite.
+
 ---
 
-## 4. Arquitectura y carpetas reales
+## 4. Arquitectura de carpetas
 
 ```text
 PROYECTOBAUL/ (Frontend)
 ├── .env                  # URL del backend (VITE_API_URL=http://localhost:3000/api)
 ├── package.json
 └── src/
-    ├── components/       # AppMenu, HeaderBar, VaultStatusCard
+    ├── components/       # AppMenu, HeaderBar, VaultStatusCard, etc.
     ├── pages/            # Login, Register, Dashboard, Albaceas, Mensajes, Apertura, etc.
     ├── routes/           # AppRoutes.tsx y RutaProtegida.tsx
     ├── services/         # api.ts (Instancia Axios), auth.service.ts, albaceas.service.ts...
@@ -72,6 +75,9 @@ backend/ (Servidor)
 ├── index.js              # Archivo principal y configuración CORS
 ├── db.js                 # Conexión a PostgreSQL
 ├── package.json
+├── database/             # Scripts SQL de base de datos
+│   ├── baul_eterno.sql   # Creación de tablas y estructura DDL
+│   └── init.sql          # Inyección de datos de prueba (Poblamiento inicial)
 ├── routes/               # auth.routes.js, albaceas.routes.js, etc.
 └── middlewares/          # authMiddleware.js
 ```
@@ -82,8 +88,10 @@ backend/ (Servidor)
 
 ### 5.1 Base de datos (PostgreSQL)
 
-El proyecto requiere PostgreSQL. Crear una base de datos local y ejecutar el script SQL de creación de tablas incluido en el repositorio.
-Configurar las credenciales en el archivo `backend/.env`:
+1. Crear una base de datos PostgreSQL local nombrada `baul_eterno`.
+2. Ejecutar el script `backend/database/baul_eterno.sql` para crear las tablas y restricciones de la base de datos.
+3. Ejecutar el script `backend/database/init.sql` para realizar la inyección inicial de datos de prueba.
+4. Configurar las credenciales en el archivo `backend/.env`:
 ```env
 DB_USER=postgres
 DB_PASSWORD=tu_password
@@ -104,17 +112,18 @@ El servidor quedará expuesto en `http://localhost:3000`.
 
 ### 5.3 Iniciar frontend
 
-Crear el archivo `.env` en la raíz de `PROYECTOBAUL/`:
+1. Crear el archivo `.env` en la raíz de `PROYECTOBAUL/`:
 ```env
 VITE_API_URL=http://localhost:3000/api
 ```
 
-Desde la carpeta `PROYECTOBAUL/`:
+2. Ejecutar la instalación limpia y levantar el servidor dev:
 ```bash
 npm install --legacy-peer-deps
-ionic serve
+npx vite --force
+npm run dev
 ```
-*Nota: Se usa `--legacy-peer-deps` para resolver la compatibilidad estricta entre `@ionic/react-router` y `react-router-dom` v6.*
+*Nota: Se recomienda `--legacy-peer-deps` al instalar dependencias para prevenir advertencias de peer dependencies entre las herramientas de empaquetado de Ionic y React 19.*
 
 ---
 
@@ -138,37 +147,29 @@ ionic serve
 |---|---|
 | JWT con expiración | Implementado en backend. |
 | Rutas protegidas | Frontend protegido con `RutaProtegida.tsx`. Backend con `authMiddleware`. |
-| Roles diferenciados | TITULAR accede al Dashboard/Gestión. ALBACEA accede a Guía/Apertura. |
+| Roles diferenciados | TITULAR accede a Dashboard/Gestión. ALBACEA accede a Guía/Apertura. |
 | bcrypt | Cifrado de contraseñas implementado en registro y login. |
 | Secretos de entorno | `VITE_API_URL`, `DB_PASSWORD`, y `JWT_SECRET` en archivos `.env`. |
 | Minimización | El JWT solo contiene el `id_usuario` y `rol`. |
 
 ---
 
-## 8. Integración frontend–backend
+## 8. Observaciones y Alcance de la Entrega (EP2)
 
-El consumo de la API se realiza mediante `axios` centralizado en `src/services/api.ts`.
-* **Intercepción de Tokens:** El archivo `api.ts` inyecta automáticamente el token almacenado en `localStorage` en los headers de cada petición.
-* **Manejo de Errores:** Se capturan los códigos de error HTTP del backend y se transforman en mensajes amigables (ej: "Credenciales inválidas") mostrados mediante los componentes de Ionic.
+Para transparencia de la evaluación de esta entrega intermedia, se registran los siguientes puntos de alcance y trabajo pendiente planificado para la entrega final:
 
----
+1. **Gestión de Roles y Alternancia (Panel Albacea):**
+   - En esta entrega, la navegación responde al rol estático asignado al usuario (`TITULAR` o `ALBACEA`). La funcionalidad para que un mismo usuario registrado pueda actuar simultáneamente como Titular de su propia bóveda y responder invitaciones como Albacea de otros usuarios se encuentra maquetada y será consolidada en la entrega final.
 
-## 9. Pruebas funcionales y evidencia EP2
+2. **Registro previo para designar Albaceas:**
+   - En la versión actual de la API, la designación de un albacea requiere que su RUT coincida con un usuario registrado en el sistema. El flujo de invitación externa (enviar correo a un albacea no registrado para asignación automática posterior) queda agendado para la versión final.
 
-*Se adjunta colección de Postman en el repositorio para validar los endpoints.*
-
-| ID | Petición / escenario | HTTP esperado |
-|---|---|---|
-| P01 | Registrar usuario TITULAR válido | 201 |
-| P02 | Login de usuario con credenciales correctas | 200 |
-| P03 | Acceso denegado a dashboard sin token | 401 |
-| P04 | Aislamiento: Albacea intenta acceder a `/dashboard` | Redirección a `/guia` |
-| P05 | Solicitud de apertura con subida de archivo (Multipart) | 201 |
-| P06 | Cancelar solicitud (Titular detiene el proceso) | 200 |
+3. **Formulario de Cambio de Contraseña (`Configuracion.tsx`):**
+   - La interfaz de usuario para actualización de claves se encuentra disponible en la pestaña de Ajustes, pero la interacción requiere la integración del endpoint `/api/auth/change-password` en el servidor backend (programado para la entrega final).
 
 ---
 
-## 10. Matriz de cumplimiento EP2
+## 9. Matriz de cumplimiento EP2
 
 - [x] **EP 2.1 Servidor:** Node.js/Express operativo y configurado.
 - [x] **EP 2.2 Base relacional:** PostgreSQL integrado.
