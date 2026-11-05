@@ -2,16 +2,17 @@
 
 BEGIN;
 
--- Reset de secuencias e inserción limpia de usuarios de prueba
--- Nota: La contraseña de todos los usuarios de prueba es: 12345678
--- (Hash bcrypt: $2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW)
+-- Limpieza previa e inserción limpia reseteando contadores de ID
+TRUNCATE TABLE usuario, polizas, albaceas, mensajes, solicitudes RESTART IDENTITY CASCADE;
 
-INSERT INTO usuarios (id_usuario, nombre, rut, email, password_hash, rol) VALUES
-(1, 'Roberto Morales', '12345678-9', 'roberto.morales@correo.cl', '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'TITULAR'),
-(2, 'Camila Morales', '19876543-2', 'camila.morales@correo.cl', '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'ALBACEA'),
-(3, 'Diego Cárdenas', '15432987-6', 'diego.cardenas@correo.cl', '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'TITULAR'),
-(4, 'Marcela Valenzuela', '17654321-K', 'marcela.valenzuela@correo.cl', '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'ALBACEA')
-ON CONFLICT (rut) DO NOTHING;
+-- Contraseña para todos los usuarios: 123123123
+-- Hash bcrypt actual: $2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG
+
+INSERT INTO usuario (id_usuario, nombre, rut, email, password_hash, rol) VALUES
+(1, 'Roberto Morales', '12345678-9', 'roberto.morales@correo.cl', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'TITULAR'),
+(2, 'Camila Morales', '19876543-2', 'camila.morales@correo.cl', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'ALBACEA'),
+(3, 'Diego Cárdenas', '15432987-6', 'diego.cardenas@correo.cl', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'TITULAR'),
+(4, 'Marcela Valenzuela', '17654321-K', 'marcela.valenzuela@correo.cl', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'ALBACEA');
 
 -- Pólizas asociadas a los Titulares
 INSERT INTO polizas (id_usuario, aseguradora, numero_poliza, tipo_seguro, monto_referencial, ubicacion_documento) VALUES
@@ -36,8 +37,7 @@ INSERT INTO mensajes (id_titular, rut_destinatario, titulo, mensaje) VALUES
 INSERT INTO solicitudes (id_titular, rut_albacea, certificado_url, estado_solicitud, fecha_solicitud) VALUES
 (1, '19876543-2', '/uploads/certificado_defuncion_demo.pdf', 'PENDIENTE EN PERIODO DE GRACIA', NOW());
 
--- Ajuste de contadores para llaves primarias seriales
-SELECT setval(pg_get_serial_sequence('usuarios', 'id_usuario'), coalesce(max(id_usuario), 1)) FROM usuarios;
-SELECT setval(pg_get_serial_sequence('polizas', 'id_poliza'), coalesce(max(id_poliza), 1)) FROM polizas;
+-- Sincronizar el correlativo de la secuencia de 'usuario' al valor máximo insertado (4)
+SELECT setval(pg_get_serial_sequence('usuario', 'id_usuario'), COALESCE(MAX(id_usuario), 1)) FROM usuario;
 
 COMMIT;
