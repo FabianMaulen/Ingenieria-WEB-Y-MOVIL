@@ -45,3 +45,6 @@ yarn-error.log*
 
 # Optional eslint cache
 .eslintcache
+
+# Control local de cambios (no versionado)
+RESUMEN_CAMBIOS_LOCAL.md

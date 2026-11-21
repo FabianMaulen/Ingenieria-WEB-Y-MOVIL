@@ -11,11 +11,14 @@ import {
   moonOutline,
   sunnyOutline,
   arrowForwardOutline,
+  keyOutline,
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { mensajeError } from '../services/api';
 import { login } from '../services/auth.service';
 import { alternarTema, obtenerTemaOscuro } from '../utils/theme';
+import { VaultChestIcon } from '../components/VaultChestIcon';
+import { VaultUnlockOverlay } from '../components/VaultUnlockOverlay';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +27,8 @@ export const Login: React.FC = () => {
   const [mostrarClave, setMostrarClave] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [abriendoBaul, setAbriendoBaul] = useState(false);
+  const [nombreBienvenida, setNombreBienvenida] = useState('');
   const [isDark, setIsDark] = useState<boolean>(() => obtenerTemaOscuro());
 
   useEffect(() => {
@@ -49,9 +54,15 @@ export const Login: React.FC = () => {
     setCargando(true);
 
     try {
-      await login(identifier.trim(), password);
+      const usuario = await login(identifier.trim(), password);
       localStorage.setItem('modo_activo', 'TITULAR');
-      navigate('/dashboard', { replace: true });
+      setNombreBienvenida((usuario.nombre || '').split(' ')[0]);
+      setAbriendoBaul(true);
+
+      // Animación suave de apertura del baúl antes de entrar al Dashboard
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 920);
     } catch (error: any) {
       setErrorMessage(mensajeError(error));
     } finally {
@@ -62,49 +73,41 @@ export const Login: React.FC = () => {
   return (
     <IonPage>
       <IonContent fullscreen>
+        <VaultUnlockOverlay visible={abriendoBaul} nombre={nombreBienvenida} />
+
         <div className="be-auth-wrapper">
           <div className="be-auth-card">
-            {/* Panel Izquierdo: Identidad de marca y confianza */}
+            {/* Panel Izquierdo: Emblema del Baúl + Confianza */}
             <div className="be-auth-brand-panel">
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '26px' }}>
                   <div
                     style={{
-                      width: '46px',
-                      height: '46px',
+                      width: '54px',
+                      height: '54px',
                       borderRadius: '14px',
-                      background: 'linear-gradient(135deg, #e5ad43 0%, #c58922 100%)',
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      border: '1px solid rgba(255, 255, 255, 0.22)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 8px 20px rgba(197, 137, 34, 0.35)',
                     }}
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M12 2L4 5.5V11.5C4 16.8 7.4 21.5 12 23C16.6 21.5 20 16.8 20 11.5V5.5L12 2Z"
-                        stroke="#FFFFFF"
-                        strokeWidth="2"
-                        strokeLinejoin="round"
-                      />
-                      <circle cx="12" cy="11.5" r="2.2" fill="#FFFFFF" />
-                      <path d="M12 13.7V16.5" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
+                    <VaultChestIcon size={46} mode="static" />
                   </div>
                   <div>
                     <span
                       style={{
                         display: 'block',
-                        fontFamily: 'var(--be-font-display)',
-                        fontSize: '1.25rem',
-                        fontWeight: 800,
-                        letterSpacing: '-0.02em',
+                        fontFamily: 'var(--be-font-serif)',
+                        fontSize: '1.35rem',
+                        fontWeight: 700,
                       }}
                     >
                       Baúl Eterno
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: '#e5ad43', fontWeight: 600, letterSpacing: '0.04em' }}>
-                      LEGADO PERSONAL PROTEGIDO
+                    <span style={{ fontSize: '0.73rem', color: '#d8c3ae', fontWeight: 600, letterSpacing: '0.06em' }}>
+                      RESGUARDO Y LEGADO PERSONAL
                     </span>
                   </div>
                 </div>
@@ -113,56 +116,56 @@ export const Login: React.FC = () => {
                   style={{
                     margin: '0 0 12px 0',
                     fontSize: '1.85rem',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     lineHeight: 1.2,
                     color: '#ffffff',
                   }}
                 >
-                  Protege hoy lo que los tuyos necesitarán mañana.
+                  Resguarda con serenidad lo que tus seres queridos necesitarán.
                 </h1>
-                <p style={{ margin: 0, fontSize: '0.92rem', color: 'rgba(226, 232, 240, 0.85)', lineHeight: 1.6 }}>
-                  Centraliza tus pólizas, activos digitales y cartas póstumas en una bóveda privada bajo tu control.
+                <p style={{ margin: 0, fontSize: '0.92rem', color: 'rgba(241, 246, 252, 0.88)', lineHeight: 1.6 }}>
+                  Mantén tus pólizas, activos digitales y cartas póstumas en un cofre digital privado, íntegro y
+                  protegido.
                 </p>
               </div>
 
-              {/* Pilares de confianza (visibles en escritorio) */}
               <div
                 className="be-auth-pillars-desktop"
                 style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '28px', position: 'relative', zIndex: 1 }}
               >
                 <div className="be-auth-pillar">
-                  <IonIcon icon={shieldCheckmarkOutline} style={{ fontSize: '1.25rem', color: '#e5ad43', marginTop: '2px' }} />
+                  <IonIcon icon={shieldCheckmarkOutline} style={{ fontSize: '1.25rem', color: '#d8c3ae', marginTop: '2px' }} />
                   <div>
-                    <strong style={{ display: 'block', fontSize: '0.84rem' }}>Cifrado AES-256 de extremo a extremo</strong>
-                    <span style={{ fontSize: '0.77rem', color: 'rgba(226, 232, 240, 0.78)' }}>
-                      Tus mensajes póstumos permanecen sellados hasta una apertura validada.
+                    <strong style={{ display: 'block', fontSize: '0.84rem' }}>Custodia cifrada AES-256</strong>
+                    <span style={{ fontSize: '0.77rem', color: 'rgba(241, 246, 252, 0.8)' }}>
+                      Tus cartas póstumas permanecen selladas hasta la apertura validada.
                     </span>
                   </div>
                 </div>
 
                 <div className="be-auth-pillar">
-                  <IonIcon icon={peopleOutline} style={{ fontSize: '1.25rem', color: '#e5ad43', marginTop: '2px' }} />
+                  <IonIcon icon={peopleOutline} style={{ fontSize: '1.25rem', color: '#d8c3ae', marginTop: '2px' }} />
                   <div>
                     <strong style={{ display: 'block', fontSize: '0.84rem' }}>Cuenta dual Titular y Albacea</strong>
-                    <span style={{ fontSize: '0.77rem', color: 'rgba(226, 232, 240, 0.78)' }}>
+                    <span style={{ fontSize: '0.77rem', color: 'rgba(241, 246, 252, 0.8)' }}>
                       Administra tu bóveda y alterna al panel de custodia cuando te designen.
                     </span>
                   </div>
                 </div>
 
                 <div className="be-auth-pillar">
-                  <IonIcon icon={timeOutline} style={{ fontSize: '1.25rem', color: '#e5ad43', marginTop: '2px' }} />
+                  <IonIcon icon={timeOutline} style={{ fontSize: '1.25rem', color: '#d8c3ae', marginTop: '2px' }} />
                   <div>
                     <strong style={{ display: 'block', fontSize: '0.84rem' }}>Periodo de gracia de 72 horas</strong>
-                    <span style={{ fontSize: '0.77rem', color: 'rgba(226, 232, 240, 0.78)' }}>
-                      Anula cualquier solicitud de apertura con un clic si sigues activo.
+                    <span style={{ fontSize: '0.77rem', color: 'rgba(241, 246, 252, 0.8)' }}>
+                      Notificación inmediata y anulación en un clic si continúas activo.
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Panel Derecho: Formulario de acceso */}
+            {/* Panel Derecho: Formulario */}
             <div className="be-auth-form-panel">
               <button
                 type="button"
@@ -188,15 +191,15 @@ export const Login: React.FC = () => {
                 <IonIcon icon={isDark ? sunnyOutline : moonOutline} />
               </button>
 
-              <div style={{ marginBottom: '26px' }}>
+              <div style={{ marginBottom: '24px' }}>
                 <span className="be-badge be-badge-info" style={{ marginBottom: '10px' }}>
                   Acceso Seguro
                 </span>
-                <h2 style={{ margin: '0 0 6px 0', fontSize: '1.65rem', fontWeight: 800, color: 'var(--be-text)' }}>
-                  Bienvenido de vuelta
+                <h2 style={{ margin: '0 0 6px 0', fontSize: '1.65rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                  Abre tu Baúl
                 </h2>
                 <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--be-text-muted)' }}>
-                  Ingresa con tu correo electrónico o RUT chileno para abrir tu bóveda.
+                  Ingresa con tu correo electrónico o RUT chileno.
                 </p>
               </div>
 
@@ -220,7 +223,7 @@ export const Login: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="be-field" style={{ marginBottom: '20px' }}>
+                <div className="be-field" style={{ marginBottom: '10px' }}>
                   <label className="be-label" htmlFor="login-pass">
                     Contraseña *
                   </label>
@@ -248,6 +251,28 @@ export const Login: React.FC = () => {
                   </div>
                 </div>
 
+                <div style={{ textAlign: 'right', marginBottom: '18px' }}>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/recuperar')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--be-primary)',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: 0,
+                    }}
+                  >
+                    <IonIcon icon={keyOutline} />
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
+
                 {errorMessage && (
                   <div
                     className="be-badge-danger"
@@ -263,12 +288,12 @@ export const Login: React.FC = () => {
                   </div>
                 )}
 
-                <button type="submit" className="be-btn be-btn-primary be-btn-block" disabled={cargando}>
+                <button type="submit" className="be-btn be-btn-primary be-btn-block" disabled={cargando || abriendoBaul}>
                   {cargando ? (
                     <IonSpinner name="crescent" color="light" />
                   ) : (
                     <>
-                      Ingresar a mi Baúl
+                      Abrir mi Baúl
                       <IonIcon icon={arrowForwardOutline} />
                     </>
                   )}
@@ -278,8 +303,8 @@ export const Login: React.FC = () => {
               <div
                 style={{
                   textAlign: 'center',
-                  marginTop: '24px',
-                  paddingTop: '20px',
+                  marginTop: '22px',
+                  paddingTop: '18px',
                   borderTop: '1px solid var(--be-border)',
                   fontSize: '0.88rem',
                   color: 'var(--be-text-muted)',

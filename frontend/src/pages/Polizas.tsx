@@ -19,6 +19,7 @@ import {
 } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
+import { VaultLoader } from '../components/VaultLoader';
 import { listarPolizas, crearPoliza, eliminarPoliza, Poliza } from '../services/polizas.service';
 import { mensajeError } from '../services/api';
 
@@ -202,9 +203,7 @@ export const Polizas: React.FC = () => {
           )}
 
           {cargando ? (
-            <div style={{ textAlign: 'center', padding: '36px' }}>
-              <IonSpinner name="crescent" />
-            </div>
+            <VaultLoader texto="Consultando tus pólizas..." />
           ) : polizas.length === 0 ? (
             <div className="be-empty-state">
               <IonIcon icon={shieldCheckmarkOutline} style={{ fontSize: '2.5rem', marginBottom: '10px', opacity: 0.55 }} />

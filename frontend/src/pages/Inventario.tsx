@@ -12,6 +12,7 @@ import {
 import { trashOutline, folderOpenOutline, layersOutline } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
+import { VaultLoader } from '../components/VaultLoader';
 import { mensajeError } from '../services/api';
 import {
   listarInventario,
@@ -196,9 +197,7 @@ export const Inventario: React.FC = () => {
           </div>
 
           {cargando ? (
-            <div style={{ textAlign: 'center', padding: '32px' }}>
-              <IonSpinner name="crescent" />
-            </div>
+            <VaultLoader texto="Abriendo tu inventario patrimonial..." />
           ) : activos.length === 0 ? (
             <div className="be-empty-state">
               <IonIcon icon={folderOpenOutline} style={{ fontSize: '2.4rem', marginBottom: '8px', opacity: 0.55 }} />

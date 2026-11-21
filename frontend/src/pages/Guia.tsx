@@ -23,6 +23,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
+import { VaultLoader } from '../components/VaultLoader';
 import { mensajeError } from '../services/api';
 import {
   obtenerDesignaciones,
@@ -113,9 +114,7 @@ export const Guia: React.FC = () => {
           </div>
 
           {cargando ? (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <IonSpinner name="crescent" />
-            </div>
+            <VaultLoader texto="Consultando designaciones y pólizas..." />
           ) : (
             <>
               {/* 1. DESIGNACIONES PENDIENTES */}

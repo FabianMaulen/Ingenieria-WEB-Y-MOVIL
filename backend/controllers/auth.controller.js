@@ -1,9 +1,11 @@
+const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { enviarRespuesta } = require('../utils/respuesta');
 const { registrarAuditoria } = require('../utils/auditoria');
 const { normalizarRut, validarRut, validarEmail, obtenerIp } = require('../utils/validadores');
+const { enviarBienvenida, enviarRecuperacionPassword } = require('../services/email.service');
 
 // POST /api/auth/register
 exports.register = async (req, res) => {
@@ -69,6 +71,13 @@ exports.register = async (req, res) => {
       nuevoUsuario.id_usuario
     );
 
+    // Envío de correo de bienvenida (no bloqueante)
+    enviarBienvenida({
+      correo: correoNormalizado,
+      nombre: nombreLimpio,
+      designacionesVinculadas: cantidadVinculadas,
+    }).catch(() => {});
+
     const mensaje = cantidadVinculadas > 0
       ? `Usuario registrado con éxito. Se vincularon ${cantidadVinculadas} invitación(es) pendiente(s) como albacea.`
       : 'Usuario registrado con éxito.';
@@ -109,7 +118,7 @@ exports.login = async (req, res) => {
     } else {
       const rutNormalizado = normalizarRut(credencial);
       const { rows } = await db.query(
-        'SELECT * FROM USUARIO WHERE rut = $1 OR LOWER(correo_usuario) = $2',
+        'SELECT * FROM USUARIO WHERE UPPER(rut) = $1 OR LOWER(correo_usuario) = $2',
         [rutNormalizado, credencial.toLowerCase()]
       );
       user = rows[0] || null;
@@ -258,5 +267,115 @@ exports.changePassword = async (req, res) => {
   } catch (e) {
     console.error('Error en changePassword:', e);
     return enviarRespuesta(res, 500, 'Error interno del servidor al cambiar la contraseña.', null);
+  }
+};
+
+// POST /api/auth/forgot-password
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { correo_usuario } = req.body || {};
+    const correo = String(correo_usuario || '').trim().toLowerCase();
+
+    if (!correo || !validarEmail(correo)) {
+      return enviarRespuesta(res, 400, 'Ingresa un correo electrónico válido.', null);
+    }
+
+    const { rows } = await db.query(
+      'SELECT id_usuario, nombre_usuario, correo_usuario FROM USUARIO WHERE LOWER(correo_usuario) = $1',
+      [correo]
+    );
+
+    // Respuesta genérica para no revelar si un correo existe o no en el sistema
+    const mensajeGenerico =
+      'Si el correo está registrado, enviamos un código de recuperación de 6 dígitos (válido por 30 minutos).';
+
+    const user = rows[0];
+    if (!user) {
+      return enviarRespuesta(res, 200, mensajeGenerico, null);
+    }
+
+    const codigo = String(crypto.randomInt(100000, 1000000));
+    const tokenHash = crypto.createHash('sha256').update(codigo).digest('hex');
+
+    // Invalidar códigos previos sin usar del mismo usuario
+    await db.query(
+      'UPDATE RESET_PASSWORD_TOKEN SET usado = TRUE WHERE id_usuario = $1 AND usado = FALSE',
+      [user.id_usuario]
+    );
+
+    await db.query(
+      `INSERT INTO RESET_PASSWORD_TOKEN (id_usuario, token_hash, expira_en)
+       VALUES ($1, $2, NOW() + INTERVAL '30 minutes')`,
+      [user.id_usuario, tokenHash]
+    );
+
+    const urlBase = (process.env.FRONTEND_URL || 'http://localhost:8100').split(',')[0].trim();
+    const enlaceReset = `${urlBase}/recuperar?correo=${encodeURIComponent(user.correo_usuario)}&codigo=${codigo}`;
+
+    await enviarRecuperacionPassword({
+      correo: user.correo_usuario,
+      nombre: user.nombre_usuario,
+      codigo,
+      enlaceReset,
+    });
+
+    await registrarAuditoria('Solicitó código de recuperación de contraseña', obtenerIp(req), user.id_usuario);
+
+    return enviarRespuesta(res, 200, mensajeGenerico, null);
+  } catch (e) {
+    console.error('Error en forgotPassword:', e);
+    return enviarRespuesta(res, 500, 'Error interno del servidor al procesar la recuperación.', null);
+  }
+};
+
+// POST /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { correo_usuario, codigo, nuevaPassword } = req.body || {};
+    const correo = String(correo_usuario || '').trim().toLowerCase();
+    const codigoLimpio = String(codigo || '').trim();
+
+    if (!correo || !validarEmail(correo) || !codigoLimpio || !nuevaPassword) {
+      return enviarRespuesta(res, 400, 'Correo electrónico, código de 6 dígitos y nueva contraseña son obligatorios.', null);
+    }
+
+    if (typeof nuevaPassword !== 'string' || nuevaPassword.length < 8) {
+      return enviarRespuesta(res, 400, 'La nueva contraseña debe tener al menos 8 caracteres.', null);
+    }
+
+    const userRes = await db.query(
+      'SELECT id_usuario FROM USUARIO WHERE LOWER(correo_usuario) = $1',
+      [correo]
+    );
+    const user = userRes.rows[0];
+    if (!user) {
+      return enviarRespuesta(res, 400, 'Código de recuperación inválido o expirado.', null);
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(codigoLimpio).digest('hex');
+
+    const tokenRes = await db.query(
+      `SELECT id_token
+       FROM RESET_PASSWORD_TOKEN
+       WHERE id_usuario = $1 AND token_hash = $2 AND usado = FALSE AND expira_en > NOW()
+       ORDER BY id_token DESC
+       LIMIT 1`,
+      [user.id_usuario, tokenHash]
+    );
+
+    if (!tokenRes.rows[0]) {
+      return enviarRespuesta(res, 400, 'El código de recuperación es incorrecto o ya expiró.', null);
+    }
+
+    const nuevoHash = await bcrypt.hash(nuevaPassword, 10);
+    await db.query('UPDATE USUARIO SET contrasena_hash = $1 WHERE id_usuario = $2', [nuevoHash, user.id_usuario]);
+    await db.query('UPDATE RESET_PASSWORD_TOKEN SET usado = TRUE WHERE id_token = $1', [tokenRes.rows[0].id_token]);
+
+    await registrarAuditoria('Restableció su contraseña mediante código de recuperación', obtenerIp(req), user.id_usuario);
+
+    return enviarRespuesta(res, 200, 'Contraseña restablecida con éxito. Ya puedes iniciar sesión.', null);
+  } catch (e) {
+    console.error('Error en resetPassword:', e);
+    return enviarRespuesta(res, 500, 'Error interno del servidor al restablecer la contraseña.', null);
   }
 };

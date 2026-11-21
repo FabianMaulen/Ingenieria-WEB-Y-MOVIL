@@ -11,6 +11,7 @@ import { closeCircleOutline, cloudUploadOutline, documentAttachOutline } from 'i
 import { useLocation } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
+import { VaultLoader } from '../components/VaultLoader';
 import { mensajeError } from '../services/api';
 import { crearSolicitud, misSolicitudes, SolicitudAlbacea } from '../services/solicitudes.service';
 import { normalizarRut, rutValido } from '../utils/rut';
@@ -226,9 +227,7 @@ export const Apertura: React.FC = () => {
           </h3>
 
           {cargandoLista ? (
-            <div style={{ textAlign: 'center', padding: '24px' }}>
-              <IonSpinner name="crescent" />
-            </div>
+            <VaultLoader texto="Cargando tus solicitudes..." />
           ) : solicitudes.length === 0 ? (
             <div className="be-empty-state" style={{ padding: '26px' }}>
               <IonIcon icon={documentAttachOutline} style={{ fontSize: '2.2rem', marginBottom: '6px', opacity: 0.55 }} />

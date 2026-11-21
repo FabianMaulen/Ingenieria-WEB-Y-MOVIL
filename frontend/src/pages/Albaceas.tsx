@@ -12,6 +12,7 @@ import {
 import { personOutline, trashOutline, peopleOutline } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
+import { VaultLoader } from '../components/VaultLoader';
 import {
   getAlbaceas,
   agregarAlbacea,
@@ -219,9 +220,7 @@ export const Albaceas: React.FC = () => {
           </form>
 
           {cargando ? (
-            <div style={{ textAlign: 'center', padding: '28px' }}>
-              <IonSpinner name="crescent" />
-            </div>
+            <VaultLoader texto="Cargando tu red de albaceas..." />
           ) : albaceas.length === 0 ? (
             <div className="be-empty-state">
               <IonIcon icon={peopleOutline} style={{ fontSize: '2.4rem', marginBottom: '8px', opacity: 0.55 }} />

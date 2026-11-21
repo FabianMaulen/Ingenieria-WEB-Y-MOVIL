@@ -1,140 +1,268 @@
 /* ==========================================================================
-   BAÚL ETERNO — SISTEMA DE DISEÑO (TEMAS CLARO / OSCURO + RESPONSIVE)
-   Paleta: Índigo Patrimonial + Ámbar Dorado + Superficies Pizarra Cálidas
-   Tipografía: Plus Jakarta Sans (Títulos/UI) + Inter (Cuerpo)
+   BAÚL ETERNO — SISTEMA DE DISEÑO (AZUL PURO · BLANCO · COFRE Y ACERO)
+   Modo Claro: Blanco Luminoso · Azul Celestial Sereno · Madera Nogal · Acero
+   Modo Oscuro: Grafito Metálico · Acero Cepillado · Madera Cálida · Azul Cielo
+   Tipografía: Fraunces (marca y titulares) + DM Sans (interfaz y lectura)
    ========================================================================== */
 
 :root {
-  --be-font-display: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --be-font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --be-font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --be-font-display: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --be-font-body: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Superficies y texto — Modo Claro */
-  --be-bg: #f4f6fa;
+  /* Superficies y texto — Modo Claro (Pureza Blanca + Acero Suave) */
+  --be-bg: #f6f9fc;
   --be-surface: #ffffff;
-  --be-surface-alt: #edf1f7;
-  --be-surface-hover: #e5ecf6;
-  --be-border: #dce3ef;
-  --be-text: #10203a;
-  --be-text-muted: #566782;
-  --be-shadow-sm: 0 2px 10px rgba(16, 32, 58, 0.04);
-  --be-shadow-md: 0 10px 30px rgba(16, 32, 58, 0.07);
-  --be-shadow-lg: 0 20px 50px rgba(16, 32, 58, 0.12);
+  --be-surface-alt: #eef3f8;
+  --be-surface-hover: #e3ecf5;
+  --be-border: #d5dfea;
+  --be-text: #1b2430;
+  --be-text-muted: #5a6878;
+  --be-shadow-sm: 0 2px 10px rgba(27, 36, 48, 0.05);
+  --be-shadow-md: 0 10px 28px rgba(27, 36, 48, 0.08);
+  --be-shadow-lg: 0 22px 52px rgba(27, 36, 48, 0.13);
 
-  /* Identidad de marca */
-  --be-primary: #1d4173;
-  --be-primary-light: #2b5ca0;
+  /* Identidad — Azul Puro Celestial + Madera de Baúl + Acero Metálico */
+  --be-primary: #1d5196;
+  --be-primary-light: #2b69ba;
   --be-primary-contrast: #ffffff;
-  --be-primary-soft: rgba(29, 65, 115, 0.09);
+  --be-primary-soft: rgba(29, 81, 150, 0.09);
 
-  --be-accent: #c58922;
-  --be-accent-hover: #ad761a;
-  --be-accent-soft: rgba(197, 137, 34, 0.13);
+  --be-accent: #7a553a;
+  --be-accent-hover: #63442d;
+  --be-accent-soft: rgba(122, 85, 58, 0.12);
+
+  --be-steel: #6d7b8c;
+  --be-steel-soft: rgba(109, 123, 140, 0.13);
+
+  /* Hero y paneles de marca */
+  --be-hero-bg: linear-gradient(135deg, #17427a 0%, #235ca6 60%, #3a526e 100%);
+  --be-brand-panel-bg: linear-gradient(155deg, #153c70 0%, #1f5396 55%, #3c4654 100%);
 
   /* Estados semánticos */
-  --be-success: #15803d;
-  --be-success-bg: #dcfce7;
-  --be-success-text: #166534;
+  --be-success: #1b7348;
+  --be-success-bg: #e1f5eb;
+  --be-success-text: #145736;
 
-  --be-warning: #b45309;
-  --be-warning-bg: #fef3c7;
-  --be-warning-text: #92400e;
+  --be-warning: #9e651e;
+  --be-warning-bg: #f9edd8;
+  --be-warning-text: #794c14;
 
-  --be-danger: #c53030;
-  --be-danger-bg: #fee2e2;
-  --be-danger-text: #991b1b;
+  --be-danger: #b53434;
+  --be-danger-bg: #fbe3e3;
+  --be-danger-text: #8c2323;
 
-  --be-info: #1d4ed8;
-  --be-info-bg: #dbeafe;
-  --be-info-text: #1e40af;
+  --be-info: #1d5196;
+  --be-info-bg: #e3eefb;
+  --be-info-text: #174178;
 
   /* Mapeo a variables nativas de Ionic */
   --ion-font-family: var(--be-font-body);
   --ion-background-color: var(--be-bg);
-  --ion-background-color-rgb: 244, 246, 250;
+  --ion-background-color-rgb: 246, 249, 252;
   --ion-text-color: var(--be-text);
-  --ion-text-color-rgb: 16, 32, 58;
+  --ion-text-color-rgb: 27, 36, 48;
   --ion-card-background: var(--be-surface);
   --ion-item-background: var(--be-surface);
-  --ion-toolbar-background: #17355e;
+  --ion-toolbar-background: #194580;
   --ion-toolbar-color: #ffffff;
 
-  --ion-color-primary: #1d4173;
-  --ion-color-primary-rgb: 29, 65, 115;
+  --ion-color-primary: #1d5196;
+  --ion-color-primary-rgb: 29, 81, 150;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #193965;
-  --ion-color-primary-tint: #345481;
+  --ion-color-primary-shade: #194784;
+  --ion-color-primary-tint: #3462a1;
 
-  --ion-color-secondary: #c58922;
-  --ion-color-secondary-rgb: 197, 137, 34;
+  --ion-color-secondary: #7a553a;
+  --ion-color-secondary-rgb: 122, 85, 58;
   --ion-color-secondary-contrast: #ffffff;
-  --ion-color-secondary-shade: #ad791e;
-  --ion-color-secondary-tint: #cb9538;
+  --ion-color-secondary-shade: #6b4b33;
+  --ion-color-secondary-tint: #87664e;
 
-  --ion-color-warning: #d98218;
+  --ion-color-warning: #b87624;
   --ion-color-warning-contrast: #ffffff;
-  --ion-color-success: #16803c;
+  --ion-color-success: #1b7348;
   --ion-color-success-contrast: #ffffff;
-  --ion-color-danger: #c93333;
+  --ion-color-danger: #b53434;
   --ion-color-danger-contrast: #ffffff;
 }
 
 /* ==========================================================================
-   MODO OSCURO — Sincronizado con .ion-palette-dark (Ionic 8/9) y body.dark
+   MODO OSCURO — Acero Metálico Cepillado + Madera Nogal + Azul Sereno
+   (Sin azul neón nocturno genérico)
    ========================================================================== */
 :root.ion-palette-dark,
 body.dark {
-  --be-bg: #0a111f;
-  --be-surface: #121d31;
-  --be-surface-alt: #192843;
-  --be-surface-hover: #213457;
-  --be-border: #253859;
-  --be-text: #f1f5f9;
-  --be-text-muted: #9eb0c9;
-  --be-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.28);
-  --be-shadow-md: 0 12px 32px rgba(0, 0, 0, 0.38);
-  --be-shadow-lg: 0 22px 54px rgba(0, 0, 0, 0.5);
+  --be-bg: #15171a;
+  --be-surface: #1e2126;
+  --be-surface-alt: #272b32;
+  --be-surface-hover: #31363f;
+  --be-border: #383e48;
+  --be-text: #f3f6fa;
+  --be-text-muted: #a4aebc;
+  --be-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.34);
+  --be-shadow-md: 0 12px 32px rgba(0, 0, 0, 0.44);
+  --be-shadow-lg: 0 24px 56px rgba(0, 0, 0, 0.58);
 
-  --be-primary: #5b93e6;
-  --be-primary-light: #7cabef;
-  --be-primary-contrast: #081224;
-  --be-primary-soft: rgba(91, 147, 230, 0.16);
+  --be-primary: #6ca6e4;
+  --be-primary-light: #8cbceb;
+  --be-primary-contrast: #101822;
+  --be-primary-soft: rgba(108, 166, 228, 0.16);
 
-  --be-accent: #e5ad43;
-  --be-accent-hover: #f0be5b;
-  --be-accent-soft: rgba(229, 173, 67, 0.16);
+  --be-accent: #bc8f69;
+  --be-accent-hover: #cca27e;
+  --be-accent-soft: rgba(188, 143, 105, 0.18);
 
-  --be-success: #34d399;
-  --be-success-bg: rgba(16, 185, 129, 0.18);
-  --be-success-text: #6ee7b7;
+  --be-steel: #9ba5b4;
+  --be-steel-soft: rgba(155, 165, 180, 0.16);
 
-  --be-warning: #fbbf24;
-  --be-warning-bg: rgba(245, 158, 11, 0.18);
-  --be-warning-text: #fcd34d;
+  --be-hero-bg: linear-gradient(135deg, #21262e 0%, #243850 60%, #302822 100%);
+  --be-brand-panel-bg: linear-gradient(155deg, #1b222c 0%, #233b59 55%, #2b241e 100%);
 
-  --be-danger: #f87171;
-  --be-danger-bg: rgba(239, 68, 68, 0.18);
-  --be-danger-text: #fca5a5;
+  --be-success: #4cc38a;
+  --be-success-bg: rgba(76, 195, 138, 0.16);
+  --be-success-text: #81e4b3;
 
-  --be-info: #60a5fa;
-  --be-info-bg: rgba(59, 130, 246, 0.18);
-  --be-info-text: #93c5fd;
+  --be-warning: #e2b15c;
+  --be-warning-bg: rgba(226, 177, 92, 0.16);
+  --be-warning-text: #f2cf8d;
+
+  --be-danger: #e47171;
+  --be-danger-bg: rgba(228, 113, 113, 0.16);
+  --be-danger-text: #f6a6a6;
+
+  --be-info: #7bb2ea;
+  --be-info-bg: rgba(123, 178, 234, 0.16);
+  --be-info-text: #a9d0f5;
 
   --ion-background-color: var(--be-bg);
-  --ion-background-color-rgb: 10, 17, 31;
+  --ion-background-color-rgb: 21, 23, 26;
   --ion-text-color: var(--be-text);
-  --ion-text-color-rgb: 241, 245, 249;
+  --ion-text-color-rgb: 243, 246, 250;
   --ion-card-background: var(--be-surface);
   --ion-item-background: var(--be-surface);
-  --ion-toolbar-background: #0f1b30;
-  --ion-toolbar-color: #f1f5f9;
+  --ion-toolbar-background: #1b1e23;
+  --ion-toolbar-color: #f3f6fa;
   --ion-border-color: var(--be-border);
 
-  --ion-color-primary: #4c83d6;
-  --ion-color-primary-rgb: 76, 131, 214;
-  --ion-color-primary-contrast: #ffffff;
-  --ion-color-primary-shade: #3d6fb8;
-  --ion-color-primary-tint: #6394de;
+  --ion-color-primary: #6ca6e4;
+  --ion-color-primary-rgb: 108, 166, 228;
+  --ion-color-primary-contrast: #101822;
+  --ion-color-primary-shade: #5f92c9;
+  --ion-color-primary-tint: #7bafe7;
+}
+
+/* ==========================================================================
+   ANIMACIONES TEMÁTICAS DEL BAÚL (APERTURA, BRILLO Y RESPIRACIÓN)
+   ========================================================================== */
+@keyframes beFadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes beChestLidBreathe {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-6deg);
+  }
+}
+
+@keyframes beChestLidOpen {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  30% {
+    transform: translateY(-1px) rotate(-2deg);
+  }
+  100% {
+    transform: translateY(-10px) rotate(-22deg);
+  }
+}
+
+@keyframes beChestRadiance {
+  0% {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+  45% {
+    opacity: 0.95;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 0.85;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes beChestGlowPulse {
+  0%, 100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes beOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.be-chest-lid {
+  transform-box: fill-box;
+  transform-origin: 12% 100%;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.be-chest-breathing .be-chest-lid {
+  animation: beChestLidBreathe 1.9s ease-in-out infinite;
+}
+
+.be-chest-breathing .be-chest-light {
+  animation: beChestGlowPulse 1.9s ease-in-out infinite;
+}
+
+.be-chest-opening .be-chest-lid {
+  animation: beChestLidOpen 0.78s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.be-chest-opening .be-chest-light {
+  animation: beChestRadiance 0.82s ease-out forwards;
+}
+
+.be-unlock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: radial-gradient(circle at 50% 42%, rgba(29, 81, 150, 0.94) 0%, rgba(21, 25, 32, 0.98) 72%);
+  color: #ffffff;
+  animation: beOverlayFadeIn 0.25s ease-out both;
+  backdrop-filter: blur(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ==========================================================================
@@ -147,9 +275,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, ion-title, ion-card-title {
-  font-family: var(--be-font-display);
+h1, h2 {
+  font-family: var(--be-font-serif);
   letter-spacing: -0.02em;
+}
+
+h3, h4, ion-title, ion-card-title {
+  font-family: var(--be-font-display);
+  letter-spacing: -0.015em;
 }
 
 ion-content {
@@ -183,7 +316,7 @@ ion-menu ion-item {
   margin-bottom: 4px;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 ion-menu ion-item.be-menu-active {
@@ -200,9 +333,10 @@ ion-menu ion-item.be-menu-active ion-icon {
    LAYOUT Y COMPONENTES REUTILIZABLES (.be-*)
    ========================================================================== */
 .be-container {
-  max-width: 900px;
+  max-width: 920px;
   margin: 0 auto;
   padding: 12px 4px 28px;
+  animation: beFadeSlideUp 0.28s ease-out both;
 }
 
 .be-page-header {
@@ -216,8 +350,8 @@ ion-menu ion-item.be-menu-active ion-icon {
 
 .be-page-title {
   margin: 0 0 4px 0;
-  font-size: 1.45rem;
-  font-weight: 800;
+  font-size: 1.52rem;
+  font-weight: 700;
   color: var(--be-text);
 }
 
@@ -236,7 +370,7 @@ ion-menu ion-item.be-menu-active ion-icon {
   box-shadow: var(--be-shadow-sm);
   padding: 22px 24px;
   margin-bottom: 18px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease;
+  transition: border-color 0.2s ease, box-shadow 0.22s ease, transform 0.2s ease;
 }
 
 .be-card-interactive:hover {
@@ -246,31 +380,32 @@ ion-menu ion-item.be-menu-active ion-icon {
 }
 
 .be-hero-banner {
-  background: linear-gradient(135deg, #163259 0%, #1f487e 60%, #275896 100%);
+  background: var(--be-hero-bg);
   color: #ffffff;
   border-radius: 18px;
   padding: 24px 26px;
   margin-bottom: 22px;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: var(--be-shadow-md);
 }
 
 .be-hero-banner::after {
   content: '';
   position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 180px;
-  height: 180px;
+  top: -45px;
+  right: -45px;
+  width: 190px;
+  height: 190px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(229, 173, 67, 0.28) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(188, 143, 105, 0.28) 0%, transparent 70%);
   pointer-events: none;
 }
 
 .be-hero-banner h2 {
   margin: 0 0 6px 0;
-  font-size: 1.2rem;
+  font-size: 1.38rem;
   font-weight: 700;
   color: #ffffff;
 }
@@ -278,7 +413,7 @@ ion-menu ion-item.be-menu-active ion-icon {
 .be-hero-banner p {
   margin: 0;
   font-size: 0.9rem;
-  color: rgba(241, 245, 249, 0.88);
+  color: rgba(243, 246, 250, 0.88);
   line-height: 1.55;
 }
 
@@ -287,6 +422,12 @@ ion-menu ion-item.be-menu-active ion-icon {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.be-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 /* Formularios */
@@ -351,7 +492,11 @@ ion-menu ion-item.be-menu-active ion-icon {
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.12s ease, background-color 0.15s ease;
+  transition: opacity 0.16s ease, transform 0.14s ease, filter 0.16s ease, background-color 0.16s ease;
+}
+
+.be-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
 }
 
 .be-btn:active:not(:disabled) {
@@ -359,7 +504,7 @@ ion-menu ion-item.be-menu-active ion-icon {
 }
 
 .be-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.58;
   cursor: not-allowed;
 }
 
@@ -368,21 +513,21 @@ ion-menu ion-item.be-menu-active ion-icon {
 }
 
 .be-btn-primary {
-  background: linear-gradient(135deg, #1d4173 0%, #2a5aa0 100%);
+  background: linear-gradient(135deg, #194580 0%, #2763b0 100%);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(29, 65, 115, 0.25);
+  box-shadow: 0 4px 14px rgba(29, 81, 150, 0.26);
 }
 
 .be-btn-accent {
-  background: linear-gradient(135deg, #c58922 0%, #d99b2e 100%);
+  background: linear-gradient(135deg, #6d4b33 0%, #8f6444 100%);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(197, 137, 34, 0.28);
+  box-shadow: 0 4px 14px rgba(122, 85, 58, 0.28);
 }
 
 .be-btn-danger {
-  background: linear-gradient(135deg, #c53030 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #9e2a2a 0%, #c43a3a 100%);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
+  box-shadow: 0 4px 14px rgba(181, 52, 52, 0.25);
 }
 
 .be-btn-outline {
@@ -410,6 +555,7 @@ ion-menu ion-item.be-menu-active ion-icon {
   flex-wrap: wrap;
   gap: 14px;
   box-shadow: var(--be-shadow-sm);
+  animation: beFadeSlideUp 0.24s ease-out both;
 }
 
 .be-icon-box {
@@ -477,8 +623,27 @@ ion-menu ion-item.be-menu-active ion-icon {
 }
 
 /* ==========================================================================
+   LOADER TEMÁTICO DEL BAÚL (COFRE CON LUZ SERENA)
+   ========================================================================== */
+.be-vault-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 12px;
+  animation: beFadeSlideUp 0.25s ease-out both;
+}
+
+.be-vault-loader-label {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--be-text-muted);
+  letter-spacing: 0.01em;
+}
+
+/* ==========================================================================
    NAVEGACIÓN INFERIOR EXCLUSIVA PARA MÓVIL (< 768px)
-   En escritorio el menú lateral (IonSplitPane) ya está siempre visible.
    ========================================================================== */
 .be-mobile-footer {
   display: block;
@@ -509,7 +674,7 @@ ion-menu ion-item.be-menu-active ion-icon {
   font-weight: 600;
   cursor: pointer;
   border-radius: 10px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition: color 0.16s ease, background-color 0.16s ease;
 }
 
 .be-mobile-nav-btn ion-icon {
@@ -531,7 +696,7 @@ ion-menu ion-item.be-menu-active ion-icon {
 }
 
 /* ==========================================================================
-   PANTALLAS DE AUTENTICACIÓN (LOGIN & REGISTER) — ESTÉTICA EDITORIAL
+   PANTALLAS DE AUTENTICACIÓN (LOGIN, REGISTER & RECUPERAR)
    ========================================================================== */
 .be-auth-wrapper {
   min-height: 100%;
@@ -540,8 +705,8 @@ ion-menu ion-item.be-menu-active ion-icon {
   justify-content: center;
   padding: 24px 16px;
   background:
-    radial-gradient(circle at 12% 18%, rgba(29, 65, 115, 0.12) 0%, transparent 45%),
-    radial-gradient(circle at 88% 82%, rgba(197, 137, 34, 0.13) 0%, transparent 45%),
+    radial-gradient(circle at 12% 16%, rgba(29, 81, 150, 0.12) 0%, transparent 46%),
+    radial-gradient(circle at 88% 84%, rgba(122, 85, 58, 0.12) 0%, transparent 46%),
     var(--be-bg);
 }
 
@@ -555,10 +720,11 @@ ion-menu ion-item.be-menu-active ion-icon {
   border-radius: 24px;
   box-shadow: var(--be-shadow-lg);
   overflow: hidden;
+  animation: beFadeSlideUp 0.34s ease-out both;
 }
 
 .be-auth-brand-panel {
-  background: linear-gradient(155deg, #0f2442 0%, #1a3b6b 55%, #12294a 100%);
+  background: var(--be-brand-panel-bg);
   color: #ffffff;
   padding: 44px 40px;
   display: flex;
@@ -576,7 +742,7 @@ ion-menu ion-item.be-menu-active ion-icon {
   width: 240px;
   height: 240px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(229, 173, 67, 0.25) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -585,10 +751,10 @@ ion-menu ion-item.be-menu-active ion-icon {
   position: absolute;
   bottom: -80px;
   left: -60px;
-  width: 220px;
-  height: 220px;
+  width: 240px;
+  height: 240px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(96, 165, 250, 0.2) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(188, 143, 105, 0.22) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -606,10 +772,10 @@ ion-menu ion-item.be-menu-active ion-icon {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 11px 13px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .be-input-group {
@@ -673,6 +839,10 @@ ion-menu ion-item.be-menu-active ion-icon {
   .be-hero-banner {
     padding: 20px 18px;
   }
+
+  .be-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -681,6 +851,6 @@ ion-menu ion-item.be-menu-active ion-icon {
   }
 
   .be-page-title {
-    font-size: 1.25rem;
+    font-size: 1.32rem;
   }
 }

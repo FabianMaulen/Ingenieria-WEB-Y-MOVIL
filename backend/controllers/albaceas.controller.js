@@ -1,6 +1,7 @@
 const db = require('../db');
 const { enviarRespuesta } = require('../utils/respuesta');
 const { registrarAuditoria } = require('../utils/auditoria');
+const { enviarInvitacionAlbacea } = require('../services/email.service');
 const {
   normalizarRut,
   validarRut,
@@ -82,7 +83,7 @@ exports.crear = async (req, res) => {
     }
 
     // 1. Verificar que el titular no se designe a sí mismo
-    const titularRes = await db.query('SELECT rut FROM USUARIO WHERE id_usuario = $1', [id_titular]);
+    const titularRes = await db.query('SELECT rut, nombre_usuario FROM USUARIO WHERE id_usuario = $1', [id_titular]);
     if (!titularRes.rows[0]) {
       return enviarRespuesta(res, 404, 'Usuario titular no encontrado.', null);
     }
@@ -147,6 +148,15 @@ exports.crear = async (req, res) => {
       ip,
       id_titular
     );
+
+    // 6. Notificar por correo electrónico al albacea designado
+    enviarInvitacionAlbacea({
+      correoAlbacea: emailFinal,
+      nombreAlbacea: nombreFinal,
+      nombreTitular: titularRes.rows[0].nombre_usuario,
+      parentesco: String(parentesco).trim(),
+      registrado: Boolean(usuarioExistente),
+    }).catch(() => {});
 
     const mensaje = usuarioExistente
       ? 'Albacea designado con éxito. Queda pendiente de aceptación en su Panel Albacea.'

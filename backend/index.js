@@ -74,6 +74,7 @@ app.use('/api/mensajes', require('./routes/mensajes.routes'));
 app.use('/api/solicitudes', require('./routes/solicitudes.routes'));
 app.use('/api/guia', require('./routes/guia.routes'));
 app.use('/api/inventario', require('./routes/inventario.routes'));
+app.use('/api/admin', require('./routes/admin.routes'));
 
 // Alias protegido de perfil
 app.get('/api/perfil', verificarToken, perfil);

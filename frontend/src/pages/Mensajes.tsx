@@ -18,6 +18,7 @@ import {
 } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
+import { VaultLoader } from '../components/VaultLoader';
 import { getMensajes, crearMensaje, eliminarMensaje, MensajeResumen } from '../services/mensajes.service';
 import { getAlbaceas, Albacea } from '../services/albaceas.service';
 import { mensajeError } from '../services/api';
@@ -216,9 +217,7 @@ export const Mensajes: React.FC = () => {
           </h3>
 
           {cargando ? (
-            <div style={{ textAlign: 'center', padding: '28px' }}>
-              <IonSpinner name="crescent" />
-            </div>
+            <VaultLoader texto="Verificando cartas selladas..." />
           ) : mensajes.length === 0 ? (
             <div className="be-empty-state">
               <IonIcon icon={mailOpenOutline} style={{ fontSize: '2.3rem', marginBottom: '8px', opacity: 0.55 }} />

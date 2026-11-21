@@ -14,8 +14,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 /**
  * Barra de navegación inferior exclusiva para pantallas móviles (< 768px).
- * En escritorio se oculta automáticamente porque el menú lateral (IonSplitPane)
- * permanece siempre visible, evitando duplicación de atajos.
+ * Sincroniza el contexto activo con AppMenu mediante el evento 'modo-cambiado'.
  */
 export const MobileBottomNav: React.FC = () => {
   const navigate = useNavigate();
@@ -64,6 +63,7 @@ export const MobileBottomNav: React.FC = () => {
                 onClick={() => {
                   if ('switchToTitular' in item && item.switchToTitular) {
                     localStorage.setItem('modo_activo', 'TITULAR');
+                    window.dispatchEvent(new Event('modo-cambiado'));
                   }
                   navigate(item.path);
                 }}

@@ -9,11 +9,11 @@ import {
   IonItem,
   IonIcon,
   IonLabel,
-  IonMenuToggle,
   IonBadge,
   IonSegment,
   IonSegmentButton,
 } from '@ionic/react';
+import { menuController } from '@ionic/core/components';
 import {
   homeOutline,
   shieldCheckmarkOutline,
@@ -24,25 +24,45 @@ import {
   helpCircleOutline,
   folderOpenOutline,
   documentAttachOutline,
+  analyticsOutline,
 } from 'ionicons/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { logout, ModoApp, usuarioGuardado } from '../services/auth.service';
 import { obtenerDesignaciones } from '../services/guia.service';
 
+const RUTAS_ALBACEA = ['/guia', '/apertura'];
+const RUTAS_TITULAR = ['/dashboard', '/polizas', '/inventario', '/albaceas', '/mensajes'];
+
 export const AppMenu: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [nombre, setNombre] = useState<string>('Usuario');
+  const [esAdmin, setEsAdmin] = useState<boolean>(false);
   const [modo, setModo] = useState<ModoApp>(
     (localStorage.getItem('modo_activo') as ModoApp) || 'TITULAR'
   );
   const [tieneDesignaciones, setTieneDesignaciones] = useState<boolean>(false);
   const [pendientes, setPendientes] = useState<number>(0);
 
+  const cerrarMenu = async () => {
+    try {
+      await menuController.close();
+    } catch {
+      // En escritorio con IonSplitPane fijo, close() es un no-op seguro
+    }
+  };
+
+  const navegarYcerrar = async (ruta: string) => {
+    navigate(ruta);
+    await cerrarMenu();
+  };
+
   const cargarContextoUsuario = useCallback(async () => {
     const usuario = usuarioGuardado();
     const nombreGuardado = usuario?.nombre || localStorage.getItem('user_nombre');
+    const rolGuardado = usuario?.rol || localStorage.getItem('user_rol');
     if (nombreGuardado) setNombre(nombreGuardado);
+    setEsAdmin(rolGuardado === 'ADMIN');
 
     const token = localStorage.getItem('auth_token');
     if (!token) return;
@@ -77,32 +97,45 @@ export const AppMenu: React.FC = () => {
     const refrescar = () => {
       cargarContextoUsuario();
     };
+    const sincronizarModo = () => {
+      const guardado = (localStorage.getItem('modo_activo') as ModoApp) || 'TITULAR';
+      setModo(guardado);
+    };
+
     window.addEventListener('auth-updated', refrescar);
     window.addEventListener('designaciones-actualizadas', refrescar);
+    window.addEventListener('modo-cambiado', sincronizarModo);
     return () => {
       window.removeEventListener('auth-updated', refrescar);
       window.removeEventListener('designaciones-actualizadas', refrescar);
+      window.removeEventListener('modo-cambiado', sincronizarModo);
     };
   }, [cargarContextoUsuario]);
 
+  // Sincronización bidireccional: tanto al pasar a Albacea como al volver a Mi Baúl desde barra inferior
   useEffect(() => {
-    if (location.pathname === '/guia' || location.pathname === '/apertura') {
+    if (RUTAS_ALBACEA.includes(location.pathname)) {
       setModo('ALBACEA');
       localStorage.setItem('modo_activo', 'ALBACEA');
+    } else if (RUTAS_TITULAR.includes(location.pathname)) {
+      setModo('TITULAR');
+      localStorage.setItem('modo_activo', 'TITULAR');
     }
   }, [location.pathname]);
 
-  const handleCambioModo = (nuevoModo: ModoApp) => {
+  const handleCambioModo = async (nuevoModo: ModoApp) => {
     setModo(nuevoModo);
     localStorage.setItem('modo_activo', nuevoModo);
+    window.dispatchEvent(new Event('modo-cambiado'));
     if (nuevoModo === 'ALBACEA') {
-      navigate('/guia');
+      await navegarYcerrar('/guia');
     } else {
-      navigate('/dashboard');
+      await navegarYcerrar('/dashboard');
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await cerrarMenu();
     logout();
     navigate('/login', { replace: true });
   };
@@ -120,20 +153,21 @@ export const AppMenu: React.FC = () => {
               '--background': 'var(--ion-toolbar-background)',
               '--color': 'var(--ion-toolbar-color)',
               '--min-height': '56px',
+              borderBottom: '1px solid rgba(216, 163, 85, 0.18)',
             } as React.CSSProperties
           }
         >
-          <IonTitle style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+          <IonTitle style={{ fontFamily: 'var(--be-font-serif)', fontSize: '1.12rem', fontWeight: 700 }}>
             {enModoAlbacea ? 'Panel Albacea' : 'Baúl Eterno'}
           </IonTitle>
         </IonToolbar>
       </IonHeader>
 
       <IonContent>
-        {/* Cabecera de perfil del usuario — 100% compatible con tema claro y oscuro */}
+        {/* Cabecera de perfil */}
         <div
           style={{
-            padding: '16px',
+            padding: '15px 14px',
             margin: '12px 10px 8px',
             borderRadius: '14px',
             display: 'flex',
@@ -150,17 +184,17 @@ export const AppMenu: React.FC = () => {
               height: '42px',
               borderRadius: '12px',
               background: enModoAlbacea
-                ? 'linear-gradient(135deg, #c58922 0%, #e0a63b 100%)'
-                : 'linear-gradient(135deg, #1d4173 0%, #3468b0 100%)',
+                ? 'linear-gradient(135deg, #6d4b33 0%, #9b704e 100%)'
+                : 'linear-gradient(135deg, #194580 0%, #2d6ec2 100%)',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontFamily: 'var(--be-font-display)',
-              fontWeight: 800,
-              fontSize: '1.05rem',
+              fontFamily: 'var(--be-font-serif)',
+              fontWeight: 700,
+              fontSize: '1.1rem',
               flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.16)',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.18)',
             }}
           >
             {inicial}
@@ -194,7 +228,7 @@ export const AppMenu: React.FC = () => {
           </div>
         </div>
 
-        {/* Selector de Modo Dual cuando el usuario figura en DIRECTORIO_ALBACEAS */}
+        {/* Selector de Modo Dual sincronizado */}
         {tieneDesignaciones && (
           <div
             style={{
@@ -225,14 +259,10 @@ export const AppMenu: React.FC = () => {
             </div>
             <IonSegment
               value={modo}
-              style={
-                {
-                  '--background': 'var(--be-surface-alt)',
-                } as React.CSSProperties
-              }
+              style={{ '--background': 'var(--be-surface-alt)' } as React.CSSProperties}
               onIonChange={(e) => {
                 const val = e.detail.value as ModoApp;
-                if (val === 'TITULAR' || val === 'ALBACEA') {
+                if ((val === 'TITULAR' || val === 'ALBACEA') && val !== modo) {
                   handleCambioModo(val);
                 }
               }}
@@ -248,67 +278,72 @@ export const AppMenu: React.FC = () => {
         )}
 
         <IonList lines="none">
-          <IonMenuToggle autoHide={false}>
-            {!enModoAlbacea && (
-              <>
-                <IonItem button className={rutaActiva('/dashboard')} onClick={() => navigate('/dashboard')}>
-                  <IonIcon slot="start" icon={homeOutline} />
-                  <IonLabel>Resumen del Baúl</IonLabel>
-                </IonItem>
+          {!enModoAlbacea && (
+            <>
+              <IonItem button className={rutaActiva('/dashboard')} onClick={() => navegarYcerrar('/dashboard')}>
+                <IonIcon slot="start" icon={homeOutline} />
+                <IonLabel>Resumen del Baúl</IonLabel>
+              </IonItem>
 
-                <IonItem button className={rutaActiva('/polizas')} onClick={() => navigate('/polizas')}>
-                  <IonIcon slot="start" icon={shieldCheckmarkOutline} />
-                  <IonLabel>Pólizas y Seguros</IonLabel>
-                </IonItem>
+              <IonItem button className={rutaActiva('/polizas')} onClick={() => navegarYcerrar('/polizas')}>
+                <IonIcon slot="start" icon={shieldCheckmarkOutline} />
+                <IonLabel>Pólizas y Seguros</IonLabel>
+              </IonItem>
 
-                <IonItem button className={rutaActiva('/inventario')} onClick={() => navigate('/inventario')}>
-                  <IonIcon slot="start" icon={folderOpenOutline} />
-                  <IonLabel>Inventario Digital</IonLabel>
-                </IonItem>
+              <IonItem button className={rutaActiva('/inventario')} onClick={() => navegarYcerrar('/inventario')}>
+                <IonIcon slot="start" icon={folderOpenOutline} />
+                <IonLabel>Inventario Digital</IonLabel>
+              </IonItem>
 
-                <IonItem button className={rutaActiva('/albaceas')} onClick={() => navigate('/albaceas')}>
-                  <IonIcon slot="start" icon={peopleOutline} />
-                  <IonLabel>Albaceas</IonLabel>
-                </IonItem>
+              <IonItem button className={rutaActiva('/albaceas')} onClick={() => navegarYcerrar('/albaceas')}>
+                <IonIcon slot="start" icon={peopleOutline} />
+                <IonLabel>Albaceas</IonLabel>
+              </IonItem>
 
-                <IonItem button className={rutaActiva('/mensajes')} onClick={() => navigate('/mensajes')}>
-                  <IonIcon slot="start" icon={mailOutline} />
-                  <IonLabel>Mensajes Póstumos</IonLabel>
-                </IonItem>
-              </>
-            )}
+              <IonItem button className={rutaActiva('/mensajes')} onClick={() => navegarYcerrar('/mensajes')}>
+                <IonIcon slot="start" icon={mailOutline} />
+                <IonLabel>Mensajes Póstumos</IonLabel>
+              </IonItem>
+            </>
+          )}
 
-            {enModoAlbacea && (
-              <>
-                <IonItem button className={rutaActiva('/guia')} onClick={() => navigate('/guia')}>
-                  <IonIcon slot="start" icon={helpCircleOutline} />
-                  <IonLabel>Guía y Designaciones</IonLabel>
-                  {pendientes > 0 && (
-                    <IonBadge slot="end" color="warning">
-                      {pendientes}
-                    </IonBadge>
-                  )}
-                </IonItem>
+          {enModoAlbacea && (
+            <>
+              <IonItem button className={rutaActiva('/guia')} onClick={() => navegarYcerrar('/guia')}>
+                <IonIcon slot="start" icon={helpCircleOutline} />
+                <IonLabel>Guía y Designaciones</IonLabel>
+                {pendientes > 0 && (
+                  <IonBadge slot="end" color="warning">
+                    {pendientes}
+                  </IonBadge>
+                )}
+              </IonItem>
 
-                <IonItem button className={rutaActiva('/apertura')} onClick={() => navigate('/apertura')}>
-                  <IonIcon slot="start" icon={documentAttachOutline} />
-                  <IonLabel>Solicitar Apertura</IonLabel>
-                </IonItem>
-              </>
-            )}
+              <IonItem button className={rutaActiva('/apertura')} onClick={() => navegarYcerrar('/apertura')}>
+                <IonIcon slot="start" icon={documentAttachOutline} />
+                <IonLabel>Solicitar Apertura</IonLabel>
+              </IonItem>
+            </>
+          )}
 
-            <div style={{ height: '1px', backgroundColor: 'var(--be-border)', margin: '10px 6px' }} />
+          <div style={{ height: '1px', backgroundColor: 'var(--be-border)', margin: '10px 6px' }} />
 
-            <IonItem button className={rutaActiva('/configuracion')} onClick={() => navigate('/configuracion')}>
-              <IonIcon slot="start" icon={settingsOutline} />
-              <IonLabel>Ajustes y Clave</IonLabel>
+          {esAdmin && (
+            <IonItem button className={rutaActiva('/admin')} onClick={() => navegarYcerrar('/admin')}>
+              <IonIcon slot="start" icon={analyticsOutline} />
+              <IonLabel>Panel Administración</IonLabel>
             </IonItem>
+          )}
 
-            <IonItem button onClick={handleLogout} style={{ marginTop: '4px' }}>
-              <IonIcon slot="start" icon={logOutOutline} color="danger" />
-              <IonLabel color="danger">Cerrar Sesión</IonLabel>
-            </IonItem>
-          </IonMenuToggle>
+          <IonItem button className={rutaActiva('/configuracion')} onClick={() => navegarYcerrar('/configuracion')}>
+            <IonIcon slot="start" icon={settingsOutline} />
+            <IonLabel>Ajustes y Clave</IonLabel>
+          </IonItem>
+
+          <IonItem button onClick={handleLogout} style={{ marginTop: '4px' }}>
+            <IonIcon slot="start" icon={logOutOutline} color="danger" />
+            <IonLabel color="danger">Cerrar Sesión</IonLabel>
+          </IonItem>
         </IonList>
       </IonContent>
     </IonMenu>

@@ -6,6 +6,7 @@ import { RutaProtegida } from './RutaProtegida';
 
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
+import { ForgotPassword } from '../pages/ForgotPassword';
 import { Dashboard } from '../pages/Dashboard';
 import { Polizas } from '../pages/Polizas';
 import { Albaceas } from '../pages/Albaceas';
@@ -14,6 +15,7 @@ import { Inventario } from '../pages/Inventario';
 import { Apertura } from '../pages/Apertura';
 import { Guia } from '../pages/Guia';
 import { Configuracion } from '../pages/Configuracion';
+import { AdminPanel } from '../pages/AdminPanel';
 
 const AppShellProtegido: React.FC = () => (
   <IonSplitPane
@@ -39,6 +41,14 @@ const AppShellProtegido: React.FC = () => (
         <Route path="/apertura" element={<Apertura />} />
         <Route path="/guia" element={<Guia />} />
         <Route path="/configuracion" element={<Configuracion />} />
+        <Route
+          path="/admin"
+          element={
+            <RutaProtegida roles={['ADMIN']}>
+              <AdminPanel />
+            </RutaProtegida>
+          }
+        />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </IonRouterOutlet>
@@ -51,6 +61,7 @@ export const AppRoutes: React.FC = () => {
       {/* Rutas Públicas */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/recuperar" element={<ForgotPassword />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* Rutas Privadas protegidas con RutaProtegida */}

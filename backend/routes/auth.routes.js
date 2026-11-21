@@ -15,8 +15,22 @@ const loginLimiter = rateLimit({
   },
 });
 
+// Protección contra abuso en solicitudes de recuperación de contraseña
+const recoveryLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    mensaje: 'Demasiadas solicitudes de recuperación. Intenta nuevamente en 15 minutos.',
+    data: null,
+  },
+});
+
 router.post('/register', authController.register);
 router.post('/login', loginLimiter, authController.login);
+router.post('/forgot-password', recoveryLimiter, authController.forgotPassword);
+router.post('/reset-password', recoveryLimiter, authController.resetPassword);
 router.get('/perfil', verificarToken, authController.perfil);
 router.put('/change-password', verificarToken, authController.changePassword);
 

@@ -19,6 +19,7 @@ import { mensajeError } from '../services/api';
 import { registrar } from '../services/auth.service';
 import { normalizarRut, rutValido, emailValido } from '../utils/rut';
 import { alternarTema, obtenerTemaOscuro } from '../utils/theme';
+import { VaultChestIcon } from '../components/VaultChestIcon';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -95,56 +96,39 @@ export const Register: React.FC = () => {
       <IonContent fullscreen>
         <div className="be-auth-wrapper">
           <div className="be-auth-card">
-            {/* Panel Lateral Editorial */}
             <div className="be-auth-brand-panel">
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '26px' }}>
                   <div
                     style={{
-                      width: '46px',
-                      height: '46px',
+                      width: '54px',
+                      height: '54px',
                       borderRadius: '14px',
-                      background: 'linear-gradient(135deg, #e5ad43 0%, #c58922 100%)',
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      border: '1px solid rgba(255, 255, 255, 0.22)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 8px 20px rgba(197, 137, 34, 0.35)',
                     }}
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M12 2L4 5.5V11.5C4 16.8 7.4 21.5 12 23C16.6 21.5 20 16.8 20 11.5V5.5L12 2Z"
-                        stroke="#FFFFFF"
-                        strokeWidth="2"
-                        strokeLinejoin="round"
-                      />
-                      <circle cx="12" cy="11.5" r="2.2" fill="#FFFFFF" />
-                      <path d="M12 13.7V16.5" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
+                    <VaultChestIcon size={46} mode="static" />
                   </div>
                   <div>
-                    <span
-                      style={{
-                        display: 'block',
-                        fontFamily: 'var(--be-font-display)',
-                        fontSize: '1.25rem',
-                        fontWeight: 800,
-                      }}
-                    >
+                    <span style={{ display: 'block', fontFamily: 'var(--be-font-serif)', fontSize: '1.35rem', fontWeight: 700 }}>
                       Baúl Eterno
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: '#e5ad43', fontWeight: 600, letterSpacing: '0.04em' }}>
+                    <span style={{ fontSize: '0.73rem', color: '#d8c3ae', fontWeight: 600, letterSpacing: '0.06em' }}>
                       CUENTA DUAL UNIFICADA
                     </span>
                   </div>
                 </div>
 
-                <h1 style={{ margin: '0 0 12px 0', fontSize: '1.8rem', fontWeight: 800, lineHeight: 1.2, color: '#ffffff' }}>
-                  Tu tranquilidad y la de tu familia en un solo lugar.
+                <h1 style={{ margin: '0 0 12px 0', fontSize: '1.8rem', fontWeight: 700, lineHeight: 1.2, color: '#ffffff' }}>
+                  Tu tranquilidad y la de tu familia en un solo cofre.
                 </h1>
-                <p style={{ margin: 0, fontSize: '0.92rem', color: 'rgba(226, 232, 240, 0.85)', lineHeight: 1.6 }}>
-                  Con una sola cuenta puedes organizar tu propio patrimonio digital y, al mismo tiempo, aceptar
-                  designaciones como albacea de personas que confían en ti.
+                <p style={{ margin: 0, fontSize: '0.92rem', color: 'rgba(241, 246, 252, 0.88)', lineHeight: 1.6 }}>
+                  Con una sola cuenta puedes organizar tu patrimonio y, al mismo tiempo, aceptar designaciones como
+                  albacea de personas que confían en ti.
                 </p>
               </div>
 
@@ -153,28 +137,27 @@ export const Register: React.FC = () => {
                 style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '28px', position: 'relative', zIndex: 1 }}
               >
                 <div className="be-auth-pillar">
-                  <IonIcon icon={sparklesOutline} style={{ fontSize: '1.25rem', color: '#e5ad43', marginTop: '2px' }} />
+                  <IonIcon icon={sparklesOutline} style={{ fontSize: '1.25rem', color: '#d8c3ae', marginTop: '2px' }} />
                   <div>
                     <strong style={{ display: 'block', fontSize: '0.84rem' }}>Vinculación automática por RUT</strong>
-                    <span style={{ fontSize: '0.77rem', color: 'rgba(226, 232, 240, 0.78)' }}>
+                    <span style={{ fontSize: '0.77rem', color: 'rgba(241, 246, 252, 0.8)' }}>
                       Si alguien te invitó antes de registrarte, tu designación aparecerá lista al entrar.
                     </span>
                   </div>
                 </div>
 
                 <div className="be-auth-pillar">
-                  <IonIcon icon={shieldCheckmarkOutline} style={{ fontSize: '1.25rem', color: '#e5ad43', marginTop: '2px' }} />
+                  <IonIcon icon={shieldCheckmarkOutline} style={{ fontSize: '1.25rem', color: '#d8c3ae', marginTop: '2px' }} />
                   <div>
-                    <strong style={{ display: 'block', fontSize: '0.84rem' }}>Privacidad garantizada</strong>
-                    <span style={{ fontSize: '0.77rem', color: 'rgba(226, 232, 240, 0.78)' }}>
-                      Solo tú ves tu inventario, pólizas y mensajes mientras tu bóveda esté sellada.
+                    <strong style={{ display: 'block', fontSize: '0.84rem' }}>Privacidad absoluta</strong>
+                    <span style={{ fontSize: '0.77rem', color: 'rgba(241, 246, 252, 0.8)' }}>
+                      Solo tú accedes a tu información mientras tu bóveda permanezca sellada.
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Panel Formulario de Registro */}
             <div className="be-auth-form-panel">
               <button
                 type="button"
@@ -201,10 +184,10 @@ export const Register: React.FC = () => {
               </button>
 
               <div style={{ marginBottom: '22px' }}>
-                <span className="be-badge be-badge-warning" style={{ marginBottom: '10px' }}>
+                <span className="be-badge be-badge-info" style={{ marginBottom: '10px' }}>
                   Nuevo Registro
                 </span>
-                <h2 style={{ margin: '0 0 6px 0', fontSize: '1.6rem', fontWeight: 800, color: 'var(--be-text)' }}>
+                <h2 style={{ margin: '0 0 6px 0', fontSize: '1.6rem', fontWeight: 700, color: 'var(--be-text)' }}>
                   Crea tu Baúl Eterno
                 </h2>
                 <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--be-text-muted)' }}>

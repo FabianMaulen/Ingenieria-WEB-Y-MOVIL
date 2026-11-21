@@ -65,6 +65,24 @@ export const cambiarPassword = async (passwordActual: string, nuevaPassword: str
   return res.data;
 };
 
+export const solicitarRecuperacion = async (correo_usuario: string) => {
+  const res = await api.post<ApiResponse<null>>('/auth/forgot-password', { correo_usuario });
+  return res.data;
+};
+
+export const restablecerPassword = async (
+  correo_usuario: string,
+  codigo: string,
+  nuevaPassword: string
+) => {
+  const res = await api.post<ApiResponse<null>>('/auth/reset-password', {
+    correo_usuario,
+    codigo,
+    nuevaPassword,
+  });
+  return res.data;
+};
+
 export const logout = () => {
   localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem('token');

@@ -112,6 +112,19 @@ CREATE TABLE IF NOT EXISTS AUDITORIA (
   id_usuario INT REFERENCES USUARIO(id_usuario) ON DELETE SET NULL
 );
 
+-- ============================================================================
+-- 8. RESET_PASSWORD_TOKEN
+-- Tokens temporales hasheados (SHA-256) para recuperación de contraseña.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS RESET_PASSWORD_TOKEN (
+  id_token SERIAL PRIMARY KEY,
+  id_usuario INT NOT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE,
+  token_hash VARCHAR(64) NOT NULL,
+  expira_en TIMESTAMP NOT NULL,
+  usado BOOLEAN NOT NULL DEFAULT FALSE,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 -- Índices recomendados para consultas frecuentes
 CREATE INDEX IF NOT EXISTS idx_directorio_titular ON DIRECTORIO_ALBACEAS(id_titular);
 CREATE INDEX IF NOT EXISTS idx_directorio_rut ON DIRECTORIO_ALBACEAS(rut_albacea);
@@ -120,3 +133,5 @@ CREATE INDEX IF NOT EXISTS idx_poliza_usuario ON POLIZA(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_inventario_usuario ON INVENTARIO(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_mensaje_usuario ON MENSAJE_POSTUMO(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_solicitud_usuario ON SOLICITUD_APERTURA(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_reset_token_usuario ON RESET_PASSWORD_TOKEN(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_reset_token_hash ON RESET_PASSWORD_TOKEN(token_hash);

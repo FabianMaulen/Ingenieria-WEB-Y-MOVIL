@@ -7,6 +7,7 @@ const { enviarRespuesta } = require('../utils/respuesta');
 const { registrarAuditoria } = require('../utils/auditoria');
 const { PLAZO_HORAS, aprobarVencidas } = require('../utils/solicitudes');
 const { normalizarRut, validarRut, parsearIdEntero, obtenerIp } = require('../utils/validadores');
+const { enviarAlertaApertura } = require('../services/email.service');
 
 // ---------- Subida del certificado de defunción ----------
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'certificados');
@@ -115,6 +116,23 @@ exports.crear = async (req, res) => {
       obtenerIp(req),
       req.user.id
     );
+
+    // Enviar alerta crítica de apertura al correo del titular
+    const infoAlerta = await db.query(
+      `SELECT t.correo_usuario, t.nombre_usuario AS nombre_titular, a.nombre_usuario AS nombre_albacea
+       FROM USUARIO t
+       JOIN USUARIO a ON a.id_usuario = $2
+       WHERE t.id_usuario = $1`,
+      [id_titular, req.user.id]
+    );
+    if (infoAlerta.rows[0]) {
+      enviarAlertaApertura({
+        correoTitular: infoAlerta.rows[0].correo_usuario,
+        nombreTitular: infoAlerta.rows[0].nombre_titular,
+        nombreAlbacea: infoAlerta.rows[0].nombre_albacea,
+        plazoHoras: PLAZO_HORAS,
+      }).catch(() => {});
+    }
 
     return enviarRespuesta(
       res,

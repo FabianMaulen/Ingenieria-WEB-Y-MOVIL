@@ -4,6 +4,7 @@ const { registrarAuditoria } = require('../utils/auditoria');
 const { aprobarVencidas } = require('../utils/solicitudes');
 const { contactoAseguradora } = require('../utils/aseguradoras');
 const { parsearIdEntero, obtenerIp } = require('../utils/validadores');
+const { enviarRespuestaDesignacion } = require('../services/email.service');
 
 // Middleware de sincronización de solicitudes vencidas
 exports.sincronizarVencidas = async (req, res, next) => {
@@ -203,6 +204,23 @@ exports.responderDesignacion = async (req, res) => {
       obtenerIp(req),
       req.user.id
     );
+
+    // Notificar por correo al titular sobre la decisión del albacea
+    const notifInfo = await db.query(
+      `SELECT t.correo_usuario, t.nombre_usuario AS nombre_titular, a.nombre_usuario AS nombre_albacea
+       FROM USUARIO t
+       JOIN USUARIO a ON a.id_usuario = $2
+       WHERE t.id_usuario = $1`,
+      [rows[0].id_titular, req.user.id]
+    );
+    if (notifInfo.rows[0]) {
+      enviarRespuestaDesignacion({
+        correoTitular: notifInfo.rows[0].correo_usuario,
+        nombreTitular: notifInfo.rows[0].nombre_titular,
+        nombreAlbacea: notifInfo.rows[0].nombre_albacea,
+        estado: nuevoEstado,
+      }).catch(() => {});
+    }
 
     const mensaje = nuevoEstado === 'VALIDADO'
       ? 'Designación aceptada correctamente. Ahora figuras como albacea validado.'
