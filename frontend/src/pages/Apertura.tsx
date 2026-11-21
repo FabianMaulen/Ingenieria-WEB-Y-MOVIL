@@ -5,12 +5,12 @@ import {
   IonIcon,
   IonToast,
   IonSpinner,
-  IonBadge,
   useIonViewWillEnter,
 } from '@ionic/react';
-import { closeCircleOutline } from 'ionicons/icons';
+import { closeCircleOutline, cloudUploadOutline, documentAttachOutline } from 'ionicons/icons';
 import { useLocation } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
+import { MobileBottomNav } from '../components/MobileBottomNav';
 import { mensajeError } from '../services/api';
 import { crearSolicitud, misSolicitudes, SolicitudAlbacea } from '../services/solicitudes.service';
 import { normalizarRut, rutValido } from '../utils/rut';
@@ -95,11 +95,9 @@ export const Apertura: React.FC = () => {
     try {
       setCargando(true);
       const rutFormateado = normalizarRut(rutTitular);
-
-      // Llamada exacta a crearSolicitud(rut_titular, certificado) en formato multipart/form-data
       const res = await crearSolicitud(rutFormateado, archivos[0]);
 
-      setToastMsg(res.mensaje || 'Solicitud enviada exitosamente. En periodo de gracia.');
+      setToastMsg(res.mensaje || 'Solicitud enviada con éxito. Periodo de gracia iniciado.');
       setShowToast(true);
       setRutTitular('');
       setArchivos([]);
@@ -119,206 +117,149 @@ export const Apertura: React.FC = () => {
       <HeaderBar title="Apertura por Contingencia" />
 
       <IonContent className="ion-padding">
-        <div style={{ maxWidth: '720px', margin: '0 auto', padding: '16px 0' }}>
-          <div
-            style={{
-              width: '100%',
-              backgroundColor: 'var(--ion-card-background, #ffffff)',
-              color: 'var(--ion-text-color, #0f172a)',
-              borderRadius: '16px',
-              border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.03)',
-              padding: '32px',
-              marginBottom: '28px',
-            }}
-          >
-            <h2 style={{ fontSize: '1.35rem', fontWeight: '700', margin: '0 0 6px 0' }}>
-              Solicitud de Liberación (Albacea)
-            </h2>
-            <p style={{ fontSize: '0.88rem', opacity: 0.78, margin: '0 0 24px 0' }}>
-              Adjunta el certificado de defunción para iniciar el periodo de gracia de verificación. Debes haber
-              aceptado previamente la designación del titular en tu Panel Albacea.
-            </p>
-
-            <form onSubmit={handleSolicitar}>
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'block', marginBottom: '6px' }}>
-                  RUT del Titular *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: 12345678-5"
-                  value={rutTitular}
-                  onChange={(e) => setRutTitular(e.target.value)}
-                  onBlur={() => {
-                    if (rutTitular.trim()) setRutTitular(normalizarRut(rutTitular));
-                  }}
-                  required
-                  style={{
-                    width: '100%',
-                    height: '48px',
-                    padding: '0 16px',
-                    backgroundColor: 'var(--ion-color-step-100, #f8fafc)',
-                    border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    borderRadius: '8px',
-                    fontSize: '0.92rem',
-                    color: 'var(--ion-text-color, #0f172a)',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'block', marginBottom: '8px' }}>
-                  Certificado de Defunción (PDF, JPG o PNG — Máx. 5 MB) *
-                </label>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,image/png,image/jpeg"
-                  onChange={handleFileChange}
-                  style={{
-                    fontSize: '0.85rem',
-                    marginBottom: archivos.length > 0 ? '12px' : '0',
-                  }}
-                />
-
-                {archivos.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {archivos.map((arch, index) => (
-                      <div
-                        key={`${arch.name}-${index}`}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          backgroundColor: 'var(--ion-color-step-100, #f1f5f9)',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                        }}
-                      >
-                        <span style={{ fontSize: '0.85rem', fontWeight: '500' }}>{arch.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleEliminarArchivo(index)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '0.8rem',
-                            fontWeight: '600',
-                            padding: 0,
-                          }}
-                        >
-                          <IonIcon icon={closeCircleOutline} style={{ fontSize: '1.2rem' }} />
-                          Quitar
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {errorMsg && (
-                <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '16px', fontWeight: '500' }}>
-                  {errorMsg}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={cargando}
-                style={{
-                  width: '100%',
-                  height: '46px',
-                  backgroundColor: cargando ? '#f87171' : '#dc2626',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '0.85rem',
-                  fontWeight: '700',
-                  letterSpacing: '0.5px',
-                  cursor: cargando ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {cargando ? <IonSpinner name="crescent" color="light" /> : 'INICIAR SOLICITUD'}
-              </button>
-            </form>
+        <div className="be-container">
+          <div className="be-page-header">
+            <div>
+              <h2 className="be-page-title">Solicitud de Liberación</h2>
+              <p className="be-page-subtitle">
+                Adjunta el certificado de defunción para activar el periodo de gracia de 72 horas. Debes figurar como
+                albacea validado del titular.
+              </p>
+            </div>
           </div>
 
-          {/* Historial de Solicitudes del Albacea */}
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '12px' }}>
-            Mis Solicitudes de Apertura ({solicitudes.length})
+          <form onSubmit={handleSolicitar} className="be-card">
+            <div className="be-field">
+              <label className="be-label">RUT del titular *</label>
+              <input
+                type="text"
+                className="be-input"
+                placeholder="Ej: 12345678-5"
+                value={rutTitular}
+                onChange={(e) => setRutTitular(e.target.value)}
+                onBlur={() => {
+                  if (rutTitular.trim()) setRutTitular(normalizarRut(rutTitular));
+                }}
+                required
+              />
+            </div>
+
+            <div className="be-field" style={{ marginBottom: '20px' }}>
+              <label className="be-label">Certificado de defunción (PDF, JPG o PNG · Máx. 5 MB) *</label>
+
+              <div
+                style={{
+                  border: '1.5px dashed var(--be-border)',
+                  borderRadius: '12px',
+                  padding: '18px',
+                  backgroundColor: 'var(--be-surface-alt)',
+                  textAlign: 'center',
+                }}
+              >
+                <IonIcon icon={cloudUploadOutline} style={{ fontSize: '2rem', color: 'var(--be-primary)', marginBottom: '6px' }} />
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,image/png,image/jpeg"
+                    onChange={handleFileChange}
+                    style={{ fontSize: '0.84rem', maxWidth: '100%' }}
+                  />
+                </div>
+              </div>
+
+              {archivos.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                  {archivos.map((arch, index) => (
+                    <div
+                      key={`${arch.name}-${index}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: 'var(--be-surface-alt)',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        border: '1px solid var(--be-border)',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--be-text)' }}>
+                        {arch.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleEliminarArchivo(index)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--be-danger)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                        }}
+                      >
+                        <IonIcon icon={closeCircleOutline} style={{ fontSize: '1.15rem' }} />
+                        Quitar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {errorMsg && (
+              <p style={{ color: 'var(--be-danger)', fontSize: '0.85rem', margin: '0 0 14px 0', fontWeight: 600 }}>
+                {errorMsg}
+              </p>
+            )}
+
+            <button type="submit" className="be-btn be-btn-danger be-btn-block" disabled={cargando}>
+              {cargando ? <IonSpinner name="crescent" color="light" /> : 'Iniciar solicitud de apertura'}
+            </button>
+          </form>
+
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--be-text)', margin: '0 0 12px 0' }}>
+            Mis solicitudes enviadas ({solicitudes.length})
           </h3>
 
           {cargandoLista ? (
-            <div style={{ textAlign: 'center', padding: '20px' }}>
+            <div style={{ textAlign: 'center', padding: '24px' }}>
               <IonSpinner name="crescent" />
             </div>
           ) : solicitudes.length === 0 ? (
-            <div
-              style={{
-                padding: '24px',
-                borderRadius: '12px',
-                backgroundColor: 'var(--ion-card-background, #ffffff)',
-                border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                textAlign: 'center',
-                opacity: 0.75,
-                fontSize: '0.9rem',
-              }}
-            >
-              No has iniciado solicitudes de apertura todavía.
+            <div className="be-empty-state" style={{ padding: '26px' }}>
+              <IonIcon icon={documentAttachOutline} style={{ fontSize: '2.2rem', marginBottom: '6px', opacity: 0.55 }} />
+              <p style={{ margin: 0, fontSize: '0.88rem' }}>No has iniciado solicitudes de apertura todavía.</p>
             </div>
           ) : (
             solicitudes.map((sol) => (
-              <div
-                key={sol.id_solicitud}
-                style={{
-                  backgroundColor: 'var(--ion-card-background, #ffffff)',
-                  borderRadius: '12px',
-                  border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                  padding: '16px 20px',
-                  marginBottom: '12px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '10px',
-                }}
-              >
+              <div key={sol.id_solicitud} className="be-list-item">
                 <div>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '0.98rem', fontWeight: '700' }}>
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '0.98rem', fontWeight: 700, color: 'var(--be-text)' }}>
                     {sol.nombre_titular} {sol.rut_titular ? `(${sol.rut_titular})` : ''}
                   </h4>
-                  <p style={{ margin: 0, fontSize: '0.82rem', opacity: 0.75 }}>
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--be-text-muted)' }}>
                     Enviada: {fechaHora(sol.fecha_solicitud)}
                     {sol.estado_solicitud === 'PENDIENTE' && sol.fecha_limite
-                      ? ` • ${tiempoRestante(sol.fecha_limite)}`
+                      ? ` · ${tiempoRestante(sol.fecha_limite)}`
                       : ''}
                   </p>
                 </div>
 
-                <IonBadge
-                  color={
+                <span
+                  className={
                     sol.estado_solicitud === 'APROBADA'
-                      ? 'success'
+                      ? 'be-badge be-badge-success'
                       : sol.estado_solicitud === 'CANCELADA'
-                      ? 'medium'
-                      : 'warning'
+                      ? 'be-badge be-badge-neutral'
+                      : 'be-badge be-badge-warning'
                   }
                 >
                   {sol.estado_solicitud}
-                </IonBadge>
+                </span>
               </div>
             ))
           )}
@@ -332,6 +273,8 @@ export const Apertura: React.FC = () => {
           color="success"
         />
       </IonContent>
+
+      <MobileBottomNav />
     </IonPage>
   );
 };

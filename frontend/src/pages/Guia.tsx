@@ -6,7 +6,6 @@ import {
   IonSpinner,
   IonToast,
   IonButton,
-  IonBadge,
   IonCheckbox,
   useIonViewWillEnter,
 } from '@ionic/react';
@@ -16,7 +15,6 @@ import {
   checkmarkCircleOutline,
   closeCircleOutline,
   shieldCheckmarkOutline,
-  informationCircleOutline,
   documentTextOutline,
   callOutline,
   globeOutline,
@@ -24,6 +22,7 @@ import {
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
+import { MobileBottomNav } from '../components/MobileBottomNav';
 import { mensajeError } from '../services/api';
 import {
   obtenerDesignaciones,
@@ -73,9 +72,7 @@ export const Guia: React.FC = () => {
       setToastColor(nuevoEstado === 'VALIDADO' ? 'success' : 'warning');
       setToastMsg(
         res.mensaje ||
-          (nuevoEstado === 'VALIDADO'
-            ? 'Designación aceptada exitosamente.'
-            : 'Designación rechazada.')
+          (nuevoEstado === 'VALIDADO' ? 'Designación aceptada.' : 'Designación rechazada.')
       );
       await cargarDatosAlbacea();
     } catch (error) {
@@ -103,30 +100,15 @@ export const Guia: React.FC = () => {
 
   return (
     <IonPage id="main-content">
-      <HeaderBar title="Panel Albacea y Guía de Cobro" />
+      <HeaderBar title="Panel Albacea" showBack={false} />
 
       <IonContent className="ion-padding">
-        <div style={{ maxWidth: '850px', margin: '0 auto', padding: '12px 0' }}>
-          {/* Banner Informativo */}
-          <div
-            style={{
-              backgroundColor: 'var(--ion-color-step-100, rgba(37, 99, 235, 0.08))',
-              border: '1px solid var(--ion-color-primary, #2563eb)',
-              borderRadius: '14px',
-              padding: '20px 24px',
-              marginBottom: '28px',
-              color: 'var(--ion-text-color)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <IonIcon icon={informationCircleOutline} style={{ fontSize: '1.4rem', color: 'var(--ion-color-primary, #2563eb)' }} />
-              <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '700', color: 'var(--ion-text-color)' }}>
-                Tu Rol como Albacea de Confianza
-              </h2>
-            </div>
-            <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.85, lineHeight: '1.5', color: 'var(--ion-text-color)' }}>
-              Aquí puedes aceptar o rechazar las designaciones recibidas, iniciar procesos de apertura por contingencia
-              y consultar la guía de cobro de pólizas una vez aprobada una apertura.
+        <div className="be-container">
+          <div className="be-hero-banner">
+            <h2>Custodia y Guía de Albacea</h2>
+            <p>
+              Acepta o rechaza las designaciones recibidas, inicia solicitudes de apertura cuando corresponda y
+              gestiona el cobro de pólizas liberadas con el checklist oficial.
             </p>
           </div>
 
@@ -136,60 +118,39 @@ export const Guia: React.FC = () => {
             </div>
           ) : (
             <>
-              {/* 1. SOLICITUDES DE DESIGNACIÓN PENDIENTES */}
-              <div style={{ marginBottom: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: 'var(--ion-text-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <IonIcon icon={mailUnreadOutline} color="warning" />
-                    Solicitudes de Designación Pendientes
+              {/* 1. DESIGNACIONES PENDIENTES */}
+              <div style={{ marginBottom: '28px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '12px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.06rem', fontWeight: 800, color: 'var(--be-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <IonIcon icon={mailUnreadOutline} style={{ color: 'var(--be-warning)' }} />
+                    Invitaciones por responder
                   </h3>
-                  <IonBadge color={solicitudesPendientes.length > 0 ? 'warning' : 'medium'}>
-                    {solicitudesPendientes.length} Pendientes
-                  </IonBadge>
+                  <span className={solicitudesPendientes.length > 0 ? 'be-badge be-badge-warning' : 'be-badge be-badge-neutral'}>
+                    {solicitudesPendientes.length} pendiente{solicitudesPendientes.length === 1 ? '' : 's'}
+                  </span>
                 </div>
 
                 {solicitudesPendientes.length === 0 ? (
-                  <div
-                    style={{
-                      padding: '24px',
-                      backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
-                      borderRadius: '12px',
-                      border: '1px solid var(--ion-color-step-150, #cbd5e1)',
-                      color: 'var(--ion-color-step-600, #64748b)',
-                      fontSize: '0.9rem',
-                      textAlign: 'center',
-                    }}
-                  >
-                    No tienes solicitudes de designación pendientes por responder.
+                  <div className="be-empty-state" style={{ padding: '24px' }}>
+                    <p style={{ margin: 0, fontSize: '0.88rem' }}>
+                      No tienes designaciones pendientes por responder.
+                    </p>
                   </div>
                 ) : (
                   solicitudesPendientes.map((sol) => (
-                    <div
-                      key={sol.id_directorio}
-                      style={{
-                        backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
-                        color: 'var(--ion-text-color)',
-                        borderRadius: '12px',
-                        border: '1px solid var(--ion-color-step-150, #cbd5e1)',
-                        padding: '20px 24px',
-                        marginBottom: '14px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '14px',
-                      }}
-                    >
-                      <div>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: '700', color: 'var(--ion-text-color)' }}>
-                          {sol.nombre_titular} te ha designado como su Albacea ({sol.parentesco})
+                    <div key={sol.id_directorio} className="be-card" style={{ padding: '18px 20px' }}>
+                      <div style={{ marginBottom: '14px' }}>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                          {sol.nombre_titular} te designó como Albacea ({sol.parentesco})
                         </h4>
-                        <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--ion-color-step-600, #64748b)' }}>
-                          RUT Titular: {sol.rut_titular}
-                          {sol.correo_titular ? ` | ${sol.correo_titular}` : ''} | Fecha:{' '}
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--be-text-muted)' }}>
+                          RUT: {sol.rut_titular}
+                          {sol.correo_titular ? ` · ${sol.correo_titular}` : ''} ·{' '}
                           {new Date(sol.fecha_designacion).toLocaleDateString('es-CL')}
                         </p>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                         <IonButton
                           fill="outline"
                           color="danger"
@@ -213,7 +174,7 @@ export const Guia: React.FC = () => {
                           ) : (
                             <>
                               <IonIcon slot="start" icon={checkmarkCircleOutline} />
-                              Aceptar Designación
+                              Aceptar designación
                             </>
                           )}
                         </IonButton>
@@ -223,83 +184,48 @@ export const Guia: React.FC = () => {
                 )}
               </div>
 
-              {/* 2. TITULARES QUE CUSTODIAS (VALIDADOS) */}
-              <div style={{ marginBottom: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: 'var(--ion-text-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <IonIcon icon={shieldCheckmarkOutline} color="success" />
-                    Titulares que Autorizaste Custodiar
+              {/* 2. TITULARES CUSTODIADOS */}
+              <div style={{ marginBottom: '28px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '12px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.06rem', fontWeight: 800, color: 'var(--be-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <IonIcon icon={shieldCheckmarkOutline} style={{ color: 'var(--be-success)' }} />
+                    Titulares bajo tu custodia
                   </h3>
-                  <IonBadge color="success">{titularesAutorizados.length} Activos</IonBadge>
+                  <span className="be-badge be-badge-success">{titularesAutorizados.length} activos</span>
                 </div>
 
                 {titularesAutorizados.length === 0 ? (
-                  <div
-                    style={{
-                      padding: '24px',
-                      backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
-                      borderRadius: '12px',
-                      border: '1px solid var(--ion-color-step-150, #cbd5e1)',
-                      color: 'var(--ion-color-step-600, #64748b)',
-                      fontSize: '0.9rem',
-                      textAlign: 'center',
-                    }}
-                  >
-                    Aún no has aceptado tu rol de albacea para ningún titular.
+                  <div className="be-empty-state" style={{ padding: '24px' }}>
+                    <p style={{ margin: 0, fontSize: '0.88rem' }}>
+                      Aún no has aceptado tu rol de albacea para ningún titular.
+                    </p>
                   </div>
                 ) : (
                   titularesAutorizados.map((tit) => (
-                    <div
-                      key={tit.id_directorio}
-                      style={{
-                        backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
-                        color: 'var(--ion-text-color)',
-                        borderRadius: '12px',
-                        border: '1px solid var(--ion-color-step-150, #cbd5e1)',
-                        padding: '18px 22px',
-                        marginBottom: '14px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: '12px',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <div
-                          style={{
-                            width: '42px',
-                            height: '42px',
-                            borderRadius: '10px',
-                            backgroundColor: 'var(--ion-color-step-100, rgba(37, 99, 235, 0.1))',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <IonIcon icon={peopleOutline} style={{ fontSize: '1.4rem', color: 'var(--ion-color-primary, #2563eb)' }} />
+                    <div key={tit.id_directorio} className="be-list-item">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '1 1 220px', minWidth: 0 }}>
+                        <div className="be-icon-box">
+                          <IonIcon icon={peopleOutline} />
                         </div>
-                        <div>
-                          <h4 style={{ margin: '0 0 2px 0', fontSize: '0.98rem', fontWeight: '700', color: 'var(--ion-text-color)' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <h4 style={{ margin: '0 0 2px 0', fontSize: '0.98rem', fontWeight: 700, color: 'var(--be-text)' }}>
                             {tit.nombre_titular}
                           </h4>
-                          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--ion-color-step-600, #64748b)' }}>
-                            RUT: {tit.rut_titular} {tit.correo_titular ? `| ${tit.correo_titular}` : ''} | {tit.parentesco}
+                          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--be-text-muted)' }}>
+                            RUT: {tit.rut_titular} · {tit.parentesco}
                           </p>
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <IonBadge color="success" style={{ padding: '6px 12px', borderRadius: '12px' }}>
-                          VALIDADO
-                        </IonBadge>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span className="be-badge be-badge-success">VALIDADO</span>
                         <IonButton
                           size="small"
                           fill="outline"
                           color="danger"
                           onClick={() => navigate('/apertura', { state: { rut_titular: tit.rut_titular } })}
                         >
-                          Solicitar Apertura
+                          Solicitar apertura
                         </IonButton>
                       </div>
                     </div>
@@ -307,59 +233,42 @@ export const Guia: React.FC = () => {
                 )}
               </div>
 
-              {/* 3. GUÍA DE COBRO DE PÓLIZAS LIBERADAS (RF-07) */}
+              {/* 3. GUÍA DE COBRO DE PÓLIZAS LIBERADAS */}
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: 'var(--ion-text-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <IonIcon icon={documentTextOutline} color="primary" />
-                    Guía de Cobro de Pólizas Liberadas
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '12px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.06rem', fontWeight: 800, color: 'var(--be-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <IonIcon icon={documentTextOutline} style={{ color: 'var(--be-primary)' }} />
+                    Guía de cobro de pólizas liberadas
                   </h3>
-                  <IonBadge color="primary">
-                    {guia.resumen.tramitadas} / {guia.resumen.total} Tramitadas
-                  </IonBadge>
+                  <span className="be-badge be-badge-info">
+                    {guia.resumen.tramitadas} / {guia.resumen.total} tramitadas
+                  </span>
                 </div>
 
                 {guia.polizas.length === 0 ? (
-                  <div
-                    style={{
-                      padding: '24px',
-                      backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
-                      borderRadius: '12px',
-                      border: '1px solid var(--ion-color-step-150, #cbd5e1)',
-                      color: 'var(--ion-color-step-600, #64748b)',
-                      fontSize: '0.9rem',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {guia.mensaje || 'Aún no tienes pólizas liberadas tras una apertura aprobada.'}
+                  <div className="be-empty-state" style={{ padding: '24px' }}>
+                    <p style={{ margin: 0, fontSize: '0.88rem' }}>
+                      {guia.mensaje || 'Aún no tienes pólizas liberadas tras una apertura aprobada.'}
+                    </p>
                   </div>
                 ) : (
                   guia.polizas.map((pol) => (
-                    <div
-                      key={pol.id_poliza}
-                      style={{
-                        backgroundColor: 'var(--ion-card-background, var(--ion-item-background))',
-                        color: 'var(--ion-text-color)',
-                        borderRadius: '12px',
-                        border: '1px solid var(--ion-color-step-150, #cbd5e1)',
-                        padding: '18px 22px',
-                        marginBottom: '14px',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                        <div>
-                          <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: '700' }}>
-                            {pol.aseguradora} — {pol.tipo_seguro}
+                    <div key={pol.id_poliza} className="be-card" style={{ padding: '18px 20px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                        <div style={{ flex: '1 1 260px' }}>
+                          <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                            {pol.aseguradora} · {pol.tipo_seguro}
                           </h4>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '0.84rem', color: 'var(--ion-color-step-600, #64748b)' }}>
-                            Titular: <strong>{pol.nombre_titular}</strong> | N° Póliza: <strong>{pol.numero_poliza}</strong> | Monto:{' '}
-                            <strong>{dinero(pol.monto_referencial)}</strong>
+                          <p style={{ margin: '0 0 4px 0', fontSize: '0.84rem', color: 'var(--be-text-muted)' }}>
+                            Titular: <strong style={{ color: 'var(--be-text)' }}>{pol.nombre_titular}</strong> · Póliza:{' '}
+                            <strong style={{ color: 'var(--be-text)' }}>{pol.numero_poliza}</strong> ·{' '}
+                            <strong style={{ color: 'var(--be-success)' }}>{dinero(pol.monto_referencial)}</strong>
                           </p>
-                          <p style={{ margin: '0 0 8px 0', fontSize: '0.82rem', color: 'var(--ion-color-step-600, #64748b)' }}>
-                            📍 Ubicación documento: {pol.ubicacion_fisica}
+                          <p style={{ margin: '0 0 8px 0', fontSize: '0.82rem', color: 'var(--be-text-muted)' }}>
+                            Ubicación: {pol.ubicacion_fisica}
                           </p>
                           {pol.contacto && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.8rem', marginTop: '6px' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.8rem', color: 'var(--be-primary)' }}>
                               {pol.contacto.telefono && (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                   <IonIcon icon={callOutline} /> {pol.contacto.telefono}
@@ -371,7 +280,7 @@ export const Guia: React.FC = () => {
                                 </span>
                               )}
                               {pol.contacto.web && (
-                                <a href={pol.contacto.web} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <a href={pol.contacto.web} target="_blank" rel="noreferrer" style={{ color: 'var(--be-primary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                   <IonIcon icon={globeOutline} /> Portal Web
                                 </a>
                               )}
@@ -384,7 +293,7 @@ export const Guia: React.FC = () => {
                             checked={pol.tramitada}
                             onIonChange={(e) => handleToggleTramitada(pol.id_poliza, !!e.detail.checked)}
                           />
-                          <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--be-text)' }}>
                             {pol.tramitada ? 'Tramitada' : 'Pendiente'}
                           </span>
                         </div>
@@ -405,6 +314,8 @@ export const Guia: React.FC = () => {
           color={toastColor}
         />
       </IonContent>
+
+      <MobileBottomNav />
     </IonPage>
   );
 };

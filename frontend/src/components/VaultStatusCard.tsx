@@ -1,81 +1,112 @@
 import React from 'react';
-import { 
-  IonCard, 
-  IonCardHeader, 
-  IonCardSubtitle, 
-  IonCardTitle, 
-  IonCardContent, 
-  IonButton 
-} from '@ionic/react';
+import { IonIcon } from '@ionic/react';
+import { shieldCheckmarkOutline, alertCircleOutline, lockOpenOutline, checkmarkDoneOutline } from 'ionicons/icons';
 
 interface VaultStatusProps {
   daysLeft: number;
   status: 'PROTEGIDA' | 'EN_REVISION' | 'LIBERADA';
   onCheckin: () => void;
+  loading?: boolean;
 }
 
-export const VaultStatusCard: React.FC<VaultStatusProps> = ({ daysLeft, status, onCheckin }) => {
-  // Colores de estado adaptados con alto contraste
-  const getStatusColor = () => {
-    switch (status) {
-      case 'PROTEGIDA':
-        return 'var(--ion-color-success, #16a34a)';
-      case 'EN_REVISION':
-        return 'var(--ion-color-warning, #d97706)';
-      case 'LIBERADA':
-        return 'var(--ion-color-danger, #dc2626)';
-      default:
-        return 'var(--ion-color-primary, #2563eb)';
-    }
-  };
+export const VaultStatusCard: React.FC<VaultStatusProps> = ({
+  daysLeft,
+  status,
+  onCheckin,
+  loading = false,
+}) => {
+  const porcentaje = Math.max(0, Math.min(100, Math.round((daysLeft / 180) * 100)));
+
+  const configEstado = {
+    PROTEGIDA: {
+      badgeClass: 'be-badge be-badge-success',
+      label: 'BÓVEDA PROTEGIDA',
+      icon: shieldCheckmarkOutline,
+      barColor: 'var(--be-success)',
+    },
+    EN_REVISION: {
+      badgeClass: 'be-badge be-badge-warning',
+      label: 'EN PERIODO DE GRACIA',
+      icon: alertCircleOutline,
+      barColor: 'var(--be-warning)',
+    },
+    LIBERADA: {
+      badgeClass: 'be-badge be-badge-danger',
+      label: 'BÓVEDA LIBERADA',
+      icon: lockOpenOutline,
+      barColor: 'var(--be-danger)',
+    },
+  }[status];
 
   return (
-    <IonCard className="ion-no-margin ion-margin-bottom" style={{
-      background: 'var(--ion-card-background, #ffffff)',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-      borderRadius: '12px'
-    }}>
-      <IonCardHeader>
-        <IonCardSubtitle style={{ 
-          color: getStatusColor(), 
-          fontWeight: '700',
-          letterSpacing: '0.5px'
-        }}>
-          ESTADO: {status}
-        </IonCardSubtitle>
-        
-        <IonCardTitle style={{ 
-          color: 'var(--ion-text-color, #0f172a)',
-          fontWeight: '600',
-          fontSize: '1.25rem'
-        }}>
-          Bóveda Patrimonial
-        </IonCardTitle>
-      </IonCardHeader>
+    <div className="be-card" style={{ marginBottom: '20px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '14px',
+        }}
+      >
+        <div>
+          <span className={configEstado.badgeClass} style={{ marginBottom: '8px' }}>
+            <IonIcon icon={configEstado.icon} />
+            {configEstado.label}
+          </span>
+          <h2 style={{ margin: '4px 0 0 0', fontSize: '1.25rem', fontWeight: 800, color: 'var(--be-text)' }}>
+            Vigencia de tu Bóveda Patrimonial
+          </h2>
+        </div>
 
-      <IonCardContent>
-        <p style={{ 
-          marginBottom: '16px', 
-          color: 'var(--ion-text-color, #334155)',
-          fontSize: '0.95rem',
-          lineHeight: '1.5'
-        }}>
-          Próxima confirmación de actividad requerida en{' '}
-          <strong style={{ color: 'var(--ion-text-color, #0f172a)' }}>
-            {daysLeft} días
-          </strong>.
-        </p>
-        
-        <IonButton 
-          expand="block" 
-          color="warning" 
-          onClick={onCheckin}
-          style={{ fontWeight: '600' }}
-        >
-          Confirmar Presencia (Check-in)
-        </IonButton>
-      </IonCardContent>
-    </IonCard>
+        <div style={{ textAlign: 'right' }}>
+          <span style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'var(--be-font-display)', color: 'var(--be-text)' }}>
+            {daysLeft}
+          </span>
+          <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--be-text-muted)', fontWeight: 600 }}>
+            días restantes
+          </span>
+        </div>
+      </div>
+
+      {/* Barra visual de vigencia */}
+      <div
+        style={{
+          height: '8px',
+          width: '100%',
+          backgroundColor: 'var(--be-surface-alt)',
+          borderRadius: '999px',
+          overflow: 'hidden',
+          marginBottom: '14px',
+        }}
+      >
+        <div
+          style={{
+            height: '100%',
+            width: `${porcentaje}%`,
+            backgroundColor: configEstado.barColor,
+            borderRadius: '999px',
+            transition: 'width 0.35s ease',
+          }}
+        />
+      </div>
+
+      <p style={{ margin: '0 0 18px 0', fontSize: '0.88rem', color: 'var(--be-text-muted)', lineHeight: 1.5 }}>
+        Confirma periódicamente tu actividad para mantener tu legado sellado por un nuevo ciclo de{' '}
+        <strong style={{ color: 'var(--be-text)' }}>180 días</strong> y desactivar cualquier alerta pendiente.
+      </p>
+
+      <button
+        type="button"
+        className="be-btn be-btn-accent be-btn-block"
+        onClick={onCheckin}
+        disabled={loading}
+      >
+        <IonIcon icon={checkmarkDoneOutline} style={{ fontSize: '1.15rem' }} />
+        {loading ? 'Confirmando presencia...' : 'Confirmar Presencia (Check-in)'}
+      </button>
+    </div>
   );
 };
 

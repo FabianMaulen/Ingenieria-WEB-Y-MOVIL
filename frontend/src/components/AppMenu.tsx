@@ -10,7 +10,6 @@ import {
   IonIcon,
   IonLabel,
   IonMenuToggle,
-  IonAvatar,
   IonBadge,
   IonSegment,
   IonSegmentButton,
@@ -63,7 +62,6 @@ export const AppMenu: React.FC = () => {
         setModo('TITULAR');
       }
     } catch {
-      // Si falla la consulta de designaciones, mantenemos el estado previo sin interrumpir la navegación
       if (usuario?.es_albacea) {
         setTieneDesignaciones(true);
         setPendientes(usuario.designaciones_pendientes || 0);
@@ -87,7 +85,6 @@ export const AppMenu: React.FC = () => {
     };
   }, [cargarContextoUsuario]);
 
-  // Sincroniza visualmente el selector si el usuario navega directamente a rutas de Albacea
   useEffect(() => {
     if (location.pathname === '/guia' || location.pathname === '/apertura') {
       setModo('ALBACEA');
@@ -112,52 +109,70 @@ export const AppMenu: React.FC = () => {
 
   const inicial = nombre.charAt(0).toUpperCase();
   const enModoAlbacea = modo === 'ALBACEA';
+  const rutaActiva = (path: string) => (location.pathname === path ? 'be-menu-active' : '');
 
   return (
     <IonMenu contentId="main-content" type="overlay">
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>{enModoAlbacea ? 'Panel Albacea' : 'Mi Baúl'}</IonTitle>
+      <IonHeader className="ion-no-border">
+        <IonToolbar
+          style={
+            {
+              '--background': 'var(--ion-toolbar-background)',
+              '--color': 'var(--ion-toolbar-color)',
+              '--min-height': '56px',
+            } as React.CSSProperties
+          }
+        >
+          <IonTitle style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            {enModoAlbacea ? 'Panel Albacea' : 'Baúl Eterno'}
+          </IonTitle>
         </IonToolbar>
       </IonHeader>
 
       <IonContent>
-        {/* Cabecera con datos del Usuario Activo */}
+        {/* Cabecera de perfil del usuario — 100% compatible con tema claro y oscuro */}
         <div
           style={{
             padding: '16px',
+            margin: '12px 10px 8px',
+            borderRadius: '14px',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            backgroundColor: 'var(--ion-color-step-100, #f8fafc)',
-            borderBottom: '1px solid var(--ion-color-step-200, #e2e8f0)',
-            color: 'var(--ion-text-color, #0f172a)',
+            backgroundColor: 'var(--be-surface-alt)',
+            border: '1px solid var(--be-border)',
+            color: 'var(--be-text)',
           }}
         >
-          <IonAvatar
+          <div
             style={{
               width: '42px',
               height: '42px',
-              backgroundColor: '#2563eb',
+              borderRadius: '12px',
+              background: enModoAlbacea
+                ? 'linear-gradient(135deg, #c58922 0%, #e0a63b 100%)'
+                : 'linear-gradient(135deg, #1d4173 0%, #3468b0 100%)',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontWeight: 'bold',
-              fontSize: '1.1rem',
+              fontFamily: 'var(--be-font-display)',
+              fontWeight: 800,
+              fontSize: '1.05rem',
               flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.16)',
             }}
           >
             {inicial}
-          </IonAvatar>
+          </div>
 
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <h3
               style={{
                 margin: 0,
-                fontSize: '0.95rem',
-                fontWeight: '600',
-                color: 'var(--ion-text-color)',
+                fontSize: '0.92rem',
+                fontWeight: 700,
+                color: 'var(--be-text)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -167,46 +182,54 @@ export const AppMenu: React.FC = () => {
             </h3>
             <span
               style={{
-                fontSize: '0.75rem',
-                opacity: 0.75,
-                color: 'var(--ion-text-color)',
+                display: 'inline-block',
+                marginTop: '2px',
+                fontSize: '0.73rem',
+                fontWeight: 600,
+                color: enModoAlbacea ? 'var(--be-accent)' : 'var(--be-text-muted)',
               }}
             >
-              {enModoAlbacea ? 'Modo Albacea' : 'Modo Titular'}
+              {enModoAlbacea ? 'Custodia como Albacea' : 'Bóveda Personal (Titular)'}
             </span>
           </div>
         </div>
 
-        {/* Selector de Modo Dual (visible cuando el usuario posee designaciones en DIRECTORIO_ALBACEAS) */}
+        {/* Selector de Modo Dual cuando el usuario figura en DIRECTORIO_ALBACEAS */}
         {tieneDesignaciones && (
           <div
             style={{
-              padding: '12px 12px 8px 12px',
-              borderBottom: '1px solid var(--ion-color-step-200, #e2e8f0)',
+              padding: '8px 12px 12px',
+              borderBottom: '1px solid var(--be-border)',
+              marginBottom: '4px',
             }}
           >
             <div
               style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
+                fontSize: '0.68rem',
+                fontWeight: 700,
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                color: 'var(--ion-color-step-600, #64748b)',
-                marginBottom: '6px',
+                letterSpacing: '0.06em',
+                color: 'var(--be-text-muted)',
+                marginBottom: '8px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}
             >
-              <span>Cambiar contexto</span>
+              <span>Contexto activo</span>
               {pendientes > 0 && (
                 <IonBadge color="warning" style={{ fontSize: '0.68rem' }}>
-                  {pendientes} nueva{pendientes > 1 ? 's' : ''}
+                  {pendientes} pendiente{pendientes > 1 ? 's' : ''}
                 </IonBadge>
               )}
             </div>
             <IonSegment
               value={modo}
+              style={
+                {
+                  '--background': 'var(--be-surface-alt)',
+                } as React.CSSProperties
+              }
               onIonChange={(e) => {
                 const val = e.detail.value as ModoApp;
                 if (val === 'TITULAR' || val === 'ALBACEA') {
@@ -214,52 +237,50 @@ export const AppMenu: React.FC = () => {
                 }
               }}
             >
-              <IonSegmentButton value="TITULAR" style={{ minHeight: '32px' }}>
-                <IonLabel style={{ fontSize: '0.72rem', fontWeight: '600' }}>Mi Baúl</IonLabel>
+              <IonSegmentButton value="TITULAR" style={{ minHeight: '34px' }}>
+                <IonLabel style={{ fontSize: '0.74rem', fontWeight: 700 }}>Mi Baúl</IonLabel>
               </IonSegmentButton>
-              <IonSegmentButton value="ALBACEA" style={{ minHeight: '32px' }}>
-                <IonLabel style={{ fontSize: '0.72rem', fontWeight: '600' }}>Albacea</IonLabel>
+              <IonSegmentButton value="ALBACEA" style={{ minHeight: '34px' }}>
+                <IonLabel style={{ fontSize: '0.74rem', fontWeight: 700 }}>Albacea</IonLabel>
               </IonSegmentButton>
             </IonSegment>
           </div>
         )}
 
-        <IonList lines="none" style={{ background: 'transparent' }}>
+        <IonList lines="none">
           <IonMenuToggle autoHide={false}>
-            {/* Opciones de Mi Baúl (Titular) */}
             {!enModoAlbacea && (
               <>
-                <IonItem button onClick={() => navigate('/dashboard')}>
+                <IonItem button className={rutaActiva('/dashboard')} onClick={() => navigate('/dashboard')}>
                   <IonIcon slot="start" icon={homeOutline} />
-                  <IonLabel>Inicio (Resumen)</IonLabel>
+                  <IonLabel>Resumen del Baúl</IonLabel>
                 </IonItem>
 
-                <IonItem button onClick={() => navigate('/polizas')}>
+                <IonItem button className={rutaActiva('/polizas')} onClick={() => navigate('/polizas')}>
                   <IonIcon slot="start" icon={shieldCheckmarkOutline} />
                   <IonLabel>Pólizas y Seguros</IonLabel>
                 </IonItem>
 
-                <IonItem button onClick={() => navigate('/inventario')}>
+                <IonItem button className={rutaActiva('/inventario')} onClick={() => navigate('/inventario')}>
                   <IonIcon slot="start" icon={folderOpenOutline} />
                   <IonLabel>Inventario Digital</IonLabel>
                 </IonItem>
 
-                <IonItem button onClick={() => navigate('/albaceas')}>
+                <IonItem button className={rutaActiva('/albaceas')} onClick={() => navigate('/albaceas')}>
                   <IonIcon slot="start" icon={peopleOutline} />
-                  <IonLabel>Albaceas Designados</IonLabel>
+                  <IonLabel>Albaceas</IonLabel>
                 </IonItem>
 
-                <IonItem button onClick={() => navigate('/mensajes')}>
+                <IonItem button className={rutaActiva('/mensajes')} onClick={() => navigate('/mensajes')}>
                   <IonIcon slot="start" icon={mailOutline} />
                   <IonLabel>Mensajes Póstumos</IonLabel>
                 </IonItem>
               </>
             )}
 
-            {/* Opciones de Panel Albacea */}
             {enModoAlbacea && (
               <>
-                <IonItem button onClick={() => navigate('/guia')}>
+                <IonItem button className={rutaActiva('/guia')} onClick={() => navigate('/guia')}>
                   <IonIcon slot="start" icon={helpCircleOutline} />
                   <IonLabel>Guía y Designaciones</IonLabel>
                   {pendientes > 0 && (
@@ -269,20 +290,21 @@ export const AppMenu: React.FC = () => {
                   )}
                 </IonItem>
 
-                <IonItem button onClick={() => navigate('/apertura')}>
+                <IonItem button className={rutaActiva('/apertura')} onClick={() => navigate('/apertura')}>
                   <IonIcon slot="start" icon={documentAttachOutline} />
                   <IonLabel>Solicitar Apertura</IonLabel>
                 </IonItem>
               </>
             )}
 
-            {/* Opciones Comunes */}
-            <IonItem button onClick={() => navigate('/configuracion')}>
+            <div style={{ height: '1px', backgroundColor: 'var(--be-border)', margin: '10px 6px' }} />
+
+            <IonItem button className={rutaActiva('/configuracion')} onClick={() => navigate('/configuracion')}>
               <IonIcon slot="start" icon={settingsOutline} />
-              <IonLabel>Ajustes</IonLabel>
+              <IonLabel>Ajustes y Clave</IonLabel>
             </IonItem>
 
-            <IonItem button onClick={handleLogout} style={{ marginTop: '16px' }}>
+            <IonItem button onClick={handleLogout} style={{ marginTop: '4px' }}>
               <IonIcon slot="start" icon={logOutOutline} color="danger" />
               <IonLabel color="danger">Cerrar Sesión</IonLabel>
             </IonItem>

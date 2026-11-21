@@ -1,34 +1,18 @@
 import React, { useState } from 'react';
+import { IonPage, IonContent, IonToast, IonIcon, useIonViewWillEnter } from '@ionic/react';
 import {
-  IonPage,
-  IonContent,
-  IonGrid,
-  IonRow,
-  IonCol,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardSubtitle,
-  IonCardContent,
-  IonButton,
-  IonToast,
-  IonFooter,
-  IonToolbar,
-  IonIcon,
-  IonLabel,
-  IonBadge,
-  useIonViewWillEnter,
-} from '@ionic/react';
-import {
-  homeOutline,
   shieldCheckmarkOutline,
   peopleOutline,
-  settingsOutline,
+  folderOpenOutline,
+  mailOutline,
   warningOutline,
+  arrowForwardOutline,
+  handLeftOutline,
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
 import { VaultStatusCard } from '../components/VaultStatusCard';
+import { MobileBottomNav } from '../components/MobileBottomNav';
 
 import { mensajeError } from '../services/api';
 import { obtenerCheckin, renovarCheckin } from '../services/checkin.service';
@@ -93,13 +77,12 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Check-in (RF-04): Confirma actividad del titular y extiende vigencia a 180 días
   const handleCheckin = async () => {
     try {
       setCargandoCheckin(true);
       await renovarCheckin();
       setDaysLeft(180);
-      setToastMsg('Presencia confirmada con éxito. Bóveda sellada por un nuevo periodo de 180 días.');
+      setToastMsg('Presencia confirmada. Tu bóveda queda sellada por un nuevo periodo de 180 días.');
       setShowToast(true);
       await cargarDatosDashboard();
     } catch (error) {
@@ -110,11 +93,10 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Frenar proceso de apertura por gracia (RF-06)
   const handleCancelarApertura = async (idSolicitud: number) => {
     try {
       await cancelarSolicitud(idSolicitud);
-      setToastMsg('Solicitud de apertura anulada exitosamente. Tu bóveda sigue bajo tu custodia.');
+      setToastMsg('Solicitud de apertura anulada. Tu bóveda continúa bajo tu custodia.');
       setShowToast(true);
       await cargarDatosDashboard();
     } catch (error) {
@@ -123,297 +105,172 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const primerNombre = nombreTitular.split(' ')[0];
+
+  const modulos = [
+    {
+      path: '/polizas',
+      kicker: 'PATRIMONIO Y COBERTURAS',
+      titulo: 'Pólizas de Seguro',
+      descripcion:
+        'Centraliza seguros de vida, salud y desgravamen para que tus beneficiarios puedan cobrarlos sin trabas.',
+      badge: `${cantPolizas} guardada${cantPolizas === 1 ? '' : 's'}`,
+      badgeClass: 'be-badge be-badge-info',
+      cta: cantPolizas === 0 ? 'Agregar primera póliza' : 'Gestionar pólizas',
+      icon: shieldCheckmarkOutline,
+      accent: false,
+    },
+    {
+      path: '/albaceas',
+      kicker: 'RED DE CONFIANZA',
+      titulo: 'Albaceas Designados',
+      descripcion:
+        'Elige hasta 3 personas de confianza (incluso si aún no crean cuenta) para custodiar tu bóveda.',
+      badge: `${cantAlbaceas} / 3 designados`,
+      badgeClass: cantAlbaceas > 0 ? 'be-badge be-badge-success' : 'be-badge be-badge-warning',
+      cta: cantAlbaceas === 0 ? 'Designar albacea' : 'Administrar albaceas',
+      icon: peopleOutline,
+      accent: true,
+    },
+    {
+      path: '/inventario',
+      kicker: 'ACTIVOS Y CUENTAS',
+      titulo: 'Inventario Patrimonial',
+      descripcion:
+        'Registra plataformas digitales, suscripciones y bienes con instrucciones claras para tu familia.',
+      badge: `${cantInventario} activo${cantInventario === 1 ? '' : 's'}`,
+      badgeClass: 'be-badge be-badge-neutral',
+      cta: cantInventario === 0 ? 'Registrar activo' : 'Ver inventario',
+      icon: folderOpenOutline,
+      accent: false,
+    },
+    {
+      path: '/mensajes',
+      kicker: 'CUSTODIA AES-256',
+      titulo: 'Mensajes Póstumos',
+      descripcion:
+        'Redacta cartas personales o instrucciones confidenciales cifradas que solo se abren tras la liberación.',
+      badge: `${cantMensajes} carta${cantMensajes === 1 ? '' : 's'} sellada${cantMensajes === 1 ? '' : 's'}`,
+      badgeClass: 'be-badge be-badge-info',
+      cta: cantMensajes === 0 ? 'Redactar primer mensaje' : 'Ver mensajes sellados',
+      icon: mailOutline,
+      accent: true,
+    },
+  ];
+
   return (
     <IonPage id="main-content">
-      <HeaderBar title={`Bienvenido a tu Baúl, ${nombreTitular}`} />
+      <HeaderBar title="Resumen del Baúl" showBack={false} />
 
       <IonContent className="ion-padding">
-        <IonGrid className="ion-no-padding" style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <IonRow>
-            <IonCol size="12">
-              {/* ALERTA CRÍTICA DE APERTURA EN CURSO */}
-              {alertas.map((alerta) => (
-                <IonCard
-                  key={alerta.id_solicitud}
-                  color="danger"
-                  className="ion-margin-bottom"
-                  style={{ borderRadius: '14px' }}
-                >
-                  <IonCardHeader>
-                    <IonCardSubtitle
-                      style={{ color: '#fff', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
-                    >
-                      <IonIcon icon={warningOutline} style={{ fontSize: '1.2rem' }} />
-                      ALERTA DE SEGURIDAD CRÍTICA — PROCESO DE APERTURA DETECTADO
-                    </IonCardSubtitle>
-                    <IonCardTitle style={{ fontSize: '1.15rem', color: '#fff', fontWeight: '700' }}>
-                      Solicitud de Apertura Ingresada
-                    </IonCardTitle>
-                  </IonCardHeader>
-                  <IonCardContent color="light">
-                    <div
-                      style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                        padding: '14px',
-                        borderRadius: '8px',
-                        marginBottom: '14px',
-                        color: '#fff',
-                      }}
-                    >
-                      <p style={{ margin: '0 0 6px 0', fontSize: '0.9rem' }}>
-                        <strong>Albacea Solicitante:</strong> RUT {alerta.rut_albacea || 'Contacto registrado'} (
-                        {alerta.nombre_albacea || 'Nombre no disponible'})
-                      </p>
-                      <p style={{ margin: '0 0 6px 0', fontSize: '0.9rem' }}>
-                        <strong>Estado del Trámite:</strong> PENDIENTE (En Periodo de Gracia)
-                      </p>
-                      <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9 }}>
-                        🛡️ <strong>Periodo de Gracia Activo:</strong> Tienes este plazo para anular la apertura si se
-                        trata de un error o una prueba.
-                      </p>
+        <div className="be-container">
+          {/* Saludo editorial */}
+          <div className="be-hero-banner">
+            <h2>Hola, {primerNombre}</h2>
+            <p>
+              Tu bóveda personal resguarda tu patrimonio y voluntades con cifrado de alto nivel. Revisa tu vigencia o
+              actualiza tus registros cuando lo necesites.
+            </p>
+          </div>
+
+          {/* ALERTA CRÍTICA DE APERTURA EN CURSO */}
+          {alertas.map((alerta) => (
+            <div
+              key={alerta.id_solicitud}
+              style={{
+                background: 'linear-gradient(135deg, #991b1b 0%, #dc2626 100%)',
+                color: '#ffffff',
+                borderRadius: '16px',
+                padding: '22px 24px',
+                marginBottom: '20px',
+                boxShadow: '0 12px 28px rgba(220, 38, 38, 0.28)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.05em', marginBottom: '6px' }}>
+                <IonIcon icon={warningOutline} style={{ fontSize: '1.2rem' }} />
+                ALERTA CRÍTICA — PROCESO DE APERTURA DETECTADO
+              </div>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
+                Un albacea solicitó liberar tu bóveda
+              </h3>
+
+              <div
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.14)',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  marginBottom: '16px',
+                  fontSize: '0.88rem',
+                  lineHeight: 1.55,
+                }}
+              >
+                <div>
+                  <strong>Albacea solicitante:</strong> {alerta.nombre_albacea || 'Contacto registrado'} (RUT{' '}
+                  {alerta.rut_albacea || 'No disponible'})
+                </div>
+                <div>
+                  <strong>Estado:</strong> Pendiente en periodo de gracia — puedes anular esta solicitud de inmediato si
+                  fue un error o prueba.
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="be-btn be-btn-block"
+                disabled={cargandoCheckin}
+                onClick={() => handleCancelarApertura(alerta.id_solicitud)}
+                style={{ backgroundColor: '#ffffff', color: '#b91c1c' }}
+              >
+                <IonIcon icon={handLeftOutline} />
+                Anular solicitud de apertura y proteger bóveda
+              </button>
+            </div>
+          ))}
+
+          {/* Tarjeta de Vigencia y Check-in */}
+          <VaultStatusCard
+            daysLeft={daysLeft}
+            status={alertas.length > 0 ? 'EN_REVISION' : 'PROTEGIDA'}
+            onCheckin={handleCheckin}
+            loading={cargandoCheckin}
+          />
+
+          {/* Módulos del Baúl (2 columnas en tablet/PC, 1 columna en móvil) */}
+          <div className="be-grid-2">
+            {modulos.map((mod) => (
+              <div
+                key={mod.path}
+                className="be-card be-card-interactive"
+                style={{ marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', cursor: 'pointer' }}
+                onClick={() => navigate(mod.path)}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                    <div className={mod.accent ? 'be-icon-box be-icon-box-accent' : 'be-icon-box'}>
+                      <IonIcon icon={mod.icon} />
                     </div>
+                    <span className={mod.badgeClass}>{mod.badge}</span>
+                  </div>
 
-                    <IonButton
-                      expand="block"
-                      color="light"
-                      disabled={cargandoCheckin}
-                      style={{ fontWeight: '700', color: '#dc2626' }}
-                      onClick={() => handleCancelarApertura(alerta.id_solicitud)}
-                    >
-                      ✋ ANULAR SOLICITUD DE APERTURA Y PROTEGER BÓVEDA
-                    </IonButton>
-                  </IonCardContent>
-                </IonCard>
-              ))}
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.06em', color: 'var(--be-text-muted)' }}>
+                    {mod.kicker}
+                  </span>
+                  <h3 style={{ margin: '3px 0 8px 0', fontSize: '1.12rem', fontWeight: 800, color: 'var(--be-text)' }}>
+                    {mod.titulo}
+                  </h3>
+                  <p style={{ margin: '0 0 18px 0', fontSize: '0.86rem', color: 'var(--be-text-muted)', lineHeight: 1.5 }}>
+                    {mod.descripcion}
+                  </p>
+                </div>
 
-              {/* Tarjeta de Estado y Renovación (Check-in) */}
-              <VaultStatusCard
-                daysLeft={daysLeft}
-                status={alertas.length > 0 ? 'EN_REVISION' : 'PROTEGIDA'}
-                onCheckin={handleCheckin}
-              />
-
-              {/* MÓDULOS DE RESUMEN */}
-              <IonRow>
-                {/* 1. Pólizas */}
-                <IonCol size="12" sizeMd="6">
-                  <IonCard
-                    className="ion-no-margin ion-margin-bottom"
-                    style={{
-                      height: '92%',
-                      backgroundColor: 'var(--ion-card-background, #ffffff)',
-                      color: 'var(--ion-text-color, #0f172a)',
-                      borderRadius: '14px',
-                      border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                    }}
-                  >
-                    <IonCardHeader>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <IonCardSubtitle
-                          style={{ fontSize: '0.78rem', color: 'var(--ion-color-primary, #2563eb)', fontWeight: '700' }}
-                        >
-                          PATRIMONIO Y COBERTURAS
-                        </IonCardSubtitle>
-                        <IonBadge color="primary">{cantPolizas} Guardadas</IonBadge>
-                      </div>
-                      <IonCardTitle
-                        style={{ fontSize: '1.2rem', color: 'var(--ion-text-color, #0f172a)', fontWeight: '700' }}
-                      >
-                        Pólizas de Seguro
-                      </IonCardTitle>
-                    </IonCardHeader>
-
-                    <IonCardContent>
-                      <p
-                        style={{
-                          fontSize: '0.88rem',
-                          color: 'var(--ion-text-color, #334155)',
-                          opacity: 0.85,
-                          lineHeight: '1.4',
-                          marginBottom: '16px',
-                        }}
-                      >
-                        Mantén tus pólizas de vida, desgravamen y salud centralizadas para que tus beneficiarios no
-                        pierdan sus coberturas.
-                      </p>
-
-                      <IonButton
-                        fill="outline"
-                        size="small"
-                        onClick={() => navigate('/polizas')}
-                        style={{ '--color': 'var(--ion-color-primary, #2563eb)', fontWeight: '600' }}
-                      >
-                        {cantPolizas === 0 ? '+ Agregar Primera Póliza' : 'Gestionar Pólizas →'}
-                      </IonButton>
-                    </IonCardContent>
-                  </IonCard>
-                </IonCol>
-
-                {/* 2. Albaceas */}
-                <IonCol size="12" sizeMd="6">
-                  <IonCard
-                    className="ion-no-margin ion-margin-bottom"
-                    style={{
-                      height: '92%',
-                      backgroundColor: 'var(--ion-card-background, #ffffff)',
-                      color: 'var(--ion-text-color, #0f172a)',
-                      borderRadius: '14px',
-                      border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                    }}
-                  >
-                    <IonCardHeader>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <IonCardSubtitle
-                          style={{ fontSize: '0.78rem', color: 'var(--ion-color-primary, #2563eb)', fontWeight: '700' }}
-                        >
-                          CONTACTOS AUTORIZADOS
-                        </IonCardSubtitle>
-                        <IonBadge color={cantAlbaceas > 0 ? 'success' : 'warning'}>
-                          {cantAlbaceas} / 3 Designados
-                        </IonBadge>
-                      </div>
-                      <IonCardTitle
-                        style={{ fontSize: '1.2rem', color: 'var(--ion-text-color, #0f172a)', fontWeight: '700' }}
-                      >
-                        Albaceas Designados
-                      </IonCardTitle>
-                    </IonCardHeader>
-
-                    <IonCardContent>
-                      <p
-                        style={{
-                          fontSize: '0.88rem',
-                          color: 'var(--ion-text-color, #334155)',
-                          opacity: 0.85,
-                          lineHeight: '1.4',
-                          marginBottom: '16px',
-                        }}
-                      >
-                        Asigna hasta 3 personas de confianza (incluso si aún no crean cuenta) para custodiar tu legado.
-                      </p>
-
-                      <IonButton
-                        fill="outline"
-                        size="small"
-                        onClick={() => navigate('/albaceas')}
-                        style={{ '--color': 'var(--ion-color-primary, #2563eb)', fontWeight: '600' }}
-                      >
-                        {cantAlbaceas === 0 ? '+ Asignar Albacea' : 'Ver Albaceas →'}
-                      </IonButton>
-                    </IonCardContent>
-                  </IonCard>
-                </IonCol>
-
-                {/* 3. Inventario Digital */}
-                <IonCol size="12" sizeMd="6">
-                  <IonCard
-                    className="ion-no-margin ion-margin-bottom"
-                    style={{
-                      height: '92%',
-                      backgroundColor: 'var(--ion-card-background, #ffffff)',
-                      color: 'var(--ion-text-color, #0f172a)',
-                      borderRadius: '14px',
-                      border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                    }}
-                  >
-                    <IonCardHeader>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <IonCardSubtitle
-                          style={{ fontSize: '0.78rem', color: 'var(--ion-color-primary, #2563eb)', fontWeight: '700' }}
-                        >
-                          ACTIVOS Y CUENTAS
-                        </IonCardSubtitle>
-                        <IonBadge color="tertiary">{cantInventario} Activos</IonBadge>
-                      </div>
-                      <IonCardTitle
-                        style={{ fontSize: '1.2rem', color: 'var(--ion-text-color, #0f172a)', fontWeight: '700' }}
-                      >
-                        Inventario Patrimonial
-                      </IonCardTitle>
-                    </IonCardHeader>
-
-                    <IonCardContent>
-                      <p
-                        style={{
-                          fontSize: '0.88rem',
-                          color: 'var(--ion-text-color, #334155)',
-                          opacity: 0.85,
-                          lineHeight: '1.4',
-                          marginBottom: '16px',
-                        }}
-                      >
-                        Registra tus plataformas digitales, suscripciones y bienes con instrucciones claras para tu
-                        familia.
-                      </p>
-
-                      <IonButton
-                        fill="outline"
-                        size="small"
-                        onClick={() => navigate('/inventario')}
-                        style={{ '--color': 'var(--ion-color-primary, #2563eb)', fontWeight: '600' }}
-                      >
-                        {cantInventario === 0 ? '+ Registrar Activo' : 'Ver Inventario →'}
-                      </IonButton>
-                    </IonCardContent>
-                  </IonCard>
-                </IonCol>
-
-                {/* 4. Mensajes Póstumos */}
-                <IonCol size="12" sizeMd="6">
-                  <IonCard
-                    className="ion-no-margin ion-margin-bottom"
-                    style={{
-                      height: '92%',
-                      backgroundColor: 'var(--ion-card-background, #ffffff)',
-                      color: 'var(--ion-text-color, #0f172a)',
-                      borderRadius: '14px',
-                      border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                    }}
-                  >
-                    <IonCardHeader>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <IonCardSubtitle
-                          style={{ fontSize: '0.78rem', color: 'var(--ion-color-primary, #2563eb)', fontWeight: '700' }}
-                        >
-                          CUSTODIA CIFRADA AES-256
-                        </IonCardSubtitle>
-                        <IonBadge color="medium">{cantMensajes} Cartas Selladas</IonBadge>
-                      </div>
-                      <IonCardTitle
-                        style={{ fontSize: '1.2rem', color: 'var(--ion-text-color, #0f172a)', fontWeight: '700' }}
-                      >
-                        Mensajes Póstumos
-                      </IonCardTitle>
-                    </IonCardHeader>
-                    <IonCardContent>
-                      <p
-                        style={{
-                          fontSize: '0.88rem',
-                          color: 'var(--ion-text-color, #334155)',
-                          opacity: 0.85,
-                          lineHeight: '1.4',
-                          marginBottom: '16px',
-                        }}
-                      >
-                        Redacta cartas personales o instrucciones bajo cifrado AES-256 que solo se revelan tras la
-                        apertura confirmada.
-                      </p>
-                      <IonButton
-                        fill="solid"
-                        color="primary"
-                        size="small"
-                        onClick={() => navigate('/mensajes')}
-                        style={{ fontWeight: '600' }}
-                      >
-                        {cantMensajes === 0 ? '✍️ Redactar Mensaje' : 'Ver Mensajes Sellados →'}
-                      </IonButton>
-                    </IonCardContent>
-                  </IonCard>
-                </IonCol>
-              </IonRow>
-            </IonCol>
-          </IonRow>
-        </IonGrid>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--be-primary)' }}>
+                  {mod.cta}
+                  <IonIcon icon={arrowForwardOutline} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         <IonToast
           isOpen={showToast}
@@ -424,56 +281,7 @@ export const Dashboard: React.FC = () => {
         />
       </IonContent>
 
-      {/* Footer Inferior Navegable */}
-      <IonFooter>
-        <IonToolbar
-          style={
-            {
-              '--background': 'var(--ion-card-background, #ffffff)',
-              '--color': 'var(--ion-text-color, #0f172a)',
-            } as React.CSSProperties
-          }
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-            <IonButton
-              fill="clear"
-              color="primary"
-              style={{ display: 'flex', flexDirection: 'column' }}
-              onClick={() => navigate('/dashboard')}
-            >
-              <IonIcon icon={homeOutline} />
-              <IonLabel style={{ fontSize: '0.7rem' }}>Inicio</IonLabel>
-            </IonButton>
-
-            <IonButton
-              fill="clear"
-              style={{ display: 'flex', flexDirection: 'column', '--color': 'var(--ion-text-color)' }}
-              onClick={() => navigate('/polizas')}
-            >
-              <IonIcon icon={shieldCheckmarkOutline} />
-              <IonLabel style={{ fontSize: '0.7rem' }}>Pólizas</IonLabel>
-            </IonButton>
-
-            <IonButton
-              fill="clear"
-              style={{ display: 'flex', flexDirection: 'column', '--color': 'var(--ion-text-color)' }}
-              onClick={() => navigate('/albaceas')}
-            >
-              <IonIcon icon={peopleOutline} />
-              <IonLabel style={{ fontSize: '0.7rem' }}>Albaceas</IonLabel>
-            </IonButton>
-
-            <IonButton
-              fill="clear"
-              style={{ display: 'flex', flexDirection: 'column', '--color': 'var(--ion-text-color)' }}
-              onClick={() => navigate('/configuracion')}
-            >
-              <IonIcon icon={settingsOutline} />
-              <IonLabel style={{ fontSize: '0.7rem' }}>Ajustes</IonLabel>
-            </IonButton>
-          </div>
-        </IonToolbar>
-      </IonFooter>
+      <MobileBottomNav />
     </IonPage>
   );
 };

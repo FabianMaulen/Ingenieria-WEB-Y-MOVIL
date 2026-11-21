@@ -1,48 +1,686 @@
-/* ==========================================
-   CONFIGURACIÓN DE TEMAS CLARO / OSCURO
-   ========================================== */
+/* ==========================================================================
+   BAÚL ETERNO — SISTEMA DE DISEÑO (TEMAS CLARO / OSCURO + RESPONSIVE)
+   Paleta: Índigo Patrimonial + Ámbar Dorado + Superficies Pizarra Cálidas
+   Tipografía: Plus Jakarta Sans (Títulos/UI) + Inter (Cuerpo)
+   ========================================================================== */
 
-/* TEMA CLARO (Default) */
-body:not(.dark) {
-  --ion-background-color: #f1f5f9;
-  --ion-background-color-rgb: 241, 245, 249;
-  --ion-text-color: #0f172a;
-  --ion-text-color-rgb: 15, 23, 42;
-  --ion-item-background: #ffffff;
-  --ion-card-background: #ffffff;
-  --header-avatar-bg: #f8fafc;
-  --header-avatar-border: #e2e8f0;
+:root {
+  --be-font-display: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --be-font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Superficies y texto — Modo Claro */
+  --be-bg: #f4f6fa;
+  --be-surface: #ffffff;
+  --be-surface-alt: #edf1f7;
+  --be-surface-hover: #e5ecf6;
+  --be-border: #dce3ef;
+  --be-text: #10203a;
+  --be-text-muted: #566782;
+  --be-shadow-sm: 0 2px 10px rgba(16, 32, 58, 0.04);
+  --be-shadow-md: 0 10px 30px rgba(16, 32, 58, 0.07);
+  --be-shadow-lg: 0 20px 50px rgba(16, 32, 58, 0.12);
+
+  /* Identidad de marca */
+  --be-primary: #1d4173;
+  --be-primary-light: #2b5ca0;
+  --be-primary-contrast: #ffffff;
+  --be-primary-soft: rgba(29, 65, 115, 0.09);
+
+  --be-accent: #c58922;
+  --be-accent-hover: #ad761a;
+  --be-accent-soft: rgba(197, 137, 34, 0.13);
+
+  /* Estados semánticos */
+  --be-success: #15803d;
+  --be-success-bg: #dcfce7;
+  --be-success-text: #166534;
+
+  --be-warning: #b45309;
+  --be-warning-bg: #fef3c7;
+  --be-warning-text: #92400e;
+
+  --be-danger: #c53030;
+  --be-danger-bg: #fee2e2;
+  --be-danger-text: #991b1b;
+
+  --be-info: #1d4ed8;
+  --be-info-bg: #dbeafe;
+  --be-info-text: #1e40af;
+
+  /* Mapeo a variables nativas de Ionic */
+  --ion-font-family: var(--be-font-body);
+  --ion-background-color: var(--be-bg);
+  --ion-background-color-rgb: 244, 246, 250;
+  --ion-text-color: var(--be-text);
+  --ion-text-color-rgb: 16, 32, 58;
+  --ion-card-background: var(--be-surface);
+  --ion-item-background: var(--be-surface);
+  --ion-toolbar-background: #17355e;
+  --ion-toolbar-color: #ffffff;
+
+  --ion-color-primary: #1d4173;
+  --ion-color-primary-rgb: 29, 65, 115;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #193965;
+  --ion-color-primary-tint: #345481;
+
+  --ion-color-secondary: #c58922;
+  --ion-color-secondary-rgb: 197, 137, 34;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-shade: #ad791e;
+  --ion-color-secondary-tint: #cb9538;
+
+  --ion-color-warning: #d98218;
+  --ion-color-warning-contrast: #ffffff;
+  --ion-color-success: #16803c;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-danger: #c93333;
+  --ion-color-danger-contrast: #ffffff;
 }
 
-/* TEMA OSCURO */
+/* ==========================================================================
+   MODO OSCURO — Sincronizado con .ion-palette-dark (Ionic 8/9) y body.dark
+   ========================================================================== */
+:root.ion-palette-dark,
 body.dark {
-  --ion-background-color: #0f172a;
-  --ion-background-color-rgb: 15, 23, 42;
-  --ion-text-color: #f8fafc;
-  --ion-text-color-rgb: 248, 250, 252;
-  --ion-item-background: #1e293b;
-  --ion-card-background: #1e293b;
-  --header-avatar-bg: #1e293b;
-  --header-avatar-border: #334155;
+  --be-bg: #0a111f;
+  --be-surface: #121d31;
+  --be-surface-alt: #192843;
+  --be-surface-hover: #213457;
+  --be-border: #253859;
+  --be-text: #f1f5f9;
+  --be-text-muted: #9eb0c9;
+  --be-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.28);
+  --be-shadow-md: 0 12px 32px rgba(0, 0, 0, 0.38);
+  --be-shadow-lg: 0 22px 54px rgba(0, 0, 0, 0.5);
+
+  --be-primary: #5b93e6;
+  --be-primary-light: #7cabef;
+  --be-primary-contrast: #081224;
+  --be-primary-soft: rgba(91, 147, 230, 0.16);
+
+  --be-accent: #e5ad43;
+  --be-accent-hover: #f0be5b;
+  --be-accent-soft: rgba(229, 173, 67, 0.16);
+
+  --be-success: #34d399;
+  --be-success-bg: rgba(16, 185, 129, 0.18);
+  --be-success-text: #6ee7b7;
+
+  --be-warning: #fbbf24;
+  --be-warning-bg: rgba(245, 158, 11, 0.18);
+  --be-warning-text: #fcd34d;
+
+  --be-danger: #f87171;
+  --be-danger-bg: rgba(239, 68, 68, 0.18);
+  --be-danger-text: #fca5a5;
+
+  --be-info: #60a5fa;
+  --be-info-bg: rgba(59, 130, 246, 0.18);
+  --be-info-text: #93c5fd;
+
+  --ion-background-color: var(--be-bg);
+  --ion-background-color-rgb: 10, 17, 31;
+  --ion-text-color: var(--be-text);
+  --ion-text-color-rgb: 241, 245, 249;
+  --ion-card-background: var(--be-surface);
+  --ion-item-background: var(--be-surface);
+  --ion-toolbar-background: #0f1b30;
+  --ion-toolbar-color: #f1f5f9;
+  --ion-border-color: var(--be-border);
+
+  --ion-color-primary: #4c83d6;
+  --ion-color-primary-rgb: 76, 131, 214;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-shade: #3d6fb8;
+  --ion-color-primary-tint: #6394de;
 }
 
-/* Asegurar que las listas e ítems respeten el tema */
+/* ==========================================================================
+   BASE TIPOGRAFÍA Y ELEMENTOS IONIC
+   ========================================================================== */
+body {
+  font-family: var(--be-font-body);
+  background-color: var(--be-bg);
+  color: var(--be-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, ion-title, ion-card-title {
+  font-family: var(--be-font-display);
+  letter-spacing: -0.02em;
+}
+
+ion-content {
+  --background: var(--be-bg);
+  --color: var(--be-text);
+}
+
+ion-split-pane {
+  --border: 1px solid var(--be-border);
+}
+
+ion-menu {
+  --background: var(--be-surface);
+}
+
 ion-menu ion-content {
-  --background: var(--ion-background-color);
+  --background: var(--be-surface);
 }
 
 ion-menu ion-list {
   background: transparent !important;
+  padding: 8px 10px;
 }
 
 ion-menu ion-item {
-  --background: var(--ion-item-background);
-  --color: var(--ion-text-color);
-  margin-bottom: 2px;
+  --background: transparent;
+  --background-hover: var(--be-surface-hover);
+  --color: var(--be-text);
+  --border-radius: 12px;
+  --min-height: 44px;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+}
+
+ion-menu ion-item.be-menu-active {
+  --background: var(--be-primary-soft);
+  --color: var(--be-primary);
+  font-weight: 700;
+}
+
+ion-menu ion-item.be-menu-active ion-icon {
+  color: var(--be-primary);
+}
+
+/* ==========================================================================
+   LAYOUT Y COMPONENTES REUTILIZABLES (.be-*)
+   ========================================================================== */
+.be-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 4px 28px;
+}
+
+.be-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.be-page-title {
+  margin: 0 0 4px 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--be-text);
+}
+
+.be-page-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--be-text-muted);
+  line-height: 1.5;
+}
+
+.be-card {
+  background-color: var(--be-surface);
+  color: var(--be-text);
+  border: 1px solid var(--be-border);
+  border-radius: 16px;
+  box-shadow: var(--be-shadow-sm);
+  padding: 22px 24px;
+  margin-bottom: 18px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease;
+}
+
+.be-card-interactive:hover {
+  border-color: var(--be-primary);
+  box-shadow: var(--be-shadow-md);
+  transform: translateY(-2px);
+}
+
+.be-hero-banner {
+  background: linear-gradient(135deg, #163259 0%, #1f487e 60%, #275896 100%);
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 24px 26px;
+  margin-bottom: 22px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--be-shadow-md);
+}
+
+.be-hero-banner::after {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(229, 173, 67, 0.28) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.be-hero-banner h2 {
+  margin: 0 0 6px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.be-hero-banner p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(241, 245, 249, 0.88);
+  line-height: 1.55;
+}
+
+/* Grids responsivos */
+.be-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Formularios */
+.be-field {
+  margin-bottom: 14px;
+}
+
+.be-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--be-text);
+  margin-bottom: 6px;
+}
+
+.be-input,
+.be-select,
+.be-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--be-border);
+  background-color: var(--be-surface-alt);
+  color: var(--be-text);
+  font-family: var(--be-font-body);
+  font-size: 0.92rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.be-input::placeholder,
+.be-textarea::placeholder {
+  color: var(--be-text-muted);
+  opacity: 0.78;
+}
+
+.be-input:focus,
+.be-select:focus,
+.be-textarea:focus {
+  border-color: var(--be-primary);
+  background-color: var(--be-surface);
+  box-shadow: 0 0 0 3px var(--be-primary-soft);
+}
+
+.be-select option {
+  background-color: var(--be-surface);
+  color: var(--be-text);
+}
+
+/* Botones */
+.be-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 11px;
+  border: none;
+  font-family: var(--be-font-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.12s ease, background-color 0.15s ease;
+}
+
+.be-btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.be-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.be-btn-block {
+  width: 100%;
+}
+
+.be-btn-primary {
+  background: linear-gradient(135deg, #1d4173 0%, #2a5aa0 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(29, 65, 115, 0.25);
+}
+
+.be-btn-accent {
+  background: linear-gradient(135deg, #c58922 0%, #d99b2e 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(197, 137, 34, 0.28);
+}
+
+.be-btn-danger {
+  background: linear-gradient(135deg, #c53030 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
+}
+
+.be-btn-outline {
+  background: transparent;
+  color: var(--be-primary);
+  border: 1.5px solid var(--be-border);
+}
+
+.be-btn-outline:hover {
+  background: var(--be-primary-soft);
+  border-color: var(--be-primary);
+}
+
+/* Tarjetas de lista y badges */
+.be-list-item {
+  background-color: var(--be-surface);
+  color: var(--be-text);
+  border: 1px solid var(--be-border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  box-shadow: var(--be-shadow-sm);
+}
+
+.be-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: var(--be-primary-soft);
+  color: var(--be-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.35rem;
+}
+
+.be-icon-box-accent {
+  background-color: var(--be-accent-soft);
+  color: var(--be-accent);
+}
+
+.be-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--be-font-display);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.be-badge-success {
+  background-color: var(--be-success-bg);
+  color: var(--be-success-text);
+}
+
+.be-badge-warning {
+  background-color: var(--be-warning-bg);
+  color: var(--be-warning-text);
+}
+
+.be-badge-danger {
+  background-color: var(--be-danger-bg);
+  color: var(--be-danger-text);
+}
+
+.be-badge-info {
+  background-color: var(--be-info-bg);
+  color: var(--be-info-text);
+}
+
+.be-badge-neutral {
+  background-color: var(--be-surface-alt);
+  color: var(--be-text-muted);
+}
+
+.be-empty-state {
+  text-align: center;
+  padding: 36px 24px;
+  background-color: var(--be-surface);
+  border: 1.5px dashed var(--be-border);
+  border-radius: 16px;
+  color: var(--be-text-muted);
+}
+
+/* ==========================================================================
+   NAVEGACIÓN INFERIOR EXCLUSIVA PARA MÓVIL (< 768px)
+   En escritorio el menú lateral (IonSplitPane) ya está siempre visible.
+   ========================================================================== */
+.be-mobile-footer {
+  display: block;
+  border-top: 1px solid var(--be-border);
+}
+
+.be-mobile-nav-bar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 4px 2px;
+  background-color: var(--be-surface);
+}
+
+.be-mobile-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  padding: 6px 4px;
+  color: var(--be-text-muted);
+  font-family: var(--be-font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.be-mobile-nav-btn ion-icon {
+  font-size: 1.25rem;
+}
+
+.be-mobile-nav-btn.active {
+  color: var(--be-primary);
+  background-color: var(--be-primary-soft);
 }
 
 @media (min-width: 768px) {
-  ion-tab-bar {
+  .be-mobile-footer {
     display: none !important;
+  }
+  .be-back-mobile-only {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   PANTALLAS DE AUTENTICACIÓN (LOGIN & REGISTER) — ESTÉTICA EDITORIAL
+   ========================================================================== */
+.be-auth-wrapper {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(29, 65, 115, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 88% 82%, rgba(197, 137, 34, 0.13) 0%, transparent 45%),
+    var(--be-bg);
+}
+
+.be-auth-card {
+  width: 100%;
+  max-width: 940px;
+  display: grid;
+  grid-template-columns: 1.02fr 1fr;
+  background-color: var(--be-surface);
+  border: 1px solid var(--be-border);
+  border-radius: 24px;
+  box-shadow: var(--be-shadow-lg);
+  overflow: hidden;
+}
+
+.be-auth-brand-panel {
+  background: linear-gradient(155deg, #0f2442 0%, #1a3b6b 55%, #12294a 100%);
+  color: #ffffff;
+  padding: 44px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.be-auth-brand-panel::before {
+  content: '';
+  position: absolute;
+  top: -70px;
+  right: -70px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(229, 173, 67, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.be-auth-brand-panel::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.be-auth-form-panel {
+  padding: 44px 42px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: var(--be-surface);
+  color: var(--be-text);
+  position: relative;
+}
+
+.be-auth-pillar {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.be-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.be-input-group .be-input-icon {
+  position: absolute;
+  left: 13px;
+  color: var(--be-text-muted);
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+.be-input-group .be-input {
+  padding-left: 40px;
+}
+
+.be-input-group .be-input-trailing {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--be-text-muted);
+  padding: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+/* ==========================================================================
+   ADAPTACIÓN MÓVIL (<= 768px y <= 640px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .be-auth-card {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+    border-radius: 20px;
+  }
+
+  .be-auth-brand-panel {
+    padding: 28px 24px 24px;
+  }
+
+  .be-auth-pillars-desktop {
+    display: none !important;
+  }
+
+  .be-auth-form-panel {
+    padding: 28px 24px 32px;
+  }
+
+  .be-card {
+    padding: 18px 16px;
+  }
+
+  .be-hero-banner {
+    padding: 20px 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .be-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .be-page-title {
+    font-size: 1.25rem;
   }
 }

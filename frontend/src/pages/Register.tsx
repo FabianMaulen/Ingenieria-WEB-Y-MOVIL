@@ -1,9 +1,24 @@
-import React, { useState } from 'react';
-import { IonPage, IonContent, IonToast } from '@ionic/react';
+import React, { useState, useEffect } from 'react';
+import { IonPage, IonContent, IonToast, IonIcon, IonSpinner } from '@ionic/react';
+import {
+  cardOutline,
+  personOutline,
+  mailOutline,
+  lockClosedOutline,
+  eyeOutline,
+  eyeOffOutline,
+  checkmarkCircleOutline,
+  alertCircleOutline,
+  moonOutline,
+  sunnyOutline,
+  sparklesOutline,
+  shieldCheckmarkOutline,
+} from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { mensajeError } from '../services/api';
 import { registrar } from '../services/auth.service';
 import { normalizarRut, rutValido, emailValido } from '../utils/rut';
+import { alternarTema, obtenerTemaOscuro } from '../utils/theme';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -11,9 +26,17 @@ export const Register: React.FC = () => {
   const [nombreUsuario, setNombreUsuario] = useState('');
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
+  const [mostrarClave, setMostrarClave] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastColor, setToastColor] = useState<'success' | 'danger' | 'warning'>('success');
+  const [isDark, setIsDark] = useState<boolean>(() => obtenerTemaOscuro());
+
+  useEffect(() => {
+    const onTheme = () => setIsDark(obtenerTemaOscuro());
+    window.addEventListener('theme-changed', onTheme);
+    return () => window.removeEventListener('theme-changed', onTheme);
+  }, []);
 
   const rutNormalizado = rut.trim() ? normalizarRut(rut) : '';
   const rutEsValido = rut.trim().length > 0 && rutValido(rut);
@@ -26,7 +49,7 @@ export const Register: React.FC = () => {
     e.preventDefault();
     if (!rut.trim() || !nombreUsuario.trim() || !correo.trim() || !contrasena) {
       setToastColor('warning');
-      setToastMsg('Por favor completa todos los campos.');
+      setToastMsg('Por favor completa todos los campos obligatorios.');
       return;
     }
 
@@ -57,8 +80,8 @@ export const Register: React.FC = () => {
         password: contrasena,
       });
       setToastColor('success');
-      setToastMsg(res.mensaje || '¡Cuenta creada exitosamente! Redirigiendo al login...');
-      setTimeout(() => navigate('/login'), 1800);
+      setToastMsg(res.mensaje || '¡Cuenta creada con éxito! Redirigiendo al inicio de sesión...');
+      setTimeout(() => navigate('/login'), 1700);
     } catch (error: any) {
       setToastColor('danger');
       setToastMsg(mensajeError(error));
@@ -69,255 +92,270 @@ export const Register: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent style={{ '--background': '#f1f5f9' } as any} fullscreen>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '100vh',
-            padding: '20px',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              width: '100%',
-              maxWidth: '860px',
-              minHeight: '520px',
-              backgroundColor: '#ffffff',
-              borderRadius: '20px',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Panel Lateral Informativo */}
-            <div
-              style={{
-                flex: '1 1 300px',
-                background: 'linear-gradient(145deg, #1d4ed8 0%, #1e3a8a 100%)',
-                padding: '48px 40px',
-                color: '#ffffff',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-            >
-              <h1
-                style={{
-                  fontSize: '2.2rem',
-                  fontWeight: '600',
-                  margin: '0 0 16px 0',
-                  letterSpacing: '-0.5px',
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                }}
+      <IonContent fullscreen>
+        <div className="be-auth-wrapper">
+          <div className="be-auth-card">
+            {/* Panel Lateral Editorial */}
+            <div className="be-auth-brand-panel">
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '26px' }}>
+                  <div
+                    style={{
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '14px',
+                      background: 'linear-gradient(135deg, #e5ad43 0%, #c58922 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 8px 20px rgba(197, 137, 34, 0.35)',
+                    }}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M12 2L4 5.5V11.5C4 16.8 7.4 21.5 12 23C16.6 21.5 20 16.8 20 11.5V5.5L12 2Z"
+                        stroke="#FFFFFF"
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                      />
+                      <circle cx="12" cy="11.5" r="2.2" fill="#FFFFFF" />
+                      <path d="M12 13.7V16.5" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontFamily: 'var(--be-font-display)',
+                        fontSize: '1.25rem',
+                        fontWeight: 800,
+                      }}
+                    >
+                      Baúl Eterno
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: '#e5ad43', fontWeight: 600, letterSpacing: '0.04em' }}>
+                      CUENTA DUAL UNIFICADA
+                    </span>
+                  </div>
+                </div>
+
+                <h1 style={{ margin: '0 0 12px 0', fontSize: '1.8rem', fontWeight: 800, lineHeight: 1.2, color: '#ffffff' }}>
+                  Tu tranquilidad y la de tu familia en un solo lugar.
+                </h1>
+                <p style={{ margin: 0, fontSize: '0.92rem', color: 'rgba(226, 232, 240, 0.85)', lineHeight: 1.6 }}>
+                  Con una sola cuenta puedes organizar tu propio patrimonio digital y, al mismo tiempo, aceptar
+                  designaciones como albacea de personas que confían en ti.
+                </p>
+              </div>
+
+              <div
+                className="be-auth-pillars-desktop"
+                style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '28px', position: 'relative', zIndex: 1 }}
               >
-                Baúl Eterno
-              </h1>
-              <p
-                style={{
-                  fontSize: '0.95rem',
-                  color: '#e2e8f0',
-                  lineHeight: '1.6',
-                  margin: '0 0 14px 0',
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                }}
-              >
-                Crea tu cuenta única para proteger tus pólizas, activos digitales y mensajes póstumos.
-              </p>
-              <p
-                style={{
-                  fontSize: '0.85rem',
-                  color: '#bfdbfe',
-                  lineHeight: '1.5',
-                  margin: 0,
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                }}
-              >
-                Si alguien ya te designó como Albacea usando tu RUT, tus invitaciones se vincularán automáticamente a tu cuenta.
-              </p>
+                <div className="be-auth-pillar">
+                  <IonIcon icon={sparklesOutline} style={{ fontSize: '1.25rem', color: '#e5ad43', marginTop: '2px' }} />
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '0.84rem' }}>Vinculación automática por RUT</strong>
+                    <span style={{ fontSize: '0.77rem', color: 'rgba(226, 232, 240, 0.78)' }}>
+                      Si alguien te invitó antes de registrarte, tu designación aparecerá lista al entrar.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="be-auth-pillar">
+                  <IonIcon icon={shieldCheckmarkOutline} style={{ fontSize: '1.25rem', color: '#e5ad43', marginTop: '2px' }} />
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '0.84rem' }}>Privacidad garantizada</strong>
+                    <span style={{ fontSize: '0.77rem', color: 'rgba(226, 232, 240, 0.78)' }}>
+                      Solo tú ves tu inventario, pólizas y mensajes mientras tu bóveda esté sellada.
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Formulario de Registro */}
-            <div
-              style={{
-                flex: '1 1 320px',
-                padding: '44px 40px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-            >
-              <h2
+            {/* Panel Formulario de Registro */}
+            <div className="be-auth-form-panel">
+              <button
+                type="button"
+                onClick={() => setIsDark(alternarTema())}
+                title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
                 style={{
-                  fontSize: '1.75rem',
-                  fontWeight: '600',
-                  color: '#0f172a',
-                  margin: '0 0 8px 0',
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  position: 'absolute',
+                  top: '18px',
+                  right: '18px',
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--be-border)',
+                  backgroundColor: 'var(--be-surface-alt)',
+                  color: 'var(--be-text)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '1.15rem',
                 }}
               >
-                Crear Cuenta
-              </h2>
-              <p
-                style={{
-                  fontSize: '0.9rem',
-                  color: '#64748b',
-                  margin: '0 0 20px 0',
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                }}
-              >
-                Ingresa tus datos para registrarte en la plataforma.
-              </p>
+                <IonIcon icon={isDark ? sunnyOutline : moonOutline} />
+              </button>
+
+              <div style={{ marginBottom: '22px' }}>
+                <span className="be-badge be-badge-warning" style={{ marginBottom: '10px' }}>
+                  Nuevo Registro
+                </span>
+                <h2 style={{ margin: '0 0 6px 0', fontSize: '1.6rem', fontWeight: 800, color: 'var(--be-text)' }}>
+                  Crea tu Baúl Eterno
+                </h2>
+                <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--be-text-muted)' }}>
+                  Completa tus datos reales para validar tu identidad y vincular tus designaciones.
+                </p>
+              </div>
 
               <form onSubmit={handleRegister}>
-                <div style={{ marginBottom: '12px' }}>
-                  <input
-                    type="text"
-                    placeholder="RUT chileno (Ej: 12345678-5)"
-                    value={rut}
-                    onChange={(e) => setRut(e.target.value)}
-                    onBlur={() => {
-                      if (rut.trim()) setRut(normalizarRut(rut));
-                    }}
-                    required
-                    style={{
-                      width: '100%',
-                      height: '44px',
-                      padding: '0 16px',
-                      backgroundColor: '#f8fafc',
-                      border: `1px solid ${
-                        mostrarErrorRut ? '#ef4444' : rutEsValido ? '#16a34a' : '#cbd5e1'
-                      }`,
-                      borderRadius: '8px',
-                      fontSize: '0.95rem',
-                      color: '#0f172a',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+                <div className="be-field">
+                  <label className="be-label" htmlFor="reg-rut">
+                    RUT chileno *
+                  </label>
+                  <div className="be-input-group">
+                    <IonIcon icon={cardOutline} className="be-input-icon" />
+                    <input
+                      id="reg-rut"
+                      type="text"
+                      className="be-input"
+                      placeholder="Ej: 12345678-5"
+                      value={rut}
+                      onChange={(e) => setRut(e.target.value)}
+                      onBlur={() => {
+                        if (rut.trim()) setRut(normalizarRut(rut));
+                      }}
+                      required
+                      style={{
+                        borderColor: mostrarErrorRut
+                          ? 'var(--be-danger)'
+                          : rutEsValido
+                          ? 'var(--be-success)'
+                          : undefined,
+                      }}
+                    />
+                  </div>
                   {mostrarErrorRut && (
-                    <span style={{ fontSize: '0.75rem', color: '#dc2626', display: 'block', marginTop: '4px' }}>
-                      RUT inválido. Formato esperado: 12345678-5 (con dígito verificador correcto).
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--be-danger)', marginTop: '4px', fontWeight: 600 }}>
+                      <IonIcon icon={alertCircleOutline} /> RUT inválido. Verifica el dígito verificador.
                     </span>
                   )}
                   {rutEsValido && (
-                    <span style={{ fontSize: '0.75rem', color: '#16a34a', display: 'block', marginTop: '4px' }}>
-                      RUT válido: {rutNormalizado}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--be-success)', marginTop: '4px', fontWeight: 600 }}>
+                      <IonIcon icon={checkmarkCircleOutline} /> RUT validado: {rutNormalizado}
                     </span>
                   )}
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <input
-                    type="text"
-                    placeholder="Nombre Completo"
-                    value={nombreUsuario}
-                    onChange={(e) => setNombreUsuario(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      height: '44px',
-                      padding: '0 16px',
-                      backgroundColor: '#f8fafc',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.95rem',
-                      color: '#0f172a',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+                <div className="be-field">
+                  <label className="be-label" htmlFor="reg-nombre">
+                    Nombre completo *
+                  </label>
+                  <div className="be-input-group">
+                    <IonIcon icon={personOutline} className="be-input-icon" />
+                    <input
+                      id="reg-nombre"
+                      type="text"
+                      className="be-input"
+                      placeholder="Ej: Camila Morales"
+                      value={nombreUsuario}
+                      onChange={(e) => setNombreUsuario(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <input
-                    type="email"
-                    placeholder="Correo Electrónico"
-                    value={correo}
-                    onChange={(e) => setCorreo(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      height: '44px',
-                      padding: '0 16px',
-                      backgroundColor: '#f8fafc',
-                      border: `1px solid ${
-                        mostrarErrorCorreo ? '#ef4444' : correoEsValido ? '#16a34a' : '#cbd5e1'
-                      }`,
-                      borderRadius: '8px',
-                      fontSize: '0.95rem',
-                      color: '#0f172a',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+                <div className="be-field">
+                  <label className="be-label" htmlFor="reg-email">
+                    Correo electrónico *
+                  </label>
+                  <div className="be-input-group">
+                    <IonIcon icon={mailOutline} className="be-input-icon" />
+                    <input
+                      id="reg-email"
+                      type="email"
+                      className="be-input"
+                      placeholder="nombre@correo.cl"
+                      value={correo}
+                      onChange={(e) => setCorreo(e.target.value)}
+                      required
+                      style={{
+                        borderColor: mostrarErrorCorreo
+                          ? 'var(--be-danger)'
+                          : correoEsValido
+                          ? 'var(--be-success)'
+                          : undefined,
+                      }}
+                    />
+                  </div>
                   {mostrarErrorCorreo && (
-                    <span style={{ fontSize: '0.75rem', color: '#dc2626', display: 'block', marginTop: '4px' }}>
-                      Ingresa un correo electrónico válido (Ej: nombre@dominio.cl).
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--be-danger)', marginTop: '4px', fontWeight: 600 }}>
+                      <IonIcon icon={alertCircleOutline} /> Ingresa un correo electrónico válido.
                     </span>
                   )}
                 </div>
 
-                <div style={{ marginBottom: '20px' }}>
-                  <input
-                    type="password"
-                    placeholder="Contraseña (Mínimo 8 caracteres)"
-                    value={contrasena}
-                    onChange={(e) => setContrasena(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      height: '44px',
-                      padding: '0 16px',
-                      backgroundColor: '#f8fafc',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.95rem',
-                      color: '#0f172a',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+                <div className="be-field" style={{ marginBottom: '20px' }}>
+                  <label className="be-label" htmlFor="reg-pass">
+                    Contraseña *
+                  </label>
+                  <div className="be-input-group">
+                    <IonIcon icon={lockClosedOutline} className="be-input-icon" />
+                    <input
+                      id="reg-pass"
+                      type={mostrarClave ? 'text' : 'password'}
+                      className="be-input"
+                      style={{ paddingRight: '42px' }}
+                      placeholder="Mínimo 8 caracteres"
+                      value={contrasena}
+                      onChange={(e) => setContrasena(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="be-input-trailing"
+                      onClick={() => setMostrarClave((v) => !v)}
+                      aria-label={mostrarClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    >
+                      <IonIcon icon={mostrarClave ? eyeOffOutline : eyeOutline} />
+                    </button>
+                  </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={cargando}
-                  style={{
-                    width: '100%',
-                    height: '46px',
-                    backgroundColor: '#1b2431',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '0.9rem',
-                    fontWeight: '700',
-                    letterSpacing: '0.5px',
-                    cursor: cargando ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {cargando ? 'REGISTRANDO...' : 'CREAR CUENTA'}
+                <button type="submit" className="be-btn be-btn-primary be-btn-block" disabled={cargando}>
+                  {cargando ? <IonSpinner name="crescent" color="light" /> : 'Crear mi cuenta'}
                 </button>
               </form>
 
-              <div style={{ textAlign: 'center', marginTop: '18px' }}>
-                <span style={{ fontSize: '0.85rem', color: '#64748b' }}>¿Ya tienes una cuenta? </span>
+              <div
+                style={{
+                  textAlign: 'center',
+                  marginTop: '20px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid var(--be-border)',
+                  fontSize: '0.88rem',
+                  color: 'var(--be-text-muted)',
+                }}
+              >
+                ¿Ya tienes una cuenta?{' '}
                 <button
                   type="button"
                   onClick={() => navigate('/login')}
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#2563eb',
-                    fontWeight: '700',
+                    color: 'var(--be-primary)',
+                    fontWeight: 700,
                     cursor: 'pointer',
-                    fontSize: '0.85rem',
+                    fontSize: '0.88rem',
+                    padding: 0,
                   }}
                 >
-                  INGRESAR
+                  Iniciar sesión
                 </button>
               </div>
             </div>

@@ -9,8 +9,9 @@ import {
   IonAlert,
   useIonViewWillEnter,
 } from '@ionic/react';
-import { trashOutline, folderOpenOutline } from 'ionicons/icons';
+import { trashOutline, folderOpenOutline, layersOutline } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
+import { MobileBottomNav } from '../components/MobileBottomNav';
 import { mensajeError } from '../services/api';
 import {
   listarInventario,
@@ -21,13 +22,26 @@ import {
 } from '../services/inventario.service';
 
 const CATEGORIAS: CategoriaInventario[] = [
-  'General',
+  'Digital',
   'Financiero',
   'Familiar Directo',
   'Público',
-  'Digital',
   'Físico',
+  'General',
 ];
+
+const claseBadgeCategoria = (cat: CategoriaInventario): string => {
+  switch (cat) {
+    case 'Financiero':
+      return 'be-badge be-badge-warning';
+    case 'Familiar Directo':
+      return 'be-badge be-badge-success';
+    case 'Digital':
+      return 'be-badge be-badge-info';
+    default:
+      return 'be-badge be-badge-neutral';
+  }
+};
 
 export const Inventario: React.FC = () => {
   const [activos, setActivos] = useState<ActivoInventario[]>([]);
@@ -108,93 +122,40 @@ export const Inventario: React.FC = () => {
       <HeaderBar title="Inventario Patrimonial" />
 
       <IonContent className="ion-padding">
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '12px 0' }}>
-          {/* Formulario de nuevo activo */}
-          <div
-            style={{
-              backgroundColor: 'var(--ion-card-background, #ffffff)',
-              color: 'var(--ion-text-color, #0f172a)',
-              borderRadius: '16px',
-              border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
-              padding: '28px 32px',
-              marginBottom: '32px',
-            }}
-          >
-            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', margin: '0 0 20px 0' }}>
-              + Nuevo Activo Digital o Patrimonial
-            </h2>
+        <div className="be-container">
+          <div className="be-page-header">
+            <div>
+              <h2 className="be-page-title">Activos Digitales y Bienes</h2>
+              <p className="be-page-subtitle">
+                Indica qué hacer con tus cuentas, suscripciones, archivos en la nube y pertenencias clave.
+              </p>
+            </div>
+          </div>
 
-            <form onSubmit={handleAgregar}>
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                  Plataforma o Bien *
-                </label>
+          <form onSubmit={handleAgregar} className="be-card">
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.05rem', fontWeight: 700, color: 'var(--be-text)' }}>
+              Registrar nuevo activo
+            </h3>
+
+            <div className="be-grid-2">
+              <div className="be-field">
+                <label className="be-label">Plataforma o bien *</label>
                 <input
                   type="text"
-                  placeholder="Ej: Google Drive / Fotos, Instagram, Cuenta Bancaria"
+                  className="be-input"
+                  placeholder="Ej: Google Drive, Instagram, Spotify"
                   value={plataforma}
                   onChange={(e) => setPlataforma(e.target.value)}
                   required
-                  style={{
-                    width: '100%',
-                    height: '46px',
-                    padding: '0 16px',
-                    backgroundColor: 'var(--ion-color-step-100, #f8fafc)',
-                    border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    borderRadius: '8px',
-                    fontSize: '0.92rem',
-                    color: 'var(--ion-text-color, #0f172a)',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
                 />
               </div>
 
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                  Instrucción Póstuma *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Descargar respaldo familiar y cerrar cuenta"
-                  value={instruccion}
-                  onChange={(e) => setInstruccion(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    height: '46px',
-                    padding: '0 16px',
-                    backgroundColor: 'var(--ion-color-step-100, #f8fafc)',
-                    border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    borderRadius: '8px',
-                    fontSize: '0.92rem',
-                    color: 'var(--ion-text-color, #0f172a)',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                  Categoría
-                </label>
+              <div className="be-field">
+                <label className="be-label">Categoría</label>
                 <select
+                  className="be-select"
                   value={categoria}
                   onChange={(e) => setCategoria(e.target.value as CategoriaInventario)}
-                  style={{
-                    width: '100%',
-                    height: '46px',
-                    padding: '0 14px',
-                    backgroundColor: 'var(--ion-color-step-100, #f8fafc)',
-                    border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    borderRadius: '8px',
-                    fontSize: '0.92rem',
-                    color: 'var(--ion-text-color, #0f172a)',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
                 >
                   {CATEGORIAS.map((cat) => (
                     <option key={cat} value={cat}>
@@ -203,93 +164,65 @@ export const Inventario: React.FC = () => {
                   ))}
                 </select>
               </div>
+            </div>
 
-              {errorMsg && (
-                <p style={{ color: '#ef4444', fontSize: '0.85rem', margin: '0 0 12px 0' }}>{errorMsg}</p>
-              )}
+            <div className="be-field">
+              <label className="be-label">Instrucción póstuma *</label>
+              <input
+                type="text"
+                className="be-input"
+                placeholder="Ej: Descargar fotos familiares y cancelar suscripción"
+                value={instruccion}
+                onChange={(e) => setInstruccion(e.target.value)}
+                required
+              />
+            </div>
 
-              <button
-                type="submit"
-                disabled={enviando}
-                style={{
-                  width: '100%',
-                  height: '44px',
-                  backgroundColor: '#2563eb',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '0.85rem',
-                  fontWeight: '700',
-                  letterSpacing: '0.5px',
-                  cursor: enviando ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {enviando ? <IonSpinner name="crescent" /> : 'AGREGAR AL INVENTARIO'}
-              </button>
-            </form>
+            {errorMsg && (
+              <p style={{ color: 'var(--be-danger)', fontSize: '0.85rem', margin: '0 0 12px 0', fontWeight: 600 }}>
+                {errorMsg}
+              </p>
+            )}
+
+            <button type="submit" className="be-btn be-btn-primary be-btn-block" disabled={enviando}>
+              {enviando ? <IonSpinner name="crescent" color="light" /> : 'Agregar al inventario'}
+            </button>
+          </form>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--be-text)' }}>
+              Inventario registrado ({activos.length})
+            </h3>
           </div>
-
-          {/* Listado desde PostgreSQL */}
-          <h2 style={{ fontSize: '1.35rem', fontWeight: '700', marginBottom: '16px' }}>
-            Inventario Registrado ({activos.length})
-          </h2>
 
           {cargando ? (
             <div style={{ textAlign: 'center', padding: '32px' }}>
               <IonSpinner name="crescent" />
             </div>
           ) : activos.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '36px',
-                backgroundColor: 'var(--ion-card-background, #ffffff)',
-                borderRadius: '12px',
-                border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                color: 'var(--ion-color-step-600, #64748b)',
-              }}
-            >
-              <IonIcon icon={folderOpenOutline} style={{ fontSize: '2.4rem', marginBottom: '8px', opacity: 0.5 }} />
+            <div className="be-empty-state">
+              <IonIcon icon={folderOpenOutline} style={{ fontSize: '2.4rem', marginBottom: '8px', opacity: 0.55 }} />
               <p style={{ margin: 0, fontSize: '0.9rem' }}>Aún no has registrado activos en tu inventario.</p>
             </div>
           ) : (
             activos.map((a) => (
-              <div
-                key={a.id_inventario}
-                style={{
-                  backgroundColor: 'var(--ion-card-background, #ffffff)',
-                  color: 'var(--ion-text-color, #0f172a)',
-                  borderRadius: '12px',
-                  border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
-                  padding: '18px 24px',
-                  marginBottom: '12px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '12px',
-                }}
-              >
-                <div>
-                  <h3 style={{ fontWeight: '700', fontSize: '1.05rem', margin: '0 0 4px 0' }}>{a.plataforma}</h3>
-                  <p style={{ fontSize: '0.84rem', opacity: 0.78, margin: 0 }}>{a.instruccion}</p>
+              <div key={a.id_inventario} className="be-list-item">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '1 1 240px', minWidth: 0 }}>
+                  <div className="be-icon-box">
+                    <IonIcon icon={layersOutline} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <h4 style={{ margin: '0 0 3px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                      {a.plataforma}
+                    </h4>
+                    <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--be-text-muted)', lineHeight: 1.45 }}>
+                      {a.instruccion}
+                    </p>
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span
-                    style={{
-                      backgroundColor: a.categoria === 'Financiero' ? '#f3e8ff' : '#e2e8f0',
-                      color: a.categoria === 'Financiero' ? '#7e22ce' : '#334155',
-                      fontWeight: '600',
-                      fontSize: '0.78rem',
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {a.categoria}
-                  </span>
-
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className={claseBadgeCategoria(a.categoria)}>{a.categoria}</span>
                   <IonButton
                     fill="clear"
                     color="danger"
@@ -324,6 +257,8 @@ export const Inventario: React.FC = () => {
           color={toastColor}
         />
       </IonContent>
+
+      <MobileBottomNav />
     </IonPage>
   );
 };

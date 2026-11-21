@@ -9,8 +9,9 @@ import {
   IonAlert,
   useIonViewWillEnter,
 } from '@ionic/react';
-import { personOutline, trashOutline } from 'ionicons/icons';
+import { personOutline, trashOutline, peopleOutline } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
+import { MobileBottomNav } from '../components/MobileBottomNav';
 import {
   getAlbaceas,
   agregarAlbacea,
@@ -21,16 +22,16 @@ import {
 import { mensajeError } from '../services/api';
 import { normalizarRut, rutValido, emailValido } from '../utils/rut';
 
-const obtenerEstiloEstado = (estado: EstadoValidacionAlbacea) => {
+const claseBadgeEstado = (estado: EstadoValidacionAlbacea): string => {
   switch (estado) {
     case 'VALIDADO':
-      return { backgroundColor: '#dcfce7', color: '#166534' };
+      return 'be-badge be-badge-success';
     case 'INVITADO':
-      return { backgroundColor: '#dbeafe', color: '#1e40af' };
+      return 'be-badge be-badge-info';
     case 'RECHAZADO':
-      return { backgroundColor: '#fee2e2', color: '#991b1b' };
+      return 'be-badge be-badge-danger';
     default:
-      return { backgroundColor: '#fef3c7', color: '#92400e' };
+      return 'be-badge be-badge-warning';
   }
 };
 
@@ -42,7 +43,6 @@ export const Albaceas: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [idEliminar, setIdEliminar] = useState<number | null>(null);
 
-  // Formulario
   const [nombre, setNombre] = useState('');
   const [rut, setRut] = useState('');
   const [email, setEmail] = useState('');
@@ -99,7 +99,7 @@ export const Albaceas: React.FC = () => {
       setRut('');
       setEmail('');
       setParentesco('Familiar');
-      setToastMsg(res.mensaje || 'Albacea designado exitosamente.');
+      setToastMsg(res.mensaje || 'Albacea designado con éxito.');
       await cargarDatos();
     } catch (error) {
       setErrorMsg(mensajeError(error));
@@ -112,7 +112,7 @@ export const Albaceas: React.FC = () => {
     if (!idEliminar) return;
     try {
       await eliminarAlbacea(idEliminar);
-      setToastMsg('Albacea eliminado del directorio.');
+      setToastMsg('Albacea eliminado de tu directorio.');
       await cargarDatos();
     } catch (error) {
       setToastMsg(mensajeError(error));
@@ -126,82 +126,40 @@ export const Albaceas: React.FC = () => {
       <HeaderBar title="Albaceas Designados" />
 
       <IonContent className="ion-padding">
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '12px 0' }}>
-          <h2
-            style={{
-              fontSize: '1.35rem',
-              fontWeight: '700',
-              color: 'var(--ion-text-color, #0f172a)',
-              marginBottom: '4px',
-            }}
-          >
-            Contactos de Confianza
-          </h2>
-          <p
-            style={{
-              fontSize: '0.88rem',
-              color: 'var(--ion-text-color, #64748b)',
-              opacity: 0.8,
-              marginBottom: '24px',
-            }}
-          >
-            Designa hasta 3 personas autorizadas para gestionar la apertura de tu bóveda. Puedes invitar a personas
-            aún no registradas: se vincularán automáticamente cuando creen su cuenta con su RUT.
-          </p>
+        <div className="be-container">
+          <div className="be-page-header">
+            <div>
+              <h2 className="be-page-title">Red de Confianza</h2>
+              <p className="be-page-subtitle">
+                Designa hasta 3 personas autorizadas para solicitar la apertura de tu bóveda. Si aún no tienen cuenta,
+                quedan invitadas y se vinculan automáticamente al registrarse con su RUT.
+              </p>
+            </div>
+            <span className="be-badge be-badge-info">{albaceas.length} / 3 registrados</span>
+          </div>
 
-          {/* Formulario de registro */}
-          <form
-            onSubmit={handleAgregar}
-            style={{
-              backgroundColor: 'var(--ion-card-background, #ffffff)',
-              color: 'var(--ion-text-color, #0f172a)',
-              borderRadius: '12px',
-              border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.04)',
-              padding: '20px 24px',
-              marginBottom: '24px',
-            }}
-          >
-            <h3
-              style={{
-                margin: '0 0 16px 0',
-                fontSize: '1rem',
-                fontWeight: '600',
-                color: 'var(--ion-text-color, #0f172a)',
-              }}
-            >
-              + Designar Nuevo Albacea
+          <form onSubmit={handleAgregar} className="be-card">
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.05rem', fontWeight: 700, color: 'var(--be-text)' }}>
+              Designar nuevo albacea
             </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                  Nombre Completo *
-                </label>
+            <div className="be-grid-2">
+              <div className="be-field">
+                <label className="be-label">Nombre completo *</label>
                 <input
                   type="text"
+                  className="be-input"
                   placeholder="Ej: Camila Morales"
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color, #f8fafc))',
-                    color: 'var(--ion-text-color, #0f172a)',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
                 />
               </div>
 
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                  RUT del Albacea *
-                </label>
+              <div className="be-field">
+                <label className="be-label">RUT del albacea *</label>
                 <input
                   type="text"
+                  className="be-input"
                   placeholder="Ej: 19876543-0"
                   value={rut}
                   onChange={(e) => setRut(e.target.value)}
@@ -209,67 +167,36 @@ export const Albaceas: React.FC = () => {
                     if (rut.trim()) setRut(normalizarRut(rut));
                   }}
                   style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: `1px solid ${
-                      mostrarErrorRut ? '#ef4444' : rutEsValido ? '#16a34a' : 'var(--ion-color-step-200, #cbd5e1)'
-                    }`,
-                    backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color, #f8fafc))',
-                    color: 'var(--ion-text-color, #0f172a)',
-                    outline: 'none',
-                    boxSizing: 'border-box',
+                    borderColor: mostrarErrorRut
+                      ? 'var(--be-danger)'
+                      : rutEsValido
+                      ? 'var(--be-success)'
+                      : undefined,
                   }}
                 />
                 {mostrarErrorRut && (
-                  <span style={{ fontSize: '0.72rem', color: '#ef4444', display: 'block', marginTop: '3px' }}>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--be-danger)', display: 'block', marginTop: '4px', fontWeight: 600 }}>
                     RUT chileno inválido.
                   </span>
                 )}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                  Correo Electrónico *
-                </label>
+            <div className="be-grid-2">
+              <div className="be-field">
+                <label className="be-label">Correo electrónico *</label>
                 <input
                   type="email"
-                  placeholder="Ej: albacea@correo.cl"
+                  className="be-input"
+                  placeholder="albacea@correo.cl"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color, #f8fafc))',
-                    color: 'var(--ion-text-color, #0f172a)',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
                 />
               </div>
 
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                  Parentesco / Relación *
-                </label>
-                <select
-                  value={parentesco}
-                  onChange={(e) => setParentesco(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--ion-color-step-200, #cbd5e1)',
-                    backgroundColor: 'var(--ion-color-step-100, var(--ion-background-color, #f8fafc))',
-                    color: 'var(--ion-text-color, #0f172a)',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                >
+              <div className="be-field">
+                <label className="be-label">Parentesco o relación *</label>
+                <select className="be-select" value={parentesco} onChange={(e) => setParentesco(e.target.value)}>
                   <option value="Hijo/a">Hijo/a</option>
                   <option value="Hermano/a">Hermano/a</option>
                   <option value="Cónyuge">Cónyuge</option>
@@ -281,136 +208,60 @@ export const Albaceas: React.FC = () => {
             </div>
 
             {errorMsg && (
-              <p style={{ color: 'var(--ion-color-danger, #ef4444)', fontSize: '0.85rem', margin: '0 0 12px 0' }}>
+              <p style={{ color: 'var(--be-danger)', fontSize: '0.85rem', margin: '0 0 12px 0', fontWeight: 600 }}>
                 {errorMsg}
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={enviando}
-              style={{
-                width: '100%',
-                padding: '12px',
-                backgroundColor: 'var(--ion-color-warning, #f59e0b)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '700',
-                cursor: enviando ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {enviando ? <IonSpinner name="crescent" /> : 'REGISTRAR ALBACEA'}
+            <button type="submit" className="be-btn be-btn-accent be-btn-block" disabled={enviando}>
+              {enviando ? <IonSpinner name="crescent" color="light" /> : 'Registrar albacea'}
             </button>
           </form>
 
-          {/* Listado dinámico desde la BD */}
           {cargando ? (
-            <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <div style={{ textAlign: 'center', padding: '28px' }}>
               <IonSpinner name="crescent" />
             </div>
           ) : albaceas.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '32px',
-                backgroundColor: 'var(--ion-card-background, #ffffff)',
-                borderRadius: '12px',
-                border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                color: 'var(--ion-text-color, #64748b)',
-              }}
-            >
-              <p style={{ margin: 0 }}>No tienes albaceas asignados actualmente.</p>
+            <div className="be-empty-state">
+              <IonIcon icon={peopleOutline} style={{ fontSize: '2.4rem', marginBottom: '8px', opacity: 0.55 }} />
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>Todavía no has designado contactos de confianza.</p>
             </div>
           ) : (
-            albaceas.map((a) => {
-              const badgeStyle = obtenerEstiloEstado(a.estado_validacion);
-              return (
-                <div
-                  key={a.id_directorio}
-                  style={{
-                    backgroundColor: 'var(--ion-card-background, #ffffff)',
-                    color: 'var(--ion-text-color, #0f172a)',
-                    borderRadius: '12px',
-                    border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
-                    padding: '18px 24px',
-                    marginBottom: '14px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '12px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div
-                      style={{
-                        width: '42px',
-                        height: '42px',
-                        borderRadius: '50%',
-                        backgroundColor: 'var(--ion-color-step-50, #eff6ff)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <IonIcon icon={personOutline} style={{ fontSize: '1.4rem', color: 'var(--ion-color-primary, #2563eb)' }} />
-                    </div>
-                    <div>
-                      <h3
-                        style={{
-                          fontWeight: '700',
-                          fontSize: '1.05rem',
-                          color: 'var(--ion-text-color, #0f172a)',
-                          margin: '0 0 4px 0',
-                        }}
-                      >
-                        {a.nombre_usuario}
-                      </h3>
-                      <p
-                        style={{
-                          fontSize: '0.82rem',
-                          color: 'var(--ion-text-color, #64748b)',
-                          opacity: 0.8,
-                          margin: 0,
-                        }}
-                      >
-                        RUT: {a.rut} | {a.correo_usuario}
-                      </p>
-                      <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--ion-color-primary, #2563eb)' }}>
-                        Relación: {a.parentesco}
-                        {a.registrado === false ? ' • Pendiente de registro en la app' : ''}
-                      </span>
-                    </div>
+            albaceas.map((a) => (
+              <div key={a.id_directorio} className="be-list-item">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '1 1 240px', minWidth: 0 }}>
+                  <div className="be-icon-box be-icon-box-accent">
+                    <IonIcon icon={personOutline} />
                   </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span
-                      style={{
-                        ...badgeStyle,
-                        fontWeight: '700',
-                        fontSize: '0.78rem',
-                        padding: '6px 12px',
-                        borderRadius: '20px',
-                      }}
-                    >
-                      {a.estado_validacion}
+                  <div style={{ minWidth: 0 }}>
+                    <h3 style={{ margin: '0 0 3px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                      {a.nombre_usuario}
+                    </h3>
+                    <p style={{ margin: '0 0 3px 0', fontSize: '0.82rem', color: 'var(--be-text-muted)' }}>
+                      RUT: {a.rut} · {a.correo_usuario}
+                    </p>
+                    <span style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--be-primary)' }}>
+                      {a.parentesco}
+                      {a.registrado === false ? ' · Invitado (sin cuenta aún)' : ''}
                     </span>
-
-                    <IonButton
-                      fill="clear"
-                      color="danger"
-                      size="small"
-                      onClick={() => setIdEliminar(a.id_directorio)}
-                      title="Quitar albacea"
-                    >
-                      <IonIcon slot="icon-only" icon={trashOutline} />
-                    </IonButton>
                   </div>
                 </div>
-              );
-            })
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className={claseBadgeEstado(a.estado_validacion)}>{a.estado_validacion}</span>
+                  <IonButton
+                    fill="clear"
+                    color="danger"
+                    size="small"
+                    onClick={() => setIdEliminar(a.id_directorio)}
+                    title="Quitar albacea"
+                  >
+                    <IonIcon slot="icon-only" icon={trashOutline} />
+                  </IonButton>
+                </div>
+              </div>
+            ))
           )}
         </div>
 
@@ -432,6 +283,8 @@ export const Albaceas: React.FC = () => {
           duration={3500}
         />
       </IonContent>
+
+      <MobileBottomNav />
     </IonPage>
   );
 };

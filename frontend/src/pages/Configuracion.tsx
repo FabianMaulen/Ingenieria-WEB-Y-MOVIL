@@ -1,38 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { IonPage, IonContent, IonToast, IonIcon, IonSpinner } from '@ionic/react';
 import {
-  IonPage,
-  IonContent,
-  IonGrid,
-  IonRow,
-  IonCol,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardSubtitle,
-  IonCardContent,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonButton,
-  IonToast,
-  IonFooter,
-  IonToolbar,
-  IonIcon,
-  IonBadge,
-  IonSpinner,
-} from '@ionic/react';
-import {
-  homeOutline,
-  shieldCheckmarkOutline,
-  peopleOutline,
-  settingsOutline,
   personOutline,
   lockClosedOutline,
   logOutOutline,
-  shieldOutline,
+  shieldCheckmarkOutline,
+  eyeOutline,
+  eyeOffOutline,
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
+import { MobileBottomNav } from '../components/MobileBottomNav';
 import { mensajeError } from '../services/api';
 import { cambiarPassword, logout, usuarioGuardado } from '../services/auth.service';
 
@@ -45,11 +23,12 @@ export const Configuracion: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [mostrarClaves, setMostrarClaves] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
-  const [toastColor, setToastColor] = useState('success');
+  const [toastColor, setToastColor] = useState<'success' | 'danger' | 'warning'>('success');
 
   useEffect(() => {
     const usuario = usuarioGuardado();
@@ -107,219 +86,165 @@ export const Configuracion: React.FC = () => {
 
   return (
     <IonPage id="main-content">
-      <HeaderBar title={`Ajustes de ${nombreTitular}`} />
+      <HeaderBar title="Ajustes y Seguridad" />
 
       <IonContent className="ion-padding">
-        <IonGrid className="ion-no-padding" style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <IonRow>
-            <IonCol size="12">
-              {/* 1. Tarjeta de Perfil */}
-              <IonCard
-                className="ion-no-margin ion-margin-bottom"
-                style={{
-                  backgroundColor: 'var(--ion-card-background, #ffffff)',
-                  color: 'var(--ion-text-color, #0f172a)',
-                  borderRadius: '14px',
-                  border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                }}
+        <div className="be-container">
+          <div className="be-page-header">
+            <div>
+              <h2 className="be-page-title">Configuración de Cuenta</h2>
+              <p className="be-page-subtitle">
+                Consulta tus datos de acceso, actualiza tu contraseña o cierra tu sesión de forma segura.
+              </p>
+            </div>
+          </div>
+
+          {/* 1. Perfil */}
+          <div className="be-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="be-icon-box">
+                  <IonIcon icon={personOutline} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                    Perfil del Usuario
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--be-text-muted)' }}>
+                    Identidad vinculada a tu bóveda
+                  </span>
+                </div>
+              </div>
+              <span className="be-badge be-badge-info">Cuenta Dual</span>
+            </div>
+
+            <div className="be-grid-2">
+              <div className="be-field" style={{ marginBottom: 0 }}>
+                <label className="be-label">Nombre registrado</label>
+                <input className="be-input" value={nombreTitular} readOnly />
+              </div>
+
+              {rutUsuario && (
+                <div className="be-field" style={{ marginBottom: 0 }}>
+                  <label className="be-label">RUT chileno</label>
+                  <input className="be-input" value={rutUsuario} readOnly />
+                </div>
+              )}
+            </div>
+
+            {correoUsuario && (
+              <div className="be-field" style={{ marginTop: '14px', marginBottom: 0 }}>
+                <label className="be-label">Correo electrónico</label>
+                <input className="be-input" value={correoUsuario} readOnly />
+              </div>
+            )}
+          </div>
+
+          {/* 2. Cambio de contraseña conectado a PUT /api/auth/change-password */}
+          <form onSubmit={handlePasswordChange} className="be-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="be-icon-box be-icon-box-accent">
+                  <IonIcon icon={lockClosedOutline} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                    Cambiar Contraseña
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--be-text-muted)' }}>
+                    Verificada en servidor con bcrypt
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="be-btn be-btn-outline"
+                style={{ padding: '7px 12px', fontSize: '0.78rem' }}
+                onClick={() => setMostrarClaves((v) => !v)}
               >
-                <IonCardHeader>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <IonCardSubtitle style={{ fontSize: '0.78rem', color: 'var(--ion-color-primary, #2563eb)', fontWeight: '700' }}>
-                      INFORMACIÓN DE CUENTA
-                    </IonCardSubtitle>
-                    <IonBadge color="primary">Cuenta Dual</IonBadge>
-                  </div>
-                  <IonCardTitle
-                    style={{
-                      fontSize: '1.2rem',
-                      color: 'var(--ion-text-color, #0f172a)',
-                      fontWeight: '700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                  >
-                    <IonIcon icon={personOutline} /> Perfil del Usuario
-                  </IonCardTitle>
-                </IonCardHeader>
-                <IonCardContent>
-                  <p
-                    style={{
-                      fontSize: '0.88rem',
-                      color: 'var(--ion-text-color, #334155)',
-                      opacity: 0.85,
-                      lineHeight: '1.4',
-                      marginBottom: '16px',
-                    }}
-                  >
-                    Tu cuenta te permite resguardar tu propia bóveda patrimonial y, a la vez, actuar como albacea de
-                    terceros si te designan con tu RUT.
-                  </p>
+                <IonIcon icon={mostrarClaves ? eyeOffOutline : eyeOutline} />
+                {mostrarClaves ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </div>
 
-                  <IonItem lines="none" style={{ '--background': 'var(--ion-color-step-50, #f8fafc)', borderRadius: '10px', marginBottom: '8px' }}>
-                    <IonLabel position="stacked" style={{ fontWeight: '600', color: 'var(--ion-color-primary, #2563eb)' }}>
-                      Nombre Registrado
-                    </IonLabel>
-                    <IonInput value={nombreTitular} readonly style={{ fontWeight: '600' }} />
-                  </IonItem>
+            <div className="be-field">
+              <label className="be-label" htmlFor="cfg-pass-actual">
+                Contraseña actual *
+              </label>
+              <input
+                id="cfg-pass-actual"
+                type={mostrarClaves ? 'text' : 'password'}
+                className="be-input"
+                placeholder="Ingresa tu contraseña actual"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
 
-                  {rutUsuario && (
-                    <IonItem lines="none" style={{ '--background': 'var(--ion-color-step-50, #f8fafc)', borderRadius: '10px', marginBottom: '8px' }}>
-                      <IonLabel position="stacked" style={{ fontWeight: '600', color: 'var(--ion-color-primary, #2563eb)' }}>
-                        RUT
-                      </IonLabel>
-                      <IonInput value={rutUsuario} readonly />
-                    </IonItem>
-                  )}
+            <div className="be-grid-2">
+              <div className="be-field">
+                <label className="be-label" htmlFor="cfg-pass-nueva">
+                  Nueva contraseña *
+                </label>
+                <input
+                  id="cfg-pass-nueva"
+                  type={mostrarClaves ? 'text' : 'password'}
+                  className="be-input"
+                  placeholder="Mínimo 8 caracteres"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
 
-                  {correoUsuario && (
-                    <IonItem lines="none" style={{ '--background': 'var(--ion-color-step-50, #f8fafc)', borderRadius: '10px' }}>
-                      <IonLabel position="stacked" style={{ fontWeight: '600', color: 'var(--ion-color-primary, #2563eb)' }}>
-                        Correo Electrónico
-                      </IonLabel>
-                      <IonInput value={correoUsuario} readonly />
-                    </IonItem>
-                  )}
-                </IonCardContent>
-              </IonCard>
+              <div className="be-field">
+                <label className="be-label" htmlFor="cfg-pass-confirm">
+                  Confirmar nueva contraseña *
+                </label>
+                <input
+                  id="cfg-pass-confirm"
+                  type={mostrarClaves ? 'text' : 'password'}
+                  className="be-input"
+                  placeholder="Repite la nueva contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
 
-              {/* 2. Tarjeta de Seguridad y Cambio de Contraseña */}
-              <IonCard
-                className="ion-no-margin ion-margin-bottom"
-                style={{
-                  backgroundColor: 'var(--ion-card-background, #ffffff)',
-                  color: 'var(--ion-text-color, #0f172a)',
-                  borderRadius: '14px',
-                  border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                }}
-              >
-                <IonCardHeader>
-                  <IonCardSubtitle style={{ fontSize: '0.78rem', color: 'var(--ion-color-primary, #2563eb)', fontWeight: '700' }}>
-                    ACCESO Y CLAVES
-                  </IonCardSubtitle>
-                  <IonCardTitle
-                    style={{
-                      fontSize: '1.2rem',
-                      color: 'var(--ion-text-color, #0f172a)',
-                      fontWeight: '700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                  >
-                    <IonIcon icon={lockClosedOutline} /> Cambiar Contraseña
-                  </IonCardTitle>
-                </IonCardHeader>
+            <button type="submit" className="be-btn be-btn-primary be-btn-block" disabled={enviando}>
+              {enviando ? <IonSpinner name="crescent" color="light" /> : 'Actualizar contraseña'}
+            </button>
+          </form>
 
-                <IonCardContent>
-                  <form onSubmit={handlePasswordChange}>
-                    <IonItem lines="inset" className="ion-margin-bottom" style={{ '--background': 'transparent' }}>
-                      <IonLabel position="stacked">Contraseña Actual *</IonLabel>
-                      <IonInput
-                        type="password"
-                        value={currentPassword}
-                        onIonInput={(e) => setCurrentPassword(e.detail.value || '')}
-                        placeholder="Ingresa tu contraseña actual"
-                      />
-                    </IonItem>
+          {/* 3. Sesión */}
+          <div className="be-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="be-icon-box">
+                  <IonIcon icon={shieldCheckmarkOutline} />
+                </div>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                  Seguridad y Sesión
+                </h3>
+              </div>
+              <span className="be-badge be-badge-success">AES-256 · JWT</span>
+            </div>
 
-                    <IonItem lines="inset" className="ion-margin-bottom" style={{ '--background': 'transparent' }}>
-                      <IonLabel position="stacked">Nueva Contraseña *</IonLabel>
-                      <IonInput
-                        type="password"
-                        value={newPassword}
-                        onIonInput={(e) => setNewPassword(e.detail.value || '')}
-                        placeholder="Mínimo 8 caracteres"
-                      />
-                    </IonItem>
+            <p style={{ margin: '0 0 16px 0', fontSize: '0.88rem', color: 'var(--be-text-muted)', lineHeight: 1.5 }}>
+              Al cerrar sesión, el token local se elimina de este dispositivo y tu bóveda permanece sellada hasta tu
+              próximo ingreso.
+            </p>
 
-                    <IonItem lines="inset" className="ion-margin-bottom" style={{ '--background': 'transparent' }}>
-                      <IonLabel position="stacked">Confirmar Nueva Contraseña *</IonLabel>
-                      <IonInput
-                        type="password"
-                        value={confirmPassword}
-                        onIonInput={(e) => setConfirmPassword(e.detail.value || '')}
-                        placeholder="Repite la nueva contraseña"
-                      />
-                    </IonItem>
-
-                    <IonButton
-                      expand="block"
-                      type="submit"
-                      fill="solid"
-                      color="primary"
-                      size="small"
-                      disabled={enviando}
-                      className="ion-margin-top"
-                      style={{ fontWeight: '600' }}
-                    >
-                      {enviando ? <IonSpinner name="crescent" /> : 'Actualizar Contraseña'}
-                    </IonButton>
-                  </form>
-                </IonCardContent>
-              </IonCard>
-
-              {/* 3. Tarjeta de Cierre de Sesión */}
-              <IonCard
-                className="ion-no-margin ion-margin-bottom"
-                style={{
-                  backgroundColor: 'var(--ion-card-background, #ffffff)',
-                  color: 'var(--ion-text-color, #0f172a)',
-                  borderRadius: '14px',
-                  border: '1px solid var(--ion-color-step-150, #e2e8f0)',
-                }}
-              >
-                <IonCardHeader>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <IonCardSubtitle style={{ fontSize: '0.78rem', color: 'var(--ion-color-primary, #2563eb)', fontWeight: '700' }}>
-                      GESTIÓN DE SESIÓN
-                    </IonCardSubtitle>
-                    <IonBadge color="success">Cifrado AES-256</IonBadge>
-                  </div>
-                  <IonCardTitle
-                    style={{
-                      fontSize: '1.2rem',
-                      color: 'var(--ion-text-color, #0f172a)',
-                      fontWeight: '700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                  >
-                    <IonIcon icon={shieldOutline} /> Seguridad de la Bóveda
-                  </IonCardTitle>
-                </IonCardHeader>
-
-                <IonCardContent>
-                  <p
-                    style={{
-                      fontSize: '0.88rem',
-                      color: 'var(--ion-text-color, #334155)',
-                      opacity: 0.85,
-                      lineHeight: '1.4',
-                      marginBottom: '16px',
-                    }}
-                  >
-                    Al cerrar sesión, el token local se elimina de este dispositivo y tu bóveda continuará protegida
-                    hasta tu próximo ingreso.
-                  </p>
-
-                  <IonButton
-                    expand="block"
-                    color="danger"
-                    size="small"
-                    onClick={handleLogout}
-                    style={{ fontWeight: '600' }}
-                  >
-                    <IonIcon slot="start" icon={logOutOutline} />
-                    Cerrar Sesión Activa
-                  </IonButton>
-                </IonCardContent>
-              </IonCard>
-            </IonCol>
-          </IonRow>
-        </IonGrid>
+            <button type="button" className="be-btn be-btn-danger be-btn-block" onClick={handleLogout}>
+              <IonIcon icon={logOutOutline} />
+              Cerrar sesión activa
+            </button>
+          </div>
+        </div>
 
         <IonToast
           isOpen={showToast}
@@ -330,55 +255,7 @@ export const Configuracion: React.FC = () => {
         />
       </IonContent>
 
-      <IonFooter>
-        <IonToolbar
-          style={
-            {
-              '--background': 'var(--ion-card-background, #ffffff)',
-              '--color': 'var(--ion-text-color, #0f172a)',
-            } as any
-          }
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-            <IonButton
-              fill="clear"
-              style={{ display: 'flex', flexDirection: 'column', '--color': 'var(--ion-text-color)' }}
-              onClick={() => navigate('/dashboard')}
-            >
-              <IonIcon icon={homeOutline} />
-              <IonLabel style={{ fontSize: '0.7rem' }}>Inicio</IonLabel>
-            </IonButton>
-
-            <IonButton
-              fill="clear"
-              style={{ display: 'flex', flexDirection: 'column', '--color': 'var(--ion-text-color)' }}
-              onClick={() => navigate('/polizas')}
-            >
-              <IonIcon icon={shieldCheckmarkOutline} />
-              <IonLabel style={{ fontSize: '0.7rem' }}>Pólizas</IonLabel>
-            </IonButton>
-
-            <IonButton
-              fill="clear"
-              style={{ display: 'flex', flexDirection: 'column', '--color': 'var(--ion-text-color)' }}
-              onClick={() => navigate('/albaceas')}
-            >
-              <IonIcon icon={peopleOutline} />
-              <IonLabel style={{ fontSize: '0.7rem' }}>Albaceas</IonLabel>
-            </IonButton>
-
-            <IonButton
-              fill="clear"
-              color="primary"
-              style={{ display: 'flex', flexDirection: 'column' }}
-              onClick={() => navigate('/configuracion')}
-            >
-              <IonIcon icon={settingsOutline} />
-              <IonLabel style={{ fontSize: '0.7rem' }}>Ajustes</IonLabel>
-            </IonButton>
-          </div>
-        </IonToolbar>
-      </IonFooter>
+      <MobileBottomNav />
     </IonPage>
   );
 };
