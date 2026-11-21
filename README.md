@@ -176,7 +176,7 @@ Copia `backend/.env.example` a `backend/.env` y define tus valores locales:
 | `JWT_EXPIRES_IN` | Duración del token JWT | `2h` |
 | `AES_SECRET_KEY` | Clave de cifrado AES-256-CBC para mensajes póstumos (**exactamente 64 caracteres hex = 32 bytes**) | `openssl rand -hex 32` |
 | `PLAZO_GRACIA_HORAS` | Horas del periodo de gracia antes de aprobar apertura automáticamente | `72` |
-| `FRONTEND_URL` | Origen(es) permitidos por CORS (separados por coma) | `http://localhost:5173` |
+| `FRONTEND_URL` | Origen(es) permitidos por CORS (separados por coma) | `http://localhost:5173,http://localhost:8100` |
 
 #### Frontend (`frontend/.env`)
 Copia `frontend/.env.example` a `frontend/.env`:

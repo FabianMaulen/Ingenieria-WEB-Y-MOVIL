@@ -18,7 +18,7 @@ app.use(helmet());
 app.use(morgan('tiny'));
 
 // Política estricta de CORS basada en FRONTEND_URL (soporta múltiples orígenes separados por coma)
-const origenesPermitidos = (process.env.FRONTEND_URL || 'http://localhost:5173')
+const origenesPermitidos = (process.env.FRONTEND_URL || 'http://localhost:5173,http://localhost:8100')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
