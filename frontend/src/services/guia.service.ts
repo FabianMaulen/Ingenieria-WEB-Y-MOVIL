@@ -1,0 +1,66 @@
+import api, { ApiResponse } from './api';
+
+export interface Contacto {
+  telefono?: string;
+  web?: string;
+  correo?: string;
+}
+
+export interface PolizaGuia {
+  id_poliza: number;
+  tipo_seguro: string;
+  aseguradora: string;
+  numero_poliza: string;
+  ubicacion_fisica: string;
+  monto_referencial: string;
+  tramitada: boolean;
+  id_titular: number;
+  nombre_titular: string;
+  contacto: Contacto | null;
+}
+
+export interface Guia {
+  polizas: PolizaGuia[];
+  resumen: { total: number; tramitadas: number };
+  mensaje?: string;
+}
+
+export type EstadoDesignacion = 'PENDIENTE' | 'VALIDADO' | 'RECHAZADO' | 'INVITADO';
+
+export interface DesignacionAlbacea {
+  id_directorio: number;
+  id_titular: number;
+  nombre_titular: string;
+  rut_titular: string;
+  correo_titular?: string;
+  parentesco: string;
+  estado_validacion: EstadoDesignacion;
+  fecha_designacion: string;
+}
+
+export const obtenerGuia = async (): Promise<Guia> => {
+  const res = await api.get<ApiResponse<{ polizas: PolizaGuia[]; resumen: { total: number; tramitadas: number } }>>(
+    '/guia'
+  );
+  return {
+    polizas: res.data.data?.polizas || [],
+    resumen: res.data.data?.resumen || { total: 0, tramitadas: 0 },
+    mensaje: res.data.mensaje,
+  };
+};
+
+export const marcarTramitada = async (id: number, tramitada: boolean) => {
+  const res = await api.put<ApiResponse<any>>(`/guia/polizas/${id}/tramitada`, { tramitada });
+  return res.data.data;
+};
+
+export const obtenerDesignaciones = async (): Promise<DesignacionAlbacea[]> => {
+  const res = await api.get<ApiResponse<DesignacionAlbacea[]>>('/guia/designaciones');
+  return res.data.data || [];
+};
+
+export const responderDesignacion = async (idDirectorio: number, estado: 'VALIDADO' | 'RECHAZADO') => {
+  const res = await api.put<ApiResponse<any>>(`/guia/designaciones/${idDirectorio}/responder`, { estado });
+  window.dispatchEvent(new Event('designaciones-actualizadas'));
+  return res.data;
+};

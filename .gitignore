@@ -1,29 +1,38 @@
-# dependencies
+# Dependencies
 node_modules/
 /.pnp
 .pnp.js
 
-# Ignorar carpetas de archivos subidos (Multer)
+# Uploads (Multer)
 uploads/
 backend/uploads/
 backend/uploads/certificados/
 
-# Ignorar archivos temporales o adjuntos de prueba
+# Temporary / test attachments
 *.pdf
-# testing
+
+# Testing
 /coverage
 
-# production
+# Production builds
+dist/
 /dist
 .vite/
 
-# misc
-.DS_Store
+# Environment variables (secretos locales nunca versionados)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
+frontend/.env
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# Misc & IDEs
+.DS_Store
 /.nx
 /.nx/cache
 /.vscode/*
@@ -35,4 +44,4 @@ yarn-debug.log*
 yarn-error.log*
 
 # Optional eslint cache
-.eslintcachegit rm -r --cached .
+.eslintcache

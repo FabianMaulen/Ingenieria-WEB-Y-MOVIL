@@ -1,14 +1,14 @@
 const router = require('express').Router();
-const { verificarToken, soloRol } = require('../middlewares/auth');
-const c = require('../controllers/polizas.controller');
+const { verificarToken } = require('../middlewares/auth');
+const polizasController = require('../controllers/polizas.controller');
 
-router.use(verificarToken, soloRol('TITULAR'));
+// Modelo dual: todo usuario autenticado puede gestionar sus propias pólizas
+router.use(verificarToken);
 
-router.get('/', c.listar);
-router.get('/:id', c.obtener);
-router.post('/', c.crear);
-router.put('/:id', c.actualizar);
-router.delete('/:id', c.eliminar);
+router.get('/', polizasController.listar);
+router.get('/:id', polizasController.obtener);
+router.post('/', polizasController.crear);
+router.put('/:id', polizasController.actualizar);
+router.delete('/:id', polizasController.eliminar);
 
 module.exports = router;
-

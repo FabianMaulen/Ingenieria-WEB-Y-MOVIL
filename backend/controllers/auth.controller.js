@@ -1,48 +1,148 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const { enviarRespuesta } = require('../utils/respuesta');
+const { registrarAuditoria } = require('../utils/auditoria');
+const { normalizarRut, validarRut, validarEmail, obtenerIp } = require('../utils/validadores');
 
+// POST /api/auth/register
 exports.register = async (req, res) => {
-  const { rut, nombre_usuario, correo_usuario, password, rol } = req.body;
-
-  if (!rut || !nombre_usuario || !correo_usuario || !password)
-    return res.status(400).json({ error: 'Faltan campos obligatorios' });
-  if (password.length < 8)
-    return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
-
-  // Nadie puede auto-registrarse como ADMIN
-  const rolFinal = ['TITULAR', 'ALBACEA'].includes(rol) ? rol : 'TITULAR';
-
   try {
+    const { rut, nombre_usuario, correo_usuario, password } = req.body || {};
+
+    if (!rut || !nombre_usuario || !correo_usuario || !password) {
+      return enviarRespuesta(res, 400, 'Todos los campos obligatorios (rut, nombre_usuario, correo_usuario, password) son requeridos.', null);
+    }
+
+    const rutNormalizado = normalizarRut(rut);
+    if (!validarRut(rutNormalizado)) {
+      return enviarRespuesta(res, 400, 'El RUT ingresado no es válido. Usa formato chileno con dígito verificador correcto (Ej: 12345678-5).', null);
+    }
+
+    const nombreLimpio = String(nombre_usuario).trim();
+    if (nombreLimpio.length < 2) {
+      return enviarRespuesta(res, 400, 'El nombre de usuario debe tener al menos 2 caracteres.', null);
+    }
+
+    const correoNormalizado = String(correo_usuario).trim().toLowerCase();
+    if (!validarEmail(correoNormalizado)) {
+      return enviarRespuesta(res, 400, 'El formato del correo electrónico no es válido.', null);
+    }
+
+    if (typeof password !== 'string' || password.length < 8) {
+      return enviarRespuesta(res, 400, 'La contraseña debe tener al menos 8 caracteres.', null);
+    }
+
+    // Modelo dual unificado: todo usuario registrado gestiona su propia bóveda (TITULAR)
+    // y puede actuar simultáneamente como albacea de terceros si su RUT figura en DIRECTORIO_ALBACEAS.
+    const rolFinal = 'TITULAR';
     const hash = await bcrypt.hash(password, 10);
+
     const { rows } = await db.query(
       `INSERT INTO USUARIO (rut, nombre_usuario, contrasena_hash, rol, correo_usuario)
-       VALUES ($1,$2,$3,$4,$5)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id_usuario, rut, nombre_usuario, rol, correo_usuario`,
-      [rut, nombre_usuario, hash, rolFinal, correo_usuario]
+      [rutNormalizado, nombreLimpio, hash, rolFinal, correoNormalizado]
     );
-    res.status(201).json(rows[0]);
+    const nuevoUsuario = rows[0];
+
+    // Vincular automáticamente designaciones pendientes/invitadas asociadas a este RUT
+    const vinculadas = await db.query(
+      `UPDATE DIRECTORIO_ALBACEAS
+       SET id_usuario_invitado = $1,
+           nombre_albacea = $2,
+           email_albacea = $3,
+           estado_validacion = CASE
+             WHEN estado_validacion = 'INVITADO' THEN 'PENDIENTE'
+             ELSE estado_validacion
+           END
+       WHERE rut_albacea = $4 AND id_usuario_invitado IS NULL
+       RETURNING id_directorio`,
+      [nuevoUsuario.id_usuario, nombreLimpio, correoNormalizado, rutNormalizado]
+    );
+
+    const cantidadVinculadas = vinculadas.rowCount || 0;
+
+    await registrarAuditoria(
+      `Registró cuenta de usuario (${rutNormalizado})${cantidadVinculadas > 0 ? ` con ${cantidadVinculadas} designación(es) de albacea vinculada(s)` : ''}`,
+      obtenerIp(req),
+      nuevoUsuario.id_usuario
+    );
+
+    const mensaje = cantidadVinculadas > 0
+      ? `Usuario registrado con éxito. Se vincularon ${cantidadVinculadas} invitación(es) pendiente(s) como albacea.`
+      : 'Usuario registrado con éxito.';
+
+    return enviarRespuesta(res, 201, mensaje, {
+      ...nuevoUsuario,
+      designaciones_vinculadas: cantidadVinculadas,
+    });
   } catch (e) {
-    if (e.code === '23505')
-      return res.status(409).json({ error: 'RUT o correo ya registrado' });
-    console.error(e);
-    res.status(500).json({ error: 'Error interno' });
+    if (e.code === '23505') {
+      return enviarRespuesta(res, 409, 'El RUT o correo electrónico ya se encuentra registrado.', null);
+    }
+    if (e.code === '23514') {
+      return enviarRespuesta(res, 400, 'Los datos ingresados no cumplen con las restricciones de formato.', null);
+    }
+    console.error('Error en register:', e);
+    return enviarRespuesta(res, 500, 'Error interno del servidor al registrar el usuario.', null);
   }
 };
 
+// POST /api/auth/login
 exports.login = async (req, res) => {
-  const { correo_usuario, password } = req.body;
-  if (!correo_usuario || !password)
-    return res.status(400).json({ error: 'Correo y contraseña requeridos' });
-
   try {
-    const { rows } = await db.query(
-      'SELECT * FROM USUARIO WHERE correo_usuario = $1', [correo_usuario]);
-    const user = rows[0];
+    const { correo_usuario, identificador, password } = req.body || {};
+    const credencial = String(correo_usuario || identificador || '').trim();
 
-    // Mismo mensaje si falla el correo o la clave
-    if (!user || !(await bcrypt.compare(password, user.contrasena_hash)))
-      return res.status(401).json({ error: 'Credenciales inválidas' });
+    if (!credencial || !password || typeof password !== 'string') {
+      return enviarRespuesta(res, 400, 'Correo electrónico (o RUT) y contraseña son requeridos.', null);
+    }
+
+    let user = null;
+    if (credencial.includes('@')) {
+      const { rows } = await db.query(
+        'SELECT * FROM USUARIO WHERE LOWER(correo_usuario) = $1',
+        [credencial.toLowerCase()]
+      );
+      user = rows[0] || null;
+    } else {
+      const rutNormalizado = normalizarRut(credencial);
+      const { rows } = await db.query(
+        'SELECT * FROM USUARIO WHERE rut = $1 OR LOWER(correo_usuario) = $2',
+        [rutNormalizado, credencial.toLowerCase()]
+      );
+      user = rows[0] || null;
+    }
+
+    // Mismo mensaje si falla el correo/RUT o la contraseña
+    if (!user || !(await bcrypt.compare(password, user.contrasena_hash))) {
+      return enviarRespuesta(res, 401, 'Credenciales inválidas.', null);
+    }
+
+    // Vinculación defensiva si existían invitaciones por RUT aún sin enlazar
+    await db.query(
+      `UPDATE DIRECTORIO_ALBACEAS
+       SET id_usuario_invitado = $1,
+           estado_validacion = CASE
+             WHEN estado_validacion = 'INVITADO' THEN 'PENDIENTE'
+             ELSE estado_validacion
+           END
+       WHERE rut_albacea = $2 AND id_usuario_invitado IS NULL`,
+      [user.id_usuario, user.rut]
+    );
+
+    const desigQuery = await db.query(
+      `SELECT
+         COUNT(*)::int AS total,
+         COUNT(*) FILTER (WHERE estado_validacion = 'PENDIENTE')::int AS pendientes,
+         COUNT(*) FILTER (WHERE estado_validacion = 'VALIDADO')::int AS validadas
+       FROM DIRECTORIO_ALBACEAS
+       WHERE id_usuario_invitado = $1`,
+      [user.id_usuario]
+    );
+
+    const resumenDesig = desigQuery.rows[0] || { total: 0, pendientes: 0, validadas: 0 };
 
     const token = jwt.sign(
       { id: user.id_usuario, rol: user.rol },
@@ -50,12 +150,113 @@ exports.login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '2h' }
     );
 
-    res.json({
+    return enviarRespuesta(res, 200, 'Inicio de sesión exitoso.', {
       token,
-      usuario: { id: user.id_usuario, nombre: user.nombre_usuario, rol: user.rol },
+      usuario: {
+        id: user.id_usuario,
+        rut: user.rut,
+        nombre: user.nombre_usuario,
+        correo: user.correo_usuario,
+        rol: user.rol,
+        es_albacea: resumenDesig.total > 0,
+        designaciones_pendientes: resumenDesig.pendientes,
+        designaciones_validadas: resumenDesig.validadas,
+        total_designaciones: resumenDesig.total,
+      },
     });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Error interno' });
+    console.error('Error en login:', e);
+    return enviarRespuesta(res, 500, 'Error interno del servidor al iniciar sesión.', null);
+  }
+};
+
+// GET /api/auth/perfil (y alias /api/perfil)
+exports.perfil = async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT id_usuario AS id, rut, nombre_usuario AS nombre, correo_usuario AS correo,
+              rol, fecha_ultimo_checkin
+       FROM USUARIO
+       WHERE id_usuario = $1`,
+      [req.user.id]
+    );
+
+    if (!rows[0]) {
+      return enviarRespuesta(res, 404, 'Usuario no encontrado.', null);
+    }
+
+    const desigQuery = await db.query(
+      `SELECT
+         COUNT(*)::int AS total,
+         COUNT(*) FILTER (WHERE estado_validacion = 'PENDIENTE')::int AS pendientes,
+         COUNT(*) FILTER (WHERE estado_validacion = 'VALIDADO')::int AS validadas
+       FROM DIRECTORIO_ALBACEAS
+       WHERE id_usuario_invitado = $1`,
+      [req.user.id]
+    );
+
+    const resumenDesig = desigQuery.rows[0] || { total: 0, pendientes: 0, validadas: 0 };
+
+    return enviarRespuesta(res, 200, 'Perfil obtenido correctamente.', {
+      ...rows[0],
+      es_albacea: resumenDesig.total > 0,
+      designaciones_pendientes: resumenDesig.pendientes,
+      designaciones_validadas: resumenDesig.validadas,
+      total_designaciones: resumenDesig.total,
+    });
+  } catch (e) {
+    console.error('Error en perfil:', e);
+    return enviarRespuesta(res, 500, 'Error interno del servidor.', null);
+  }
+};
+
+// PUT /api/auth/change-password
+exports.changePassword = async (req, res) => {
+  try {
+    const { passwordActual, nuevaPassword } = req.body || {};
+
+    if (!passwordActual || !nuevaPassword) {
+      return enviarRespuesta(res, 400, 'Debes ingresar tu contraseña actual y la nueva contraseña.', null);
+    }
+
+    if (typeof passwordActual !== 'string' || typeof nuevaPassword !== 'string') {
+      return enviarRespuesta(res, 400, 'Formato de contraseñas inválido.', null);
+    }
+
+    if (nuevaPassword.length < 8) {
+      return enviarRespuesta(res, 400, 'La nueva contraseña debe tener al menos 8 caracteres.', null);
+    }
+
+    if (passwordActual === nuevaPassword) {
+      return enviarRespuesta(res, 400, 'La nueva contraseña debe ser diferente a la contraseña actual.', null);
+    }
+
+    const { rows } = await db.query(
+      'SELECT id_usuario, contrasena_hash FROM USUARIO WHERE id_usuario = $1',
+      [req.user.id]
+    );
+
+    const user = rows[0];
+    if (!user) {
+      return enviarRespuesta(res, 404, 'Usuario no encontrado.', null);
+    }
+
+    const coincide = await bcrypt.compare(passwordActual, user.contrasena_hash);
+    if (!coincide) {
+      return enviarRespuesta(res, 401, 'La contraseña actual es incorrecta.', null);
+    }
+
+    const nuevoHash = await bcrypt.hash(nuevaPassword, 10);
+    await db.query(
+      'UPDATE USUARIO SET contrasena_hash = $1 WHERE id_usuario = $2',
+      [nuevoHash, req.user.id]
+    );
+
+    await registrarAuditoria('Actualizó su contraseña de acceso', obtenerIp(req), req.user.id);
+
+    return enviarRespuesta(res, 200, 'Contraseña actualizada exitosamente.', null);
+  } catch (e) {
+    console.error('Error en changePassword:', e);
+    return enviarRespuesta(res, 500, 'Error interno del servidor al cambiar la contraseña.', null);
   }
 };

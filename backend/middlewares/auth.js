@@ -1,20 +1,24 @@
 const jwt = require('jsonwebtoken');
+const { enviarRespuesta } = require('../utils/respuesta');
 
 exports.verificarToken = (req, res, next) => {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token) return res.status(401).json({ error: 'Token requerido' });
+  if (!token) {
+    return enviarRespuesta(res, 401, 'Token de autenticación requerido.', null);
+  }
 
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
-    next();
+    return next();
   } catch {
-    return res.status(401).json({ error: 'Token inválido o expirado' });
+    return enviarRespuesta(res, 401, 'Token inválido o expirado.', null);
   }
 };
 
 exports.soloRol = (...roles) => (req, res, next) => {
-  if (!roles.includes(req.user.rol))
-    return res.status(403).json({ error: 'No tienes permiso para esta acción' });
-  next();
+  if (!req.user || !roles.includes(req.user.rol)) {
+    return enviarRespuesta(res, 403, 'No tienes permiso para realizar esta acción.', null);
+  }
+  return next();
 };

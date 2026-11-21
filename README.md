@@ -1,30 +1,35 @@
-# 📱 Proyecto Full Stack: Baúl Eterno (Ionic React + Node.js/Express)
+# 📱 Proyecto Full Stack: Baúl Eterno (Ionic React + Node.js/Express + PostgreSQL)
 
-Este proyecto incluye un **frontend en Ionic + React** y un **backend en Node.js con Express**, conectados mediante una API REST y respaldados por una base de datos PostgreSQL.
+Plataforma Full Stack de resguardo de legado personal, pólizas de seguro, activos digitales y mensajes póstumos cifrados, desarrollada con **Ionic React** en el frontend, **Node.js + Express** en el backend y **PostgreSQL** como motor relacional.
 
 > **Asignatura:** Ingeniería Web y Móvil  
-> **Entrega:** EP2 — Integración frontend, backend y autenticación  
-> **Proyecto:** Baúl Eterno - Plataforma de Legado Personal  
+> **Proyecto:** Baúl Eterno — Plataforma de Legado Personal  
+> **Modelo funcional:** Cuenta Dual Unificada (Titular + Albacea)
 
 ---
 
 ## 1. Descripción y alcance
 
-"Baúl Eterno" es una plataforma que permite a los usuarios (Titulares) resguardar información crítica sobre sus seguros y redactar mensajes póstumos confidenciales. Estos datos permanecen sellados y solo son accesibles por sus contactos de confianza (Albaceas) mediante un proceso formal de apertura por contingencia (fallecimiento).
+**Baúl Eterno** permite a cualquier usuario registrado administrar su propia bóveda patrimonial (**Modo Titular**: pólizas de seguro, inventario de activos digitales/patrimoniales, mensajes póstumos cifrados con AES-256 y directorio de albaceas) y, simultáneamente, actuar como contacto de confianza (**Panel Albacea**) para terceros que lo designen mediante su RUT.
 
 ### Funcionalidades implementadas y conectadas
 
 | Función | Ubicación Backend | Ubicación Frontend | Estado |
 |---|---|---|---|
-| Registro de usuarios | `POST /api/auth/register` | `/register` (`Register.tsx`) | Implementado |
-| Inicio de sesión y JWT | `POST /api/auth/login` | `/login` (`Login.tsx`) | Implementado |
-| Protección por rutas y roles | Middleware JWT | `AppRoutes.tsx` / `RutaProtegida.tsx` | Implementado |
-| Check-in (Vigencia) | `POST /api/checkin` | `/dashboard` (`Dashboard.tsx`) | Implementado |
-| Gestión de Albaceas | `GET` / `POST /api/albaceas` | `/albaceas` (`Albaceas.tsx`) | Implementado |
-| Mensajes Póstumos | `GET` / `POST /api/mensajes` | `/mensajes` (`Mensajes.tsx`) | Implementado |
-| Solicitud Apertura | `POST /api/solicitudes` | `/apertura` (`Apertura.tsx`) | Implementado (FormData) |
-| Alertas / Cancelación | `GET` / `DELETE /api/solicitudes...` | `/dashboard` (`Dashboard.tsx`) | Implementado |
-| Cambio de Contraseña | Pendiente endpoint backend | `/configuracion` (`Configuracion.tsx`) | Vista maquetada (Conexión pendiente) |
+| Registro unificado + vinculación automática por RUT | `POST /api/auth/register` | `/register` (`Register.tsx`) | Implementado |
+| Inicio de sesión (correo o RUT) + JWT | `POST /api/auth/login` | `/login` (`Login.tsx`) | Implementado |
+| Perfil y contexto dual | `GET /api/auth/perfil` / `/api/perfil` | `AppMenu.tsx` / `Configuracion.tsx` | Implementado |
+| Cambio de contraseña verificado con bcrypt | `PUT /api/auth/change-password` | `/configuracion` (`Configuracion.tsx`) | Implementado |
+| Protección de rutas e interceptor 401 | `middlewares/auth.js` | `AppRoutes.tsx`, `RutaProtegida.tsx`, `api.ts` | Implementado |
+| Check-in de vigencia y anulación de alertas | `GET` / `POST /api/checkin` | `/dashboard` (`Dashboard.tsx`) | Implementado |
+| CRUD de Pólizas (paginado) | `/api/polizas` | `/polizas` (`Polizas.tsx`) | Implementado |
+| CRUD de Inventario Patrimonial (paginado) | `/api/inventario` | `/inventario` (`Inventario.tsx`) | Implementado |
+| Gestión de Albaceas (registrados e invitados) | `GET` / `POST` / `DELETE /api/albaceas` | `/albaceas` (`Albaceas.tsx`) | Implementado |
+| Mensajes Póstumos sellados (AES-256-CBC) | `GET` / `POST` / `PUT` / `DELETE /api/mensajes` | `/mensajes` (`Mensajes.tsx`) | Implementado |
+| Designaciones recibidas (Aceptar / Rechazar) | `GET /api/guia/designaciones`, `PUT /api/guia/designaciones/:id/responder` | `/guia` (`Guia.tsx`) | Implementado |
+| Solicitud de Apertura por Contingencia (Multipart + SHA-256) | `POST /api/solicitudes`, `GET /api/solicitudes/mias` | `/apertura` (`Apertura.tsx`) | Implementado |
+| Alertas y cancelación en periodo de gracia | `GET /api/solicitudes/alertas`, `PUT /api/solicitudes/:id/cancelar` | `/dashboard` (`Dashboard.tsx`) | Implementado |
+| Guía de cobro de pólizas liberadas y checklist | `GET /api/guia`, `PUT /api/guia/polizas/:id/tramitada` | `/guia` (`Guia.tsx`) | Implementado |
 
 ---
 
@@ -38,145 +43,386 @@ Este proyecto incluye un **frontend en Ionic + React** y un **backend en Node.js
 
 **Figma:** [Prototipo interactivo en Figma](https://www.figma.com/proto/s6G2EQV48I6itrofIrnfEL/Baul-Eterno?node-id=0-1&t=US5Hg77S9L3U4a1T-1)
 
-**Relación con EP1:** Se han implementado las interfaces y flujos que responden a los requerimientos RF-01 a RF-07 documentados en el informe inicial (Gestión patrimonial, albaceas, mensajería sellada y contingencia).
+**Relación con requerimientos:** Cubre RF-01 a RF-07 (gestión de pólizas, inventario, directorio de albaceas con invitaciones externas, mensajería sellada AES-256, check-in, apertura por contingencia con periodo de gracia y guía de cobro) y RNF-01 a RNF-05 (seguridad, integridad SHA-256, cifrado AES-256, auditoría).
 
 ---
 
-## 3. Tecnologías y alineación de dependencias
+## 3. Tecnologías y dependencias
 
-| Capa | Tecnología utilizada en Baúl Eterno |
+| Capa | Tecnología |
 |---|---|
-| Frontend | Ionic 9 + React 19 + React Router DOM (v6.30.6) + `@ionic/react-router` (^9.0.10) |
-| Backend | Node.js + Express |
-| Base de datos | PostgreSQL |
-| Autenticación | JSON Web Tokens (`jsonwebtoken`) + `bcrypt` |
-| Comunicación | `axios` para HTTP requests (multipart y JSON) |
-| Configuración CORS | Paquete `cors` en Express |
+| Frontend | Ionic 9 (`@ionic/react` ^9.0.4) + React 19 + React Router DOM (`^6.30.6`) + `@ionic/react-router` (`^9.0.10`) + TypeScript |
+| Backend | Node.js + Express 5 + Arquitectura MVC (Rutas + Controladores + Middlewares + Utils) |
+| Base de datos | PostgreSQL (`pg`) |
+| Seguridad | `helmet`, `cors` (lista blanca por entorno), `express-rate-limit`, `jsonwebtoken`, `bcrypt`, `crypto` (AES-256-CBC y SHA-256) |
+| Comunicación HTTP | `axios` (timeout 10s, interceptores de JWT y 401, soporte `multipart/form-data`) |
 
-> **Nota de compatibilidad en Frontend:** Se utiliza `@ionic/react-router` en su versión 9 junto a `react-router-dom` v6 para habilitar el uso nativo del hook `useNavigate` en todo el proyecto frontend sin conflictos de compilación en Vite.
+> **Nota de compatibilidad en Frontend:** Se mantiene `@ionic/react-router` v9 junto con `react-router-dom` v6 para utilizar `useNavigate` y `<Routes>` de forma nativa con Vite y TypeScript.
 
 ---
 
 ## 4. Arquitectura de carpetas
 
 ```text
-PROYECTOBAUL/ (Frontend)
-├── .env                  # URL del backend (VITE_API_URL=http://localhost:3000/api)
-├── package.json
-└── src/
-    ├── components/       # AppMenu, HeaderBar, VaultStatusCard, etc.
-    ├── pages/            # Login, Register, Dashboard, Albaceas, Mensajes, Apertura, etc.
-    ├── routes/           # AppRoutes.tsx y RutaProtegida.tsx
-    ├── services/         # api.ts (Instancia Axios), auth.service.ts, albaceas.service.ts...
-    └── utils/            # rut.ts (Normalización de datos)
-
-backend/ (Servidor)
-├── .env                  # Credenciales BD y JWT_SECRET
-├── index.js              # Archivo principal y configuración CORS
-├── db.js                 # Conexión a PostgreSQL
-├── package.json
-├── database/             # Scripts SQL de base de datos
-│   ├── baul_eterno.sql   # Creación de tablas y estructura DDL
-│   └── init.sql          # Inyección de datos de prueba (Poblamiento inicial)
-├── routes/               # auth.routes.js, albaceas.routes.js, etc.
-└── middlewares/          # authMiddleware.js
+Ingenieria-WEB-Y-MOVIL/
+├── .gitignore
+├── README.md
+├── backend/                          # Servidor Node.js / Express
+│   ├── .env                          # Variables locales (ignorado por Git)
+│   ├── .env.example                  # Plantilla de variables de entorno
+│   ├── .gitignore
+│   ├── db.js                         # Pool de conexión PostgreSQL
+│   ├── index.js                      # Entrada Express, Helmet, CORS, rutas y manejo global de errores JSON
+│   ├── package.json                  # Scripts start/dev apuntando a index.js
+│   ├── controllers/                  # Lógica de negocio y consultas SQL (MVC)
+│   │   ├── albaceas.controller.js
+│   │   ├── auth.controller.js
+│   │   ├── checkin.controller.js
+│   │   ├── guia.controller.js
+│   │   ├── inventario.controller.js
+│   │   ├── mensajes.controller.js
+│   │   ├── polizas.controller.js
+│   │   └── solicitudes.controller.js
+│   ├── database/
+│   │   ├── baul_eterno.sql           # DDL completo (tablas, FKs, CHECKs e índices)
+│   │   └── init.sql                  # Poblamiento semilla sincronizado + reset de secuencias
+│   ├── middlewares/
+│   │   └── auth.js                   # verificarToken (JWT) y soloRol
+│   ├── routes/                       # Definición limpia de endpoints y middlewares
+│   │   ├── albaceas.routes.js
+│   │   ├── auth.routes.js
+│   │   ├── checkin.routes.js
+│   │   ├── guia.routes.js
+│   │   ├── inventario.routes.js
+│   │   ├── mensajes.routes.js
+│   │   ├── polizas.routes.js
+│   │   └── solicitudes.routes.js
+│   └── utils/
+│       ├── aseguradoras.js           # Directorio de contactos de aseguradoras en Chile
+│       ├── auditoria.js              # Registro en tabla AUDITORIA (RNF-05)
+│       ├── cifrado.js                # Cifrado/descifrado AES-256-CBC
+│       ├── respuesta.js              # Formato estándar { mensaje, data, meta? }
+│       ├── solicitudes.js            # Aprobación automática al vencer plazo de gracia
+│       └── validadores.js            # Validación de RUT chileno (Módulo 11), email, IDs y paginación
+│
+└── frontend/                         # Aplicación Frontend Ionic React
+    ├── .env                          # URL de la API local (ignorado por Git)
+    ├── .env.example                  # Plantilla de entorno frontend
+    ├── .gitignore
+    ├── package.json
+    └── src/
+        ├── components/               # AppMenu (con selector Titular/Albacea), HeaderBar, VaultStatusCard
+        ├── pages/                    # Login, Register, Dashboard, Polizas, Inventario, Albaceas, Mensajes, Guia, Apertura, Configuracion
+        ├── routes/                   # AppRoutes.tsx y RutaProtegida.tsx
+        ├── services/                 # api.ts + servicios por módulo (incluye inventario.service.ts)
+        └── utils/                    # rut.ts (normalización/validación RUT Módulo 11 y email)
 ```
 
 ---
 
-## 5. Preparación y ejecución local
+## 5. Modelo de Base de Datos (PostgreSQL)
 
-### 5.1 Base de datos (PostgreSQL)
+El esquema relacional definido en [`backend/database/baul_eterno.sql`](backend/database/baul_eterno.sql) consta de **7 tablas**:
 
-1. Crear una base de datos PostgreSQL local nombrada `baul_eterno`.
-2. Ejecutar el script `backend/database/baul_eterno.sql` para crear las tablas y restricciones de la base de datos.
-3. Ejecutar el script `backend/database/init.sql` para realizar la inyección inicial de datos de prueba.
-4. Configurar las credenciales en el archivo `backend/.env`:
-```env
-DB_USER=postgres
-DB_PASSWORD=tu_password
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=baul_eterno
-JWT_SECRET=tu_secreto_seguro
-```
+### Entidades y cardinalidades
 
-### 5.2 Iniciar backend
+1. **`USUARIO` (1) → (N) `POLIZA`**: Un usuario titular puede registrar múltiples pólizas de seguro (`ON DELETE CASCADE`).
+2. **`USUARIO` (1) → (N) `INVENTARIO`**: Un usuario titular puede registrar múltiples activos digitales o patrimoniales con instrucciones póstumas (`ON DELETE CASCADE`).
+3. **`USUARIO` (1) → (N) `MENSAJE_POSTUMO`**: Un usuario redacta múltiples cartas póstumas cifradas con AES-256 asociadas al `rut_destinatario` de un albacea (`ON DELETE CASCADE`).
+4. **`USUARIO` (N) ↔ (M) `USUARIO` vía `DIRECTORIO_ALBACEAS`**:
+   - `id_titular` (`NOT NULL`, FK a `USUARIO`, `ON DELETE CASCADE`): dueño de la bóveda.
+   - `id_usuario_invitado` (`NULL`, FK a `USUARIO`, `ON DELETE SET NULL`): opcional para permitir designar personas **aún no registradas** (`estado_validacion = 'INVITADO'`). Se vincula automáticamente por `rut_albacea` al registrarse.
+   - Restricción `UNIQUE (id_titular, rut_albacea)` que impide duplicar un mismo contacto en el directorio de un titular.
+5. **`USUARIO` (1) → (N) `SOLICITUD_APERTURA` ← (1) `DIRECTORIO_ALBACEAS`**: Registra solicitudes de apertura iniciadas por un albacea validado (`id_albacea`) sobre la bóveda de un titular (`id_usuario`), guardando el archivo y su huella `SHA-256`.
+6. **`USUARIO` (1) → (N) `AUDITORIA`**: Bitácora inmutable de acciones críticas (`ON DELETE SET NULL`).
 
-Desde la carpeta `backend/`:
-```bash
-npm install
-npm run dev
-```
-El servidor quedará expuesto en `http://localhost:3000`.
+### Restricciones de integridad (`CHECK`)
 
-### 5.3 Iniciar frontend
+| Tabla | Restricción | Regla aplicada |
+|---|---|---|
+| `USUARIO` | `chk_usuario_rut` | `rut ~ '^[0-9]{7,8}-[0-9K]$'` |
+| `USUARIO` | `chk_usuario_rol` | `rol IN ('TITULAR', 'ALBACEA', 'ADMIN')` |
+| `DIRECTORIO_ALBACEAS` | `chk_albacea_rut` | `rut_albacea ~ '^[0-9]{7,8}-[0-9K]$'` |
+| `DIRECTORIO_ALBACEAS` | `chk_estado_validacion` | `estado_validacion IN ('PENDIENTE', 'VALIDADO', 'RECHAZADO', 'INVITADO')` |
+| `POLIZA` | `chk_poliza_monto` | `monto_referencial >= 0` |
+| `INVENTARIO` | `chk_inventario_categoria` | `categoria IN ('General', 'Financiero', 'Familiar Directo', 'Público', 'Digital', 'Físico')` |
+| `MENSAJE_POSTUMO` | `chk_mensaje_rut` | `rut_destinatario ~ '^[0-9]{7,8}-[0-9K]$'` |
+| `SOLICITUD_APERTURA` | `chk_estado_solicitud` | `estado_solicitud IN ('PENDIENTE', 'CANCELADA', 'APROBADA')` |
 
-1. Crear el archivo `.env` en la raíz de `PROYECTOBAUL/`:
+---
+
+## 6. Preparación y ejecución local
+
+### 6.1 Base de datos PostgreSQL
+
+1. Crear la base de datos local `baul_eterno`.
+2. Ejecutar [`backend/database/baul_eterno.sql`](backend/database/baul_eterno.sql) para crear tablas, restricciones e índices.
+3. Ejecutar [`backend/database/init.sql`](backend/database/init.sql) para cargar los usuarios y datos de prueba (contraseña de prueba: `123123123`).
+
+### 6.2 Variables de entorno
+
+#### Backend (`backend/.env`)
+Copia `backend/.env.example` a `backend/.env` y define tus valores locales:
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `PORT` | Puerto HTTP del servidor Express | `3000` |
+| `DB_HOST` | Host de PostgreSQL | `localhost` |
+| `DB_PORT` | Puerto de PostgreSQL | `5432` |
+| `DB_USER` | Usuario de PostgreSQL | `postgres` |
+| `DB_PASSWORD` | Contraseña de PostgreSQL | `tu_password_segura` |
+| `DB_NAME` | Nombre de la base de datos | `baul_eterno` |
+| `JWT_SECRET` | Secreto HMAC para firmar tokens JWT | 64 caracteres hex aleatorios |
+| `JWT_EXPIRES_IN` | Duración del token JWT | `2h` |
+| `AES_SECRET_KEY` | Clave de cifrado AES-256-CBC para mensajes póstumos (**exactamente 64 caracteres hex = 32 bytes**) | `openssl rand -hex 32` |
+| `PLAZO_GRACIA_HORAS` | Horas del periodo de gracia antes de aprobar apertura automáticamente | `72` |
+| `FRONTEND_URL` | Origen(es) permitidos por CORS (separados por coma) | `http://localhost:5173` |
+
+#### Frontend (`frontend/.env`)
+Copia `frontend/.env.example` a `frontend/.env`:
 ```env
 VITE_API_URL=http://localhost:3000/api
 ```
 
-2. Ejecutar la instalación limpia y levantar el servidor dev:
+### 6.3 Iniciar backend
+
 ```bash
+cd backend
+npm install
+npm run dev   # o npm start
+```
+
+### 6.4 Iniciar frontend
+
+```bash
+cd frontend
 npm install --legacy-peer-deps
-npx vite --force
 npm run dev
 ```
-*Nota: Se recomienda `--legacy-peer-deps` al instalar dependencias para prevenir advertencias de peer dependencies entre las herramientas de empaquetado de Ionic y React 19.*
 
 ---
 
-## 6. Documentación de la API (Endpoints principales)
+## 7. Documentación de la API REST
 
 **URL base:** `http://localhost:3000/api`
 
-| Método | Ruta | Objetivo | Token |
-|---|---|---|---|
-| POST | `/auth/register` | Registrar usuario (Titular/Albacea) | No |
-| POST | `/auth/login` | Iniciar sesión y obtener JWT | No |
-| GET  | `/albaceas` | Listar albaceas del titular | Sí |
-| POST | `/solicitudes` | Crear solicitud de apertura (Multipart) | Sí (Albacea) |
-| GET  | `/solicitudes/alertas`| Ver solicitudes pendientes de cancelación | Sí (Titular) |
+Todas las respuestas de la API siguen el **contrato JSON unificado**:
+```json
+{
+  "mensaje": "Descripción del resultado",
+  "data": {},
+  "meta": { "total": 10, "limit": 20, "offset": 0 }
+}
+```
+*(El campo `meta` se incluye en listados paginados o resúmenes).*
+
+### Tabla completa de endpoints
+
+| Módulo | Método | Ruta | Objetivo | Auth JWT |
+|---|---|---|---|---|
+| Sistema | `GET` | `/api/test` | Verificar disponibilidad de Express | No |
+| Sistema | `GET` | `/api/health` | Verificar conexión con PostgreSQL | No |
+| Auth | `POST` | `/api/auth/register` | Registrar usuario y vincular invitaciones por RUT | No |
+| Auth | `POST` | `/api/auth/login` | Iniciar sesión (correo o RUT) con rate-limit | No |
+| Auth | `GET` | `/api/auth/perfil` | Obtener perfil y resumen de designaciones | Sí |
+| Auth | `PUT` | `/api/auth/change-password` | Cambiar contraseña verificando la actual | Sí |
+| Pólizas | `GET` | `/api/polizas?limit=&offset=` | Listar pólizas propias (paginado) | Sí |
+| Pólizas | `GET` | `/api/polizas/:id` | Obtener una póliza propia por ID | Sí |
+| Pólizas | `POST` | `/api/polizas` | Registrar nueva póliza | Sí |
+| Pólizas | `PUT` | `/api/polizas/:id` | Actualizar póliza existente | Sí |
+| Pólizas | `DELETE` | `/api/polizas/:id` | Eliminar póliza | Sí |
+| Inventario | `GET` | `/api/inventario?limit=&offset=` | Listar activos digitales/patrimoniales (paginado) | Sí |
+| Inventario | `GET` | `/api/inventario/:id` | Obtener un activo por ID | Sí |
+| Inventario | `POST` | `/api/inventario` | Crear activo en inventario | Sí |
+| Inventario | `PUT` | `/api/inventario/:id` | Actualizar activo en inventario | Sí |
+| Inventario | `DELETE` | `/api/inventario/:id` | Eliminar activo del inventario | Sí |
+| Albaceas | `GET` | `/api/albaceas?limit=&offset=` | Listar directorio de albaceas del titular (paginado) | Sí |
+| Albaceas | `POST` | `/api/albaceas` | Designar albacea (registrado o invitado por RUT) | Sí |
+| Albaceas | `DELETE` | `/api/albaceas/:id` | Eliminar albacea del directorio | Sí |
+| Mensajes | `GET` | `/api/mensajes?limit=&offset=` | Listar metadatos de mensajes sellados (paginado) | Sí |
+| Mensajes | `POST` | `/api/mensajes` | Cifrar (AES-256) y guardar mensaje póstumo | Sí |
+| Mensajes | `PUT` | `/api/mensajes/:id` | Reescribir y volver a cifrar mensaje propio | Sí |
+| Mensajes | `DELETE` | `/api/mensajes/:id` | Eliminar mensaje póstumo | Sí |
+| Check-in | `GET` | `/api/checkin` | Consultar último check-in y días transcurridos | Sí |
+| Check-in | `POST` | `/api/checkin` | Confirmar presencia y anular solicitudes pendientes | Sí |
+| Solicitudes | `POST` | `/api/solicitudes` | Iniciar apertura (`multipart/form-data`: `rut_titular`, `certificado`) | Sí |
+| Solicitudes | `GET` | `/api/solicitudes/mias` | Ver solicitudes de apertura enviadas como albacea | Sí |
+| Solicitudes | `GET` | `/api/solicitudes/alertas` | Ver alertas de apertura sobre la bóveda del titular | Sí |
+| Solicitudes | `PUT` | `/api/solicitudes/:id/cancelar` | Cancelar solicitud pendiente en periodo de gracia | Sí |
+| Guía Albacea | `GET` | `/api/guia/designaciones` | Listar titulares que designaron al usuario como albacea | Sí |
+| Guía Albacea | `PUT` | `/api/guia/designaciones/:id/responder` | Aceptar (`VALIDADO`) o rechazar (`RECHAZADO`) designación | Sí |
+| Guía Albacea | `GET` | `/api/guia` | Consultar pólizas liberadas tras apertura `APROBADA` | Sí |
+| Guía Albacea | `PUT` | `/api/guia/polizas/:id/tramitada` | Marcar o desmarcar póliza como tramitada | Sí |
+
+### Ejemplos de Request y Response
+
+#### 1. `POST /api/auth/login`
+**Request:**
+```json
+{
+  "correo_usuario": "roberto.morales@correo.cl",
+  "password": "123123123"
+}
+```
+**Response (`200 OK`):**
+```json
+{
+  "mensaje": "Inicio de sesión exitoso.",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "usuario": {
+      "id": 1,
+      "rut": "12345678-5",
+      "nombre": "Roberto Morales",
+      "correo": "roberto.morales@correo.cl",
+      "rol": "TITULAR",
+      "es_albacea": false,
+      "designaciones_pendientes": 0,
+      "designaciones_validadas": 0,
+      "total_designaciones": 0
+    }
+  }
+}
+```
+
+#### 2. `PUT /api/auth/change-password`
+**Request:**
+```json
+{
+  "passwordActual": "123123123",
+  "nuevaPassword": "NuevaClaveSegura2026"
+}
+```
+**Response (`200 OK`):**
+```json
+{
+  "mensaje": "Contraseña actualizada exitosamente.",
+  "data": null
+}
+```
+
+#### 3. `POST /api/albaceas` (Invitación a persona no registrada)
+**Request:**
+```json
+{
+  "rut_invitado": "18111222-0",
+  "nombre_albacea": "Esteban Paredes",
+  "email_albacea": "esteban.paredes@correo.cl",
+  "parentesco": "Abogado/a"
+}
+```
+**Response (`201 Created`):**
+```json
+{
+  "mensaje": "Invitación registrada. Cuando esta persona cree su cuenta con este RUT, la designación se vinculará automáticamente.",
+  "data": {
+    "id_directorio": 3,
+    "nombre_usuario": "Esteban Paredes",
+    "rut": "18111222-0",
+    "correo_usuario": "esteban.paredes@correo.cl",
+    "parentesco": "Abogado/a",
+    "estado_validacion": "INVITADO",
+    "registrado": false
+  }
+}
+```
+
+#### 4. `PUT /api/guia/designaciones/2/responder`
+**Request:**
+```json
+{
+  "estado": "VALIDADO"
+}
+```
+**Response (`200 OK`):**
+```json
+{
+  "mensaje": "Designación aceptada correctamente. Ahora figuras como albacea validado.",
+  "data": {
+    "id_directorio": 2,
+    "id_titular": 1,
+    "parentesco": "Familiar",
+    "estado_validacion": "VALIDADO"
+  }
+}
+```
+
+#### 5. `GET /api/polizas?limit=10&offset=0`
+**Response (`200 OK`):**
+```json
+{
+  "mensaje": "Pólizas obtenidas correctamente.",
+  "data": [
+    {
+      "id_poliza": 1,
+      "tipo_seguro": "Seguro de Vida Individual",
+      "aseguradora": "Consorcio",
+      "numero_poliza": "POL-8475839",
+      "ubicacion_fisica": "Cajón derecho del escritorio principal",
+      "monto_referencial": "50000000.00",
+      "tramitada": false,
+      "id_usuario": 1
+    }
+  ],
+  "meta": {
+    "total": 3,
+    "limit": 10,
+    "offset": 0
+  }
+}
+```
+
+#### 6. `POST /api/inventario`
+**Request:**
+```json
+{
+  "plataforma": "Google Drive / Fotos",
+  "instruccion": "Descargar respaldo familiar y cerrar cuenta",
+  "categoria": "Familiar Directo"
+}
+```
+**Response (`201 Created`):**
+```json
+{
+  "mensaje": "Activo agregado al inventario con éxito.",
+  "data": {
+    "id_inventario": 1,
+    "plataforma": "Google Drive / Fotos",
+    "instruccion": "Descargar respaldo familiar y cerrar cuenta",
+    "categoria": "Familiar Directo",
+    "fecha_creacion": "2026-11-21T04:00:00.000Z"
+  }
+}
+```
 
 ---
 
-## 7. Seguridad y JWT
+## 8. Seguridad, Hardening y Limitaciones Conocidas
 
-| Control EP2 | En este proyecto |
+| Control | Implementación en Baúl Eterno |
 |---|---|
-| JWT con expiración | Implementado en backend. |
-| Rutas protegidas | Frontend protegido con `RutaProtegida.tsx`. Backend con `authMiddleware`. |
-| Roles diferenciados | TITULAR accede a Dashboard/Gestión. ALBACEA accede a Guía/Apertura. |
-| bcrypt | Cifrado de contraseñas implementado en registro y login. |
-| Secretos de entorno | `VITE_API_URL`, `DB_PASSWORD`, y `JWT_SECRET` en archivos `.env`. |
-| Minimización | El JWT solo contiene el `id_usuario` y `rol`. |
+| Cabeceras HTTP seguras | `helmet` activado globalmente en `backend/index.js`. |
+| Mitigación de fuerza bruta | `express-rate-limit` en `POST /api/auth/login` (máximo 10 intentos cada 15 minutos por IP). |
+| CORS estricto | Orígenes permitidos restringidos mediante `FRONTEND_URL`. |
+| Contraseñas | Hasheadas con `bcrypt` (10 rondas) en registro y cambio de clave. |
+| Cifrado de mensajes póstumos | `AES-256-CBC` con IV aleatorio de 16 bytes por mensaje (`AES_SECRET_KEY`). |
+| Integridad de certificados | Huella criptográfica `SHA-256` almacenada al recibir el certificado de defunción. |
+| Validación de entradas | RUT chileno (formato + dígito verificador Módulo 11), correo electrónico, IDs numéricos enteros (`400 Bad Request`), JSON global error handler. |
+| Interceptor HTTP 401 | En frontend (`api.ts`), cualquier sesión expirada limpia `localStorage` y redirige a `/login`. |
+
+> **Limitación conocida — Cierre de sesión *stateless* con JWT:** Al utilizar JSON Web Tokens sin lista de revocación en servidor (*stateless*), el cierre de sesión elimina el token del navegador (`localStorage`), pero un token previamente capturado permanecerá técnicamente válido ante el backend hasta su expiración natural configurada en `JWT_EXPIRES_IN` (**2 horas**). Para mitigación futura en producción se recomienda implementar una *denylist* en Redis o tokens de corta duración con *refresh tokens* rotatorios.
 
 ---
 
-## 8. Observaciones y Alcance de la Entrega (EP2)
+## 9. Matriz de cumplimiento
 
-Para transparencia de la evaluación de esta entrega intermedia, se registran los siguientes puntos de alcance y trabajo pendiente planificado para la entrega final:
-
-1. **Gestión de Roles y Alternancia (Panel Albacea):**
-   - En esta entrega, la navegación responde al rol estático asignado al usuario (`TITULAR` o `ALBACEA`). La funcionalidad para que un mismo usuario registrado pueda actuar simultáneamente como Titular de su propia bóveda y responder invitaciones como Albacea de otros usuarios se encuentra maquetada y será consolidada en la entrega final.
-
-2. **Registro previo para designar Albaceas:**
-   - En la versión actual de la API, la designación de un albacea requiere que su RUT coincida con un usuario registrado en el sistema. El flujo de invitación externa (enviar correo a un albacea no registrado para asignación automática posterior) queda agendado para la versión final.
-
-3. **Formulario de Cambio de Contraseña (`Configuracion.tsx`):**
-   - La interfaz de usuario para actualización de claves se encuentra disponible en la pestaña de Ajustes, pero la interacción requiere la integración del endpoint `/api/auth/change-password` en el servidor backend (programado para la entrega final).
-
----
-
-## 9. Matriz de cumplimiento EP2
-
-- [x] **EP 2.1 Servidor:** Node.js/Express operativo y configurado.
-- [x] **EP 2.2 Base relacional:** PostgreSQL integrado.
-- [x] **EP 2.3 API REST:** Endpoints POST, GET, DELETE implementados.
-- [x] **EP 2.4 JWT y roles:** Rutas y vistas aisladas para Titulares y Albaceas.
-- [x] **EP 2.5 Seguridad:** Datos sensibles excluidos del frontend, tokens manejados correctamente.
-- [x] **EP 2.6 Ionic React + backend:** Páginas conectadas usando Axios, States y useEffects.
+- [x] **EP 2.1 Servidor:** Node.js/Express operativo con arquitectura MVC, Helmet, CORS estricto, rate-limiting y manejo global de errores JSON.
+- [x] **EP 2.2 Base relacional:** PostgreSQL con esquema normalizado (7 tablas incluyendo `INVENTARIO`), restricciones `CHECK`, soporte de albaceas invitados y script `init.sql` sincronizado.
+- [x] **EP 2.3 API REST:** Endpoints CRUD completos y paginados bajo formato estándar `{ mensaje, data, meta? }` con validación estricta de IDs y entradas.
+- [x] **EP 2.4 JWT y modelo dual:** Autenticación JWT con expiración de 2h, cambio de contraseña, y alternancia fluida entre **Mi Baúl (Titular)** y **Panel Albacea**.
+- [x] **EP 2.5 Seguridad:** Secretos aislados fuera de Git (`.gitignore` + `.env.example`), cifrado AES-256, SHA-256, `bcrypt` y auditoría de eventos críticos.
+- [x] **EP 2.6 Ionic React + backend:** Todas las vistas (`Dashboard`, `Polizas`, `Inventario`, `Albaceas`, `Mensajes`, `Guia`, `Apertura`, `Configuracion`, `Login`, `Register`) integradas con Axios y validación en tiempo real.
+- [x] **EP 2.7 Documentación y calidad:** `README.md` actualizado con árbol de directorios real, variables de entorno (`AES_SECRET_KEY`, `FRONTEND_URL`), modelo de BD, ejemplos de API y limitaciones conocidas documentadas.
 
 ---
 *Desarrollado para la asignatura de Ingeniería Web y Móvil.*
