@@ -48,6 +48,7 @@ export interface Guia {
   polizas: PolizaGuia[];
   inventario: InventarioGuia[];
   mensajes: MensajeGuia[];
+  cartas_otros_por_titular: Record<number, number>;
   resumen: { total: number; tramitadas: number };
   mensaje?: string;
 }
@@ -74,6 +75,7 @@ export const obtenerGuia = async (): Promise<Guia> => {
       polizas: PolizaGuia[];
       inventario?: InventarioGuia[];
       mensajes?: MensajeGuia[];
+      cartas_otros_por_titular?: Record<number, number>;
       resumen: { total: number; tramitadas: number };
     }>
   >('/guia');
@@ -82,6 +84,7 @@ export const obtenerGuia = async (): Promise<Guia> => {
     polizas: res.data.data?.polizas || [],
     inventario: res.data.data?.inventario || [],
     mensajes: res.data.data?.mensajes || [],
+    cartas_otros_por_titular: res.data.data?.cartas_otros_por_titular || {},
     resumen: res.data.data?.resumen || { total: 0, tramitadas: 0 },
     mensaje: res.data.mensaje,
   };

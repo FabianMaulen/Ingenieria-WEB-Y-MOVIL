@@ -254,6 +254,8 @@ exports.callbackGoogle = async (req, res) => {
         plazo_gracia_dias: user.plazo_gracia_dias || 7,
         notificar_recordatorios: user.notificar_recordatorios !== false,
         rol: user.rol,
+        boveda_activa: Boolean(user.boveda_activa),
+        terminos_aceptados_en: user.terminos_aceptados_en || null,
         avatar_url: user.avatar_url || null,
         requiere_rut: !user.rut,
         tiene_password: Boolean(user.contrasena_hash),

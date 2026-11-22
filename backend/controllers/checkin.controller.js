@@ -9,6 +9,7 @@ exports.obtener = async (req, res) => {
   try {
     const query = `
       SELECT fecha_ultimo_checkin,
+             boveda_activa,
              frecuencia_checkin_dias,
              plazo_gracia_dias,
              GREATEST(0, EXTRACT(DAY FROM (NOW() - fecha_ultimo_checkin))::int) AS dias_desde_ultimo,

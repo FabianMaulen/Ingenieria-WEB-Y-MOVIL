@@ -417,6 +417,73 @@ ion-menu ion-item.be-menu-active ion-icon {
   line-height: 1.55;
 }
 
+.be-hero-banner-compact {
+  padding: 13px 18px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  box-shadow: var(--be-shadow-sm);
+}
+
+.be-hero-banner-compact::after {
+  width: 120px;
+  height: 120px;
+  top: -36px;
+  right: -28px;
+}
+
+.be-hero-banner-compact h2 {
+  margin: 0 0 2px 0;
+  font-size: 1.12rem;
+}
+
+.be-hero-banner-compact p {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+@keyframes bePriorityPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.72);
+  }
+  50% {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 7px rgba(251, 191, 36, 0);
+  }
+}
+
+.be-priority-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #fbbf24;
+  display: inline-block;
+  flex-shrink: 0;
+  animation: bePriorityPulse 1.8s ease-in-out infinite;
+}
+
+.be-onboarding-priority {
+  border: 2px solid var(--be-primary);
+  border-radius: 20px;
+  box-shadow: 0 18px 44px rgba(15, 76, 129, 0.18), 0 0 0 4px rgba(29, 81, 150, 0.08);
+  background: var(--be-surface);
+  overflow: hidden;
+  margin-bottom: 26px;
+}
+
+.dark .be-onboarding-priority {
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.48), 0 0 0 3px rgba(102, 163, 232, 0.16);
+}
+
+.be-secondary-dimmed {
+  opacity: 0.84;
+  transition: opacity 0.2s ease;
+}
+
+.be-secondary-dimmed:hover {
+  opacity: 1;
+}
+
 /* Grids responsivos */
 .be-grid-2 {
   display: grid;

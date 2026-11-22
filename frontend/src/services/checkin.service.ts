@@ -2,6 +2,7 @@ import api, { ApiResponse } from './api';
 
 export interface EstadoCheckin {
   fecha_ultimo_checkin: string;
+  boveda_activa?: boolean;
   frecuencia_checkin_dias?: number;
   plazo_gracia_dias?: number;
   dias_desde_ultimo: number;

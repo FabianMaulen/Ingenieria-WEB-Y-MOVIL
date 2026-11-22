@@ -29,10 +29,12 @@ export const getAlbaceas = async (limit = 50, offset = 0): Promise<Albacea[]> =>
 // POST /api/albaceas -> Designa albacea (registrado o invitado por RUT + nombre + email)
 export const agregarAlbacea = async (datos: NuevoAlbaceaInput) => {
   const res = await api.post<ApiResponse<Albacea>>('/albaceas', datos);
+  window.dispatchEvent(new Event('boveda-actualizada'));
   return res.data;
 };
 
 // DELETE /api/albaceas/:id -> Elimina el vínculo por id_directorio
 export const eliminarAlbacea = async (id_directorio: number): Promise<void> => {
   await api.delete(`/albaceas/${id_directorio}`);
+  window.dispatchEvent(new Event('boveda-actualizada'));
 };

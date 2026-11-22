@@ -234,6 +234,24 @@ CREATE TABLE IF NOT EXISTS TICKET_SOPORTE (
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- 6f. Activación consciente de bóveda (configuración mínima + aceptación de condiciones)
+ALTER TABLE USUARIO
+  ADD COLUMN IF NOT EXISTS boveda_activa BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS terminos_aceptados_en TIMESTAMP NULL;
+
+-- Mantener activas las cuentas existentes que ya tienen al menos 1 registro propio o son ADMIN
+UPDATE USUARIO u
+SET boveda_activa = TRUE,
+    terminos_aceptados_en = COALESCE(u.terminos_aceptados_en, NOW())
+WHERE u.boveda_activa = FALSE
+  AND (
+    u.rol = 'ADMIN'
+    OR EXISTS (SELECT 1 FROM POLIZA p WHERE p.id_usuario = u.id_usuario)
+    OR EXISTS (SELECT 1 FROM INVENTARIO i WHERE i.id_usuario = u.id_usuario)
+    OR EXISTS (SELECT 1 FROM MENSAJE_POSTUMO m WHERE m.id_usuario = u.id_usuario)
+    OR EXISTS (SELECT 1 FROM DIRECTORIO_ALBACEAS d WHERE d.id_titular = u.id_usuario)
+  );
+
 -- 7. Índices recomendados
 CREATE INDEX IF NOT EXISTS idx_directorio_titular ON DIRECTORIO_ALBACEAS(id_titular);
 CREATE INDEX IF NOT EXISTS idx_directorio_rut ON DIRECTORIO_ALBACEAS(rut_albacea);

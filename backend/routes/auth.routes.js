@@ -43,6 +43,7 @@ router.get('/google/url', oauthController.obtenerUrlGoogle);
 router.post('/google', oauthController.callbackGoogle);
 
 router.get('/perfil', verificarToken, authController.perfil);
+router.post('/activar-boveda', verificarToken, authController.activarBoveda);
 router.put('/preferencias', verificarToken, authController.actualizarPreferencias);
 router.post('/verificar-correo/enviar', verificarToken, authController.enviarCodigoVerificacion);
 router.post('/verificar-correo/confirmar', verificarToken, authController.confirmarVerificacionCorreo);

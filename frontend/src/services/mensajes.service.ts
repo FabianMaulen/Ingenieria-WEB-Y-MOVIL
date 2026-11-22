@@ -27,6 +27,7 @@ export const getMensajes = listarMensajes;
 
 export const crearMensaje = async (payload: CrearMensajePayload) => {
   const res = await api.post<ApiResponse<MensajeResumen>>('/mensajes', payload);
+  window.dispatchEvent(new Event('boveda-actualizada'));
   return res.data;
 };
 
@@ -37,4 +38,5 @@ export const actualizarMensaje = async (id: number, contenido: string) => {
 
 export const eliminarMensaje = async (id: number): Promise<void> => {
   await api.delete(`/mensajes/${id}`);
+  window.dispatchEvent(new Event('boveda-actualizada'));
 };

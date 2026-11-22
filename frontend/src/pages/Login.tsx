@@ -15,7 +15,7 @@ import {
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { mensajeError } from '../services/api';
-import { login } from '../services/auth.service';
+import { login, modoInicialUsuario, rutaInicialUsuario } from '../services/auth.service';
 import { alternarTema, obtenerTemaOscuro } from '../utils/theme';
 import { VaultChestIcon } from '../components/VaultChestIcon';
 import { VaultUnlockOverlay } from '../components/VaultUnlockOverlay';
@@ -56,8 +56,8 @@ export const Login: React.FC = () => {
 
     try {
       const usuario = await login(identifier.trim(), password);
-      const destino = usuario.rol === 'ADMIN' ? '/admin?tab=resumen' : '/dashboard';
-      localStorage.setItem('modo_activo', usuario.rol === 'ADMIN' ? 'ADMIN' : 'TITULAR');
+      const destino = rutaInicialUsuario(usuario);
+      localStorage.setItem('modo_activo', modoInicialUsuario(usuario));
       setNombreBienvenida((usuario.nombre || '').split(' ')[0]);
       setAbriendoBaul(true);
 

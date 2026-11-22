@@ -26,6 +26,7 @@ export const obtenerPolizas = listarPolizas;
 
 export const crearPoliza = async (p: PolizaInput): Promise<Poliza> => {
   const res = await api.post<ApiResponse<Poliza>>('/polizas', p);
+  window.dispatchEvent(new Event('boveda-actualizada'));
   return res.data.data;
 };
 export const agregarPoliza = crearPoliza;
@@ -37,6 +38,7 @@ export const actualizarPoliza = async (id: number, p: PolizaInput): Promise<Poli
 
 export const eliminarPoliza = async (id: number): Promise<void> => {
   await api.delete(`/polizas/${id}`);
+  window.dispatchEvent(new Event('boveda-actualizada'));
 };
 
 export interface PolizaExtraidaIA {

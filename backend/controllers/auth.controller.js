@@ -238,6 +238,8 @@ exports.login = async (req, res) => {
         plazo_gracia_dias: user.plazo_gracia_dias || 7,
         notificar_recordatorios: user.notificar_recordatorios !== false,
         rol: user.rol,
+        boveda_activa: Boolean(user.boveda_activa),
+        terminos_aceptados_en: user.terminos_aceptados_en || null,
         avatar_url: user.avatar_url || null,
         requiere_rut: !user.rut,
         tiene_password: Boolean(user.contrasena_hash),
@@ -258,7 +260,8 @@ exports.perfil = async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT id_usuario AS id, rut, nombre_usuario AS nombre, correo_usuario AS correo,
-              rol, activo, avatar_url, (contrasena_hash IS NOT NULL) AS tiene_password,
+              rol, activo, boveda_activa, terminos_aceptados_en,
+              avatar_url, (contrasena_hash IS NOT NULL) AS tiene_password,
               (rut IS NULL) AS requiere_rut, fecha_ultimo_checkin,
               frecuencia_checkin_dias, plazo_gracia_dias,
               correo_verificado, correo_alternativo, correo_alternativo_verificado,
@@ -272,28 +275,138 @@ exports.perfil = async (req, res) => {
       return enviarRespuesta(res, 404, 'Usuario no encontrado.', null);
     }
 
-    const desigQuery = await db.query(
-      `SELECT
-         COUNT(*)::int AS total,
-         COUNT(*) FILTER (WHERE estado_validacion = 'PENDIENTE')::int AS pendientes,
-         COUNT(*) FILTER (WHERE estado_validacion = 'VALIDADO')::int AS validadas
-       FROM DIRECTORIO_ALBACEAS
-       WHERE id_usuario_invitado = $1`,
-      [req.user.id]
-    );
+    const [desigQuery, conteosQuery] = await Promise.all([
+      db.query(
+        `SELECT
+           COUNT(*)::int AS total,
+           COUNT(*) FILTER (WHERE estado_validacion = 'PENDIENTE')::int AS pendientes,
+           COUNT(*) FILTER (WHERE estado_validacion = 'VALIDADO')::int AS validadas
+         FROM DIRECTORIO_ALBACEAS
+         WHERE id_usuario_invitado = $1`,
+        [req.user.id]
+      ),
+      db.query(
+        `SELECT
+           (SELECT COUNT(*)::int FROM POLIZA WHERE id_usuario = $1) AS total_polizas,
+           (SELECT COUNT(*)::int FROM INVENTARIO WHERE id_usuario = $1) AS total_inventario,
+           (SELECT COUNT(*)::int FROM DIRECTORIO_ALBACEAS WHERE id_titular = $1 AND estado_validacion <> 'RECHAZADO') AS total_albaceas,
+           (SELECT COUNT(*)::int FROM MENSAJE_POSTUMO WHERE id_usuario = $1) AS total_mensajes`,
+        [req.user.id]
+      ),
+    ]);
 
     const resumenDesig = desigQuery.rows[0] || { total: 0, pendientes: 0, validadas: 0 };
+    const conteos = conteosQuery.rows[0] || {
+      total_polizas: 0,
+      total_inventario: 0,
+      total_albaceas: 0,
+      total_mensajes: 0,
+    };
 
     return enviarRespuesta(res, 200, 'Perfil obtenido correctamente.', {
       ...rows[0],
+      boveda_activa: Boolean(rows[0].boveda_activa),
       es_albacea: resumenDesig.total > 0,
       designaciones_pendientes: resumenDesig.pendientes,
       designaciones_validadas: resumenDesig.validadas,
       total_designaciones: resumenDesig.total,
+      total_polizas: Number(conteos.total_polizas) || 0,
+      total_inventario: Number(conteos.total_inventario) || 0,
+      total_albaceas: Number(conteos.total_albaceas) || 0,
+      total_mensajes: Number(conteos.total_mensajes) || 0,
     });
   } catch (e) {
     console.error('Error en perfil:', e);
     return enviarRespuesta(res, 500, 'Error interno del servidor.', null);
+  }
+};
+
+// POST /api/auth/activar-boveda
+// Activa formalmente la bóveda del titular tras validar configuración mínima y aceptación de condiciones.
+exports.activarBoveda = async (req, res) => {
+  try {
+    const { acepta_condiciones } = req.body || {};
+    if (acepta_condiciones !== true) {
+      return enviarRespuesta(
+        res,
+        400,
+        'Debes confirmar que comprendes y aceptas tus deberes y condiciones antes de activar tu bóveda.',
+        null
+      );
+    }
+
+    const conteosRes = await db.query(
+      `SELECT
+         u.correo_verificado,
+         (SELECT COUNT(*)::int FROM DIRECTORIO_ALBACEAS WHERE id_titular = $1 AND estado_validacion <> 'RECHAZADO') AS total_albaceas,
+         (SELECT COUNT(*)::int FROM POLIZA WHERE id_usuario = $1) AS total_polizas,
+         (SELECT COUNT(*)::int FROM INVENTARIO WHERE id_usuario = $1) AS total_inventario,
+         (SELECT COUNT(*)::int FROM MENSAJE_POSTUMO WHERE id_usuario = $1) AS total_mensajes
+       FROM USUARIO u
+       WHERE u.id_usuario = $1`,
+      [req.user.id]
+    );
+
+    const c = conteosRes.rows[0];
+    if (!c) {
+      return enviarRespuesta(res, 404, 'Usuario no encontrado.', null);
+    }
+
+    const correoVerificado = Boolean(c.correo_verificado);
+    const totalAlbaceas = Number(c.total_albaceas) || 0;
+    const totalRegistros =
+      (Number(c.total_polizas) || 0) +
+      (Number(c.total_inventario) || 0) +
+      (Number(c.total_mensajes) || 0);
+
+    if (!correoVerificado || totalAlbaceas < 1 || totalRegistros < 1) {
+      const faltantes = [];
+      if (!correoVerificado) faltantes.push('confirmar tu correo electrónico principal');
+      if (totalAlbaceas < 1) faltantes.push('designar al menos 1 albacea');
+      if (totalRegistros < 1) faltantes.push('guardar al menos 1 registro (póliza, activo digital o carta póstuma)');
+      return enviarRespuesta(
+        res,
+        400,
+        `Para activar tu bóveda necesitas completar la configuración mínima: ${faltantes.join(', ')}.`,
+        {
+          correo_verificado: correoVerificado,
+          total_albaceas: totalAlbaceas,
+          total_registros: totalRegistros,
+        }
+      );
+    }
+
+    const { rows } = await db.query(
+      `UPDATE USUARIO
+       SET boveda_activa = TRUE,
+           terminos_aceptados_en = NOW(),
+           fecha_ultimo_checkin = NOW(),
+           ultimo_recordatorio_enviado = NULL
+       WHERE id_usuario = $1
+       RETURNING id_usuario AS id, boveda_activa, terminos_aceptados_en,
+                 fecha_ultimo_checkin, frecuencia_checkin_dias, plazo_gracia_dias`,
+      [req.user.id]
+    );
+
+    if (!rows[0]) {
+      return enviarRespuesta(res, 404, 'Usuario no encontrado.', null);
+    }
+
+    await registrarAuditoria(
+      'Activó y selló su bóveda personal tras completar configuración mínima y aceptar condiciones de vigencia',
+      obtenerIp(req),
+      req.user.id
+    );
+
+    return enviarRespuesta(
+      res,
+      200,
+      `¡Tu Baúl Eterno quedó sellado y activo! Tu ciclo de vigencia de ${rows[0].frecuencia_checkin_dias} días comienza hoy.`,
+      rows[0]
+    );
+  } catch (e) {
+    console.error('Error en activarBoveda:', e);
+    return enviarRespuesta(res, 500, 'Error interno del servidor al activar la bóveda.', null);
   }
 };
 

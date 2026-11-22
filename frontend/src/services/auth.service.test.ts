@@ -7,6 +7,7 @@ import {
   usuarioGuardado,
   login,
   obtenerUrlGoogle,
+  rutaInicialUsuario,
 } from './auth.service';
 
 describe('Servicio de autenticación (auth.service.ts)', () => {
@@ -38,6 +39,21 @@ describe('Servicio de autenticación (auth.service.ts)', () => {
 
     expect(localStorage.getItem('modo_activo')).toBe('ADMIN');
     expect(localStorage.getItem('user_rol')).toBe('ADMIN');
+  });
+
+  test('guardarSesion y rutaInicialUsuario dirigen a /guia en modo ALBACEA si fue invitado y aún no activa su propia bóveda', () => {
+    const invitado = {
+      id: 22,
+      nombre: 'Camila Invitada',
+      correo: 'camila@correo.cl',
+      rol: 'TITULAR' as const,
+      boveda_activa: false,
+      total_designaciones: 1,
+    };
+    guardarSesion('jwt-albacea', invitado);
+
+    expect(localStorage.getItem('modo_activo')).toBe('ALBACEA');
+    expect(rutaInicialUsuario(invitado)).toBe('/guia');
   });
 
   test('logout elimina completamente la sesión local', () => {

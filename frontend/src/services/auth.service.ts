@@ -17,6 +17,8 @@ export interface Usuario {
   plazo_gracia_dias?: number;
   notificar_recordatorios?: boolean;
   rol: Rol;
+  boveda_activa?: boolean;
+  terminos_aceptados_en?: string | null;
   avatar_url?: string | null;
   requiere_rut?: boolean;
   tiene_password?: boolean;
@@ -24,6 +26,10 @@ export interface Usuario {
   designaciones_pendientes?: number;
   designaciones_validadas?: number;
   total_designaciones?: number;
+  total_polizas?: number;
+  total_inventario?: number;
+  total_albaceas?: number;
+  total_mensajes?: number;
 }
 
 export interface PreferenciasPayload {
@@ -37,12 +43,27 @@ export interface PreferenciasPayload {
 
 export const AUTH_TOKEN_KEY = 'auth_token';
 
+export const modoInicialUsuario = (usuario: Usuario): ModoApp => {
+  if (usuario.rol === 'ADMIN') return 'ADMIN';
+  if (usuario.boveda_activa === false && (usuario.total_designaciones || 0) > 0) {
+    return 'ALBACEA';
+  }
+  return 'TITULAR';
+};
+
+export const rutaInicialUsuario = (usuario: Usuario): string => {
+  const modo = modoInicialUsuario(usuario);
+  if (modo === 'ADMIN') return '/admin?tab=resumen';
+  if (modo === 'ALBACEA') return '/guia';
+  return '/dashboard';
+};
+
 export const guardarSesion = (token: string, usuario: Usuario) => {
   localStorage.setItem(AUTH_TOKEN_KEY, token);
   localStorage.setItem('usuario', JSON.stringify(usuario));
   localStorage.setItem('user_rol', usuario.rol);
   localStorage.setItem('user_nombre', usuario.nombre || 'Usuario');
-  localStorage.setItem('modo_activo', usuario.rol === 'ADMIN' ? 'ADMIN' : 'TITULAR');
+  localStorage.setItem('modo_activo', modoInicialUsuario(usuario));
   window.dispatchEvent(new Event('auth-updated'));
 };
 
@@ -83,6 +104,33 @@ export const actualizarPreferencias = async (payload: PreferenciasPayload) => {
     const actualizado = { ...actual, ...res.data.data };
     localStorage.setItem('usuario', JSON.stringify(actualizado));
     window.dispatchEvent(new Event('auth-updated'));
+    window.dispatchEvent(new Event('boveda-actualizada'));
+  }
+  return res.data;
+};
+
+export const activarBovedaPersonal = async (aceptaCondiciones: boolean) => {
+  const res = await api.post<
+    ApiResponse<{
+      id: number;
+      boveda_activa: boolean;
+      terminos_aceptados_en: string;
+      fecha_ultimo_checkin: string;
+      frecuencia_checkin_dias: number;
+      plazo_gracia_dias: number;
+    }>
+  >('/auth/activar-boveda', { acepta_condiciones: aceptaCondiciones });
+
+  const actual = usuarioGuardado();
+  if (actual && res.data.data) {
+    const actualizado: Usuario = {
+      ...actual,
+      boveda_activa: Boolean(res.data.data.boveda_activa),
+      terminos_aceptados_en: res.data.data.terminos_aceptados_en,
+    };
+    localStorage.setItem('usuario', JSON.stringify(actualizado));
+    window.dispatchEvent(new Event('auth-updated'));
+    window.dispatchEvent(new Event('boveda-actualizada'));
   }
   return res.data;
 };

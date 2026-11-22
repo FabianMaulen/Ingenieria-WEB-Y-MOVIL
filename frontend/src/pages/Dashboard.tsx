@@ -15,11 +15,17 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
 import { VaultStatusCard } from '../components/VaultStatusCard';
+import { OnboardingBoveda } from '../components/OnboardingBoveda';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { SoporteModal } from '../components/SoporteModal';
 
 import { mensajeError } from '../services/api';
-import { completarRutUsuario, obtenerPerfil, usuarioGuardado } from '../services/auth.service';
+import {
+  activarBovedaPersonal,
+  completarRutUsuario,
+  obtenerPerfil,
+  usuarioGuardado,
+} from '../services/auth.service';
 import { normalizarRut, rutValido } from '../utils/rut';
 import { obtenerCheckin, renovarCheckin } from '../services/checkin.service';
 import {
@@ -37,8 +43,14 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const [nombreTitular, setNombreTitular] = useState('Usuario');
+  const [correoUsuario, setCorreoUsuario] = useState(() => usuarioGuardado()?.correo || '');
   const [daysLeft, setDaysLeft] = useState(180);
   const [frecuenciaDias, setFrecuenciaDias] = useState(180);
+  const [plazoGraciaDias, setPlazoGraciaDias] = useState(7);
+  const [bovedaActiva, setBovedaActiva] = useState<boolean>(
+    () => usuarioGuardado()?.boveda_activa !== false
+  );
+  const [activandoBoveda, setActivandoBoveda] = useState(false);
   const [correoVerificado, setCorreoVerificado] = useState<boolean>(true);
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [alertasLiberadas, setAlertasLiberadas] = useState<Alerta[]>([]);
@@ -109,8 +121,13 @@ export const Dashboard: React.FC = () => {
 
       if (perfilActual) {
         setNombreTitular(perfilActual.nombre || 'Usuario');
+        setCorreoUsuario(perfilActual.correo || '');
         setRequiereRut(Boolean(!perfilActual.rut || perfilActual.requiere_rut));
         setCorreoVerificado(Boolean(perfilActual.correo_verificado));
+        setBovedaActiva(Boolean(perfilActual.boveda_activa));
+        if (perfilActual.plazo_gracia_dias) setPlazoGraciaDias(Number(perfilActual.plazo_gracia_dias));
+      } else if (dataCheckin && typeof dataCheckin.boveda_activa === 'boolean') {
+        setBovedaActiva(dataCheckin.boveda_activa);
       }
 
       const listaAlertas = Array.isArray(dataAlertas) ? dataAlertas : [];
@@ -120,12 +137,17 @@ export const Dashboard: React.FC = () => {
       setAlertas(alertasPendientes);
       setAlertasLiberadas(liberadas);
       setCantPolizas(Array.isArray(dataPolizas) ? dataPolizas.length : 0);
-      setCantAlbaceas(Array.isArray(dataAlbaceas) ? dataAlbaceas.length : 0);
+      setCantAlbaceas(
+        Array.isArray(dataAlbaceas)
+          ? dataAlbaceas.filter((a) => a.estado_validacion !== 'RECHAZADO').length
+          : 0
+      );
       setCantMensajes(Array.isArray(dataMensajes) ? dataMensajes.length : 0);
       setCantInventario(Array.isArray(dataInventario) ? dataInventario.length : 0);
 
       const freq = Number(dataCheckin?.frecuencia_checkin_dias || perfilActual?.frecuencia_checkin_dias || 180);
       setFrecuenciaDias(freq);
+      if (dataCheckin?.plazo_gracia_dias) setPlazoGraciaDias(Number(dataCheckin.plazo_gracia_dias));
 
       if (alertasPendientes.length > 0) {
         const horasMin = Math.min(
@@ -141,6 +163,22 @@ export const Dashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error al cargar datos del dashboard:', mensajeError(error));
+    }
+  };
+
+  const handleActivarBoveda = async () => {
+    try {
+      setActivandoBoveda(true);
+      const res = await activarBovedaPersonal(true);
+      setBovedaActiva(true);
+      setToastMsg(res.mensaje || '¡Tu Baúl Eterno quedó sellado y activo!');
+      setShowToast(true);
+      await cargarDatosDashboard();
+    } catch (error) {
+      setToastMsg(mensajeError(error));
+      setShowToast(true);
+    } finally {
+      setActivandoBoveda(false);
     }
   };
 
@@ -249,17 +287,44 @@ export const Dashboard: React.FC = () => {
 
       <IonContent className="ion-padding">
         <div className="be-container">
-          {/* Saludo editorial */}
-          <div className="be-hero-banner">
-            <h2>Hola, {primerNombre}</h2>
-            <p>
-              Tu bóveda personal resguarda tu patrimonio y voluntades con cifrado de alto nivel. Revisa tu vigencia o
-              actualiza tus registros cuando lo necesites.
-            </p>
+          {/* Saludo editorial compacto */}
+          <div
+            className="be-hero-banner be-hero-banner-compact"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '8px',
+            }}
+          >
+            <div>
+              <h2>Hola, {primerNombre}</h2>
+              <p>
+                {bovedaActiva
+                  ? 'Tu bóveda personal resguarda tu patrimonio y voluntades con cifrado de alto nivel.'
+                  : 'Completa el paso a paso prioritario de abajo para sellar y activar tu bóveda.'}
+              </p>
+            </div>
+            {!bovedaActiva && (
+              <span
+                style={{
+                  backgroundColor: 'rgba(251, 191, 36, 0.2)',
+                  border: '1px solid rgba(251, 191, 36, 0.5)',
+                  color: '#fef3c7',
+                  borderRadius: '999px',
+                  padding: '4px 11px',
+                  fontSize: '0.73rem',
+                  fontWeight: 700,
+                }}
+              >
+                Activación pendiente
+              </span>
+            )}
           </div>
 
-          {/* Aviso de confirmación de correo principal */}
-          {!correoVerificado && (
+          {/* Aviso de confirmación de correo principal (solo si la bóveda ya está activa; si no, va integrado en el paso a paso) */}
+          {bovedaActiva && !correoVerificado && (
             <div
               className="be-card"
               style={{
@@ -449,23 +514,77 @@ export const Dashboard: React.FC = () => {
             </div>
           ))}
 
-          {/* Tarjeta de Vigencia y Check-in */}
-          <VaultStatusCard
-            daysLeft={alertasLiberadas.length > 0 ? 0 : daysLeft}
-            totalCycleDays={frecuenciaDias}
-            status={
-              alertasLiberadas.length > 0
-                ? 'LIBERADA'
-                : alertas.length > 0
-                ? 'EN_REVISION'
-                : 'PROTEGIDA'
-            }
-            onCheckin={handleCheckin}
-            loading={cargandoCheckin}
-          />
+          {/* Onboarding consciente de bóveda O Tarjeta de Vigencia y Check-in */}
+          {!bovedaActiva ? (
+            <OnboardingBoveda
+              nombreTitular={nombreTitular}
+              correoUsuario={correoUsuario}
+              correoVerificado={correoVerificado}
+              cantAlbaceas={cantAlbaceas}
+              cantPolizas={cantPolizas}
+              cantInventario={cantInventario}
+              cantMensajes={cantMensajes}
+              frecuenciaDias={frecuenciaDias}
+              plazoGraciaDias={plazoGraciaDias}
+              activando={activandoBoveda}
+              onActivar={handleActivarBoveda}
+              onCorreoConfirmado={async () => {
+                setCorreoVerificado(true);
+                window.dispatchEvent(new Event('boveda-actualizada'));
+                await cargarDatosDashboard();
+              }}
+              onNotificar={(msg) => {
+                setToastMsg(msg);
+                setShowToast(true);
+              }}
+            />
+          ) : (
+            <VaultStatusCard
+              daysLeft={alertasLiberadas.length > 0 ? 0 : daysLeft}
+              totalCycleDays={frecuenciaDias}
+              status={
+                alertasLiberadas.length > 0
+                  ? 'LIBERADA'
+                  : alertas.length > 0
+                  ? 'EN_REVISION'
+                  : 'PROTEGIDA'
+              }
+              onCheckin={handleCheckin}
+              loading={cargandoCheckin}
+            />
+          )}
 
-          {/* Módulos del Baúl */}
-          <div className="be-grid-2">
+          {/* Módulos del Baúl (visualmente subordinados mientras la activación sea la prioridad) */}
+          {!bovedaActiva && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px',
+                marginBottom: '12px',
+                paddingTop: '6px',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '0.76rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  color: 'var(--be-text-muted)',
+                }}
+              >
+                Accesos rápidos para cargar tus primeros datos
+              </span>
+              <span style={{ fontSize: '0.77rem', color: 'var(--be-text-muted)' }}>
+                Luego vuelve aquí para sellar y activar tu bóveda
+              </span>
+            </div>
+          )}
+
+          <div className={bovedaActiva ? 'be-grid-2' : 'be-grid-2 be-secondary-dimmed'}>
             {modulos.map((mod) => (
               <div
                 key={mod.path}

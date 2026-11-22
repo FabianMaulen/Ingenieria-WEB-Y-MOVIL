@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { alertCircleOutline, arrowBackOutline } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
-import { iniciarSesionConGoogle } from '../services/auth.service';
+import { iniciarSesionConGoogle, modoInicialUsuario, rutaInicialUsuario } from '../services/auth.service';
 import { mensajeError } from '../services/api';
 import { VaultChestIcon } from '../components/VaultChestIcon';
 
@@ -44,8 +44,8 @@ export const GoogleCallback: React.FC = () => {
 
     iniciarSesionConGoogle(code, state)
       .then((usuario) => {
-        const destino = usuario.rol === 'ADMIN' ? '/admin?tab=resumen' : '/dashboard';
-        localStorage.setItem('modo_activo', usuario.rol === 'ADMIN' ? 'ADMIN' : 'TITULAR');
+        const destino = rutaInicialUsuario(usuario);
+        localStorage.setItem('modo_activo', modoInicialUsuario(usuario));
         setAbriendo(true);
         setTimeout(() => {
           navigate(destino, { replace: true });

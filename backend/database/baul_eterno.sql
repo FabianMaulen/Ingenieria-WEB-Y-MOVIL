@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS USUARIO (
   rol VARCHAR(50) NOT NULL DEFAULT 'TITULAR'
     CONSTRAINT chk_usuario_rol CHECK (rol IN ('TITULAR', 'ALBACEA', 'ADMIN')),
   activo BOOLEAN NOT NULL DEFAULT TRUE,
+  boveda_activa BOOLEAN NOT NULL DEFAULT FALSE,
+  terminos_aceptados_en TIMESTAMP NULL,
   fecha_ultimo_checkin TIMESTAMP NOT NULL DEFAULT NOW(),
   frecuencia_checkin_dias INT NOT NULL DEFAULT 180
     CONSTRAINT chk_usuario_frecuencia CHECK (frecuencia_checkin_dias IN (30, 90, 180, 365)),

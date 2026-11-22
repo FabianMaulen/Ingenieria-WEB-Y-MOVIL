@@ -305,4 +305,56 @@ describe('Reglas de negocio: Pólizas, Albaceas (máx. 5), Mensajes externos, Co
     assert.match(res.body.data.codigo_ticket, /^TK-\d{4}-[0-9A-F]{4}$/);
     assert.equal(res.body.data.estado_ticket, 'ABIERTO');
   });
+
+  test('POST /api/auth/activar-boveda rechaza si no acepta condiciones o falta configuración mínima (400)', async () => {
+    const resSinCond = await request(app)
+      .post('/api/auth/activar-boveda')
+      .set('Authorization', `Bearer ${tokenTitular}`)
+      .send({ acepta_condiciones: false });
+    assert.equal(resSinCond.status, 400);
+
+    mock.method(db, 'query', async () => ({
+      rows: [{ correo_verificado: false, total_albaceas: 0, total_polizas: 0, total_inventario: 0, total_mensajes: 0 }],
+    }));
+
+    const resSinItems = await request(app)
+      .post('/api/auth/activar-boveda')
+      .set('Authorization', `Bearer ${tokenTitular}`)
+      .send({ acepta_condiciones: true });
+    assert.equal(resSinItems.status, 400);
+    assert.match(resSinItems.body.mensaje, /confirmar tu correo/i);
+  });
+
+  test('POST /api/auth/activar-boveda activa la bóveda cuando cumple requisitos mínimos y acepta condiciones (200)', async () => {
+    let paso = 0;
+    mock.method(db, 'query', async () => {
+      paso += 1;
+      if (paso === 1) {
+        return { rows: [{ correo_verificado: true, total_albaceas: 1, total_polizas: 1, total_inventario: 0, total_mensajes: 0 }] };
+      }
+      if (paso === 2) {
+        return {
+          rows: [
+            {
+              id: 10,
+              boveda_activa: true,
+              terminos_aceptados_en: new Date().toISOString(),
+              fecha_ultimo_checkin: new Date().toISOString(),
+              frecuencia_checkin_dias: 180,
+              plazo_gracia_dias: 7,
+            },
+          ],
+        };
+      }
+      return { rows: [], rowCount: 1 };
+    });
+
+    const res = await request(app)
+      .post('/api/auth/activar-boveda')
+      .set('Authorization', `Bearer ${tokenTitular}`)
+      .send({ acepta_condiciones: true });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.boveda_activa, true);
+  });
 });

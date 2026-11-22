@@ -31,6 +31,7 @@ export const listarInventario = async (limit = 50, offset = 0): Promise<ActivoIn
 
 export const crearActivoInventario = async (datos: ActivoInventarioInput): Promise<ActivoInventario> => {
   const res = await api.post<ApiResponse<ActivoInventario>>('/inventario', datos);
+  window.dispatchEvent(new Event('boveda-actualizada'));
   return res.data.data;
 };
 
@@ -44,4 +45,5 @@ export const actualizarActivoInventario = async (
 
 export const eliminarActivoInventario = async (id: number): Promise<void> => {
   await api.delete(`/inventario/${id}`);
+  window.dispatchEvent(new Event('boveda-actualizada'));
 };

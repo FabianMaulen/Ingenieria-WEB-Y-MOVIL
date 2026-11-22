@@ -261,7 +261,10 @@ exports.ejecutarCicloVigilancia = async () => {
             frecuencia_checkin_dias, ultimo_recordatorio_enviado,
             EXTRACT(EPOCH FROM (NOW() - fecha_ultimo_checkin)) / 86400.0 AS dias_transcurridos
      FROM USUARIO
-     WHERE activo = TRUE AND notificar_recordatorios = TRUE AND rol <> 'ADMIN'`
+     WHERE activo = TRUE
+       AND boveda_activa = TRUE
+       AND notificar_recordatorios = TRUE
+       AND rol <> 'ADMIN'`
   );
 
   for (const u of usrRes.rows) {

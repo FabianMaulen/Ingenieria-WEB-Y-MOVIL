@@ -67,6 +67,7 @@ exports.obtenerGuia = async (req, res) => {
           polizas: [],
           inventario: [],
           mensajes: [],
+          cartas_otros_por_titular: {},
           resumen: { total: 0, tramitadas: 0 },
         }
       );
@@ -76,7 +77,7 @@ exports.obtenerGuia = async (req, res) => {
     const albaceaUserRes = await db.query('SELECT rut FROM USUARIO WHERE id_usuario = $1', [req.user.id]);
     const rutAlbacea = albaceaUserRes.rows[0]?.rut || null;
 
-    const [polizasRes, inventarioRes, mensajesRes] = await Promise.all([
+    const [polizasRes, inventarioRes, mensajesRes, cartasOtrosRes] = await Promise.all([
       db.query(
         `SELECT p.id_poliza, p.tipo_seguro, p.aseguradora, p.numero_poliza,
                 p.ubicacion_fisica, p.monto_referencial, p.tramitada,
@@ -108,7 +109,20 @@ exports.obtenerGuia = async (req, res) => {
             [idsTitulares, rutAlbacea]
           )
         : Promise.resolve({ rows: [] }),
+      db.query(
+        `SELECT m.id_usuario AS id_titular, COUNT(*)::int AS total
+         FROM MENSAJE_POSTUMO m
+         WHERE m.id_usuario = ANY($1::int[])
+           AND ($2::text IS NULL OR m.rut_destinatario IS NULL OR UPPER(m.rut_destinatario) <> UPPER($2))
+         GROUP BY m.id_usuario`,
+        [idsTitulares, rutAlbacea]
+      ),
     ]);
+
+    const cartasOtrosPorTitular = {};
+    for (const row of cartasOtrosRes.rows) {
+      cartasOtrosPorTitular[row.id_titular] = Number(row.total) || 0;
+    }
 
     const polizas = polizasRes.rows.map((p) => ({
       ...p,
@@ -142,6 +156,7 @@ exports.obtenerGuia = async (req, res) => {
       polizas,
       inventario: inventarioRes.rows,
       mensajes,
+      cartas_otros_por_titular: cartasOtrosPorTitular,
       resumen: {
         total: polizas.length,
         tramitadas: polizas.filter((p) => p.tramitada).length,
