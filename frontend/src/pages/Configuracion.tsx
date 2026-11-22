@@ -215,9 +215,30 @@ export const Configuracion: React.FC = () => {
               </div>
             </div>
 
-            <button type="submit" className="be-btn be-btn-primary be-btn-block" disabled={enviando}>
-              {enviando ? <IonSpinner name="crescent" color="light" /> : 'Actualizar contraseña'}
-            </button>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {(currentPassword || newPassword || confirmPassword) && (
+                <button
+                  type="button"
+                  className="be-btn be-btn-outline"
+                  style={{ flex: '1 1 130px' }}
+                  onClick={() => {
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }}
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                type="submit"
+                className="be-btn be-btn-primary"
+                style={{ flex: '2 1 200px' }}
+                disabled={enviando}
+              >
+                {enviando ? <IonSpinner name="crescent" color="light" /> : 'Actualizar contraseña'}
+              </button>
+            </div>
           </form>
 
           {/* 3. Sesión */}

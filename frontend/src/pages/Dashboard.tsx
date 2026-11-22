@@ -15,6 +15,8 @@ import { VaultStatusCard } from '../components/VaultStatusCard';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 
 import { mensajeError } from '../services/api';
+import { completarRutUsuario, usuarioGuardado } from '../services/auth.service';
+import { normalizarRut, rutValido } from '../utils/rut';
 import { obtenerCheckin, renovarCheckin } from '../services/checkin.service';
 import { listarAlertas, cancelarSolicitud } from '../services/solicitudes.service';
 import { listarPolizas } from '../services/polizas.service';
@@ -37,11 +39,41 @@ export const Dashboard: React.FC = () => {
   const [cantMensajes, setCantMensajes] = useState<number>(0);
   const [cantInventario, setCantInventario] = useState<number>(0);
 
+  // Para usuarios creados con Google OAuth que aún deben registrar su RUT chileno
+  const [requiereRut, setRequiereRut] = useState<boolean>(false);
+  const [rutPendiente, setRutPendiente] = useState<string>('');
+  const [guardandoRut, setGuardandoRut] = useState<boolean>(false);
+
   useIonViewWillEnter(() => {
-    setNombreTitular(localStorage.getItem('user_nombre') || 'Usuario');
+    const u = usuarioGuardado();
+    setNombreTitular(u?.nombre || localStorage.getItem('user_nombre') || 'Usuario');
+    setRequiereRut(Boolean(u && (!u.rut || u.requiere_rut)));
     localStorage.setItem('modo_activo', 'TITULAR');
     cargarDatosDashboard();
   });
+
+  const handleGuardarRutOAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rutValido(rutPendiente)) {
+      setToastMsg('Ingresa un RUT chileno válido con dígito verificador (Ej: 12345678-5).');
+      setShowToast(true);
+      return;
+    }
+    try {
+      setGuardandoRut(true);
+      const res = await completarRutUsuario(normalizarRut(rutPendiente));
+      setRequiereRut(false);
+      setRutPendiente('');
+      setToastMsg(res.mensaje || 'RUT guardado correctamente.');
+      setShowToast(true);
+      await cargarDatosDashboard();
+    } catch (error) {
+      setToastMsg(mensajeError(error));
+      setShowToast(true);
+    } finally {
+      setGuardandoRut(false);
+    }
+  };
 
   const cargarDatosDashboard = async () => {
     try {
@@ -172,6 +204,39 @@ export const Dashboard: React.FC = () => {
               actualiza tus registros cuando lo necesites.
             </p>
           </div>
+
+          {/* Tarjeta para completar RUT en cuentas nuevas creadas vía Google OAuth */}
+          {requiereRut && (
+            <form onSubmit={handleGuardarRutOAuth} className="be-card" style={{ borderColor: 'var(--be-primary)' }}>
+              <span className="be-badge be-badge-info" style={{ marginBottom: '8px' }}>
+                Paso final de cuenta Google
+              </span>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '1.08rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                Registra tu RUT chileno para completar tu bóveda
+              </h3>
+              <p style={{ margin: '0 0 14px 0', fontSize: '0.86rem', color: 'var(--be-text-muted)' }}>
+                Tu RUT permite vincular automáticamente cualquier invitación de albacea que otros usuarios hayan creado
+                para ti.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  className="be-input"
+                  style={{ flex: '1 1 200px' }}
+                  placeholder="Ej: 12345678-5"
+                  value={rutPendiente}
+                  onChange={(e) => setRutPendiente(e.target.value)}
+                  onBlur={() => {
+                    if (rutPendiente.trim()) setRutPendiente(normalizarRut(rutPendiente));
+                  }}
+                  required
+                />
+                <button type="submit" className="be-btn be-btn-primary" disabled={guardandoRut}>
+                  {guardandoRut ? 'Guardando...' : 'Guardar RUT'}
+                </button>
+              </div>
+            </form>
+          )}
 
           {/* ALERTA CRÍTICA DE APERTURA EN CURSO */}
           {alertas.map((alerta) => (

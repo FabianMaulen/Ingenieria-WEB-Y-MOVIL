@@ -7,6 +7,7 @@ import { RutaProtegida } from './RutaProtegida';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
 import { ForgotPassword } from '../pages/ForgotPassword';
+import { GoogleCallback } from '../pages/GoogleCallback';
 import { Dashboard } from '../pages/Dashboard';
 import { Polizas } from '../pages/Polizas';
 import { Albaceas } from '../pages/Albaceas';
@@ -62,6 +63,7 @@ export const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/recuperar" element={<ForgotPassword />} />
+      <Route path="/auth/google/callback" element={<GoogleCallback />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* Rutas Privadas protegidas con RutaProtegida */}

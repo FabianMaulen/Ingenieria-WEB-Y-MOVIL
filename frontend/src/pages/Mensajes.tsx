@@ -197,19 +197,35 @@ export const Mensajes: React.FC = () => {
               </p>
             )}
 
-            <button
-              type="submit"
-              className="be-btn be-btn-primary be-btn-block"
-              disabled={enviando || albaceas.length === 0}
-            >
-              {enviando ? (
-                <IonSpinner name="crescent" color="light" />
-              ) : (
-                <>
-                  <IonIcon icon={lockClosedOutline} /> Sellar y guardar mensaje
-                </>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {contenido.trim().length > 0 && (
+                <button
+                  type="button"
+                  className="be-btn be-btn-outline"
+                  style={{ flex: '1 1 140px' }}
+                  onClick={() => {
+                    setContenido('');
+                    setErrorMsg('');
+                  }}
+                >
+                  Descartar borrador
+                </button>
               )}
-            </button>
+              <button
+                type="submit"
+                className="be-btn be-btn-primary"
+                style={{ flex: '2 1 200px' }}
+                disabled={enviando || albaceas.length === 0}
+              >
+                {enviando ? (
+                  <IonSpinner name="crescent" color="light" />
+                ) : (
+                  <>
+                    <IonIcon icon={lockClosedOutline} /> Sellar y guardar mensaje
+                  </>
+                )}
+              </button>
+            </div>
           </form>
 
           <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--be-text)', margin: '0 0 12px 0' }}>

@@ -20,6 +20,7 @@ import { registrar } from '../services/auth.service';
 import { normalizarRut, rutValido, emailValido } from '../utils/rut';
 import { alternarTema, obtenerTemaOscuro } from '../utils/theme';
 import { VaultChestIcon } from '../components/VaultChestIcon';
+import { GoogleAuthButton } from '../components/GoogleAuthButton';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -313,6 +314,30 @@ export const Register: React.FC = () => {
                   {cargando ? <IonSpinner name="crescent" color="light" /> : 'Crear mi cuenta'}
                 </button>
               </form>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  margin: '16px 0 12px',
+                  color: 'var(--be-text-muted)',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                }}
+              >
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--be-border)' }} />
+                <span>o regístrate con</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--be-border)' }} />
+              </div>
+
+              <GoogleAuthButton
+                texto="Registrarse con Google"
+                onError={(msg) => {
+                  setToastColor('danger');
+                  setToastMsg(msg);
+                }}
+              />
 
               <div
                 style={{

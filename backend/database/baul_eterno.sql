@@ -8,10 +8,12 @@
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS USUARIO (
   id_usuario SERIAL PRIMARY KEY,
-  rut VARCHAR(12) NOT NULL UNIQUE
-    CONSTRAINT chk_usuario_rut CHECK (rut ~ '^[0-9]{7,8}-[0-9K]$'),
+  rut VARCHAR(12) NULL UNIQUE
+    CONSTRAINT chk_usuario_rut CHECK (rut IS NULL OR rut ~ '^[0-9]{7,8}-[0-9K]$'),
   nombre_usuario VARCHAR(150) NOT NULL,
-  contrasena_hash VARCHAR(250) NOT NULL,
+  contrasena_hash VARCHAR(250) NULL,
+  google_id VARCHAR(128) NULL UNIQUE,
+  avatar_url TEXT NULL,
   rol VARCHAR(50) NOT NULL DEFAULT 'TITULAR'
     CONSTRAINT chk_usuario_rol CHECK (rol IN ('TITULAR', 'ALBACEA', 'ADMIN')),
   fecha_ultimo_checkin TIMESTAMP NOT NULL DEFAULT NOW(),

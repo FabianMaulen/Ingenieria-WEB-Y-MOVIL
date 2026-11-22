@@ -124,22 +124,27 @@ exports.login = async (req, res) => {
       user = rows[0] || null;
     }
 
-    // Mismo mensaje si falla el correo/RUT o la contraseña
-    if (!user || !(await bcrypt.compare(password, user.contrasena_hash))) {
+    // Mismo mensaje si falla el correo/RUT, la contraseña o si la cuenta es solo OAuth (sin contrasena_hash)
+    const passwordValida =
+      user && user.contrasena_hash ? await bcrypt.compare(password, user.contrasena_hash) : false;
+
+    if (!passwordValida) {
       return enviarRespuesta(res, 401, 'Credenciales inválidas.', null);
     }
 
     // Vinculación defensiva si existían invitaciones por RUT aún sin enlazar
-    await db.query(
-      `UPDATE DIRECTORIO_ALBACEAS
-       SET id_usuario_invitado = $1,
-           estado_validacion = CASE
-             WHEN estado_validacion = 'INVITADO' THEN 'PENDIENTE'
-             ELSE estado_validacion
-           END
-       WHERE rut_albacea = $2 AND id_usuario_invitado IS NULL`,
-      [user.id_usuario, user.rut]
-    );
+    if (user.rut) {
+      await db.query(
+        `UPDATE DIRECTORIO_ALBACEAS
+         SET id_usuario_invitado = $1,
+             estado_validacion = CASE
+               WHEN estado_validacion = 'INVITADO' THEN 'PENDIENTE'
+               ELSE estado_validacion
+             END
+         WHERE rut_albacea = $2 AND id_usuario_invitado IS NULL`,
+        [user.id_usuario, user.rut]
+      );
+    }
 
     const desigQuery = await db.query(
       `SELECT
@@ -167,6 +172,9 @@ exports.login = async (req, res) => {
         nombre: user.nombre_usuario,
         correo: user.correo_usuario,
         rol: user.rol,
+        avatar_url: user.avatar_url || null,
+        requiere_rut: !user.rut,
+        tiene_password: Boolean(user.contrasena_hash),
         es_albacea: resumenDesig.total > 0,
         designaciones_pendientes: resumenDesig.pendientes,
         designaciones_validadas: resumenDesig.validadas,
@@ -184,7 +192,8 @@ exports.perfil = async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT id_usuario AS id, rut, nombre_usuario AS nombre, correo_usuario AS correo,
-              rol, fecha_ultimo_checkin
+              rol, avatar_url, (contrasena_hash IS NOT NULL) AS tiene_password,
+              (rut IS NULL) AS requiere_rut, fecha_ultimo_checkin
        FROM USUARIO
        WHERE id_usuario = $1`,
       [req.user.id]
@@ -248,6 +257,15 @@ exports.changePassword = async (req, res) => {
     const user = rows[0];
     if (!user) {
       return enviarRespuesta(res, 404, 'Usuario no encontrado.', null);
+    }
+
+    if (!user.contrasena_hash) {
+      return enviarRespuesta(
+        res,
+        400,
+        'Tu cuenta fue creada con Google y no posee contraseña local. Usa "Olvidé mi contraseña" si deseas crear una.',
+        null
+      );
     }
 
     const coincide = await bcrypt.compare(passwordActual, user.contrasena_hash);
@@ -377,5 +395,64 @@ exports.resetPassword = async (req, res) => {
   } catch (e) {
     console.error('Error en resetPassword:', e);
     return enviarRespuesta(res, 500, 'Error interno del servidor al restablecer la contraseña.', null);
+  }
+};
+
+// PUT /api/auth/completar-rut
+// Permite a usuarios creados vía Google OAuth registrar su RUT chileno y vincular invitaciones pendientes
+exports.completarRut = async (req, res) => {
+  try {
+    const { rut } = req.body || {};
+    if (!rut) {
+      return enviarRespuesta(res, 400, 'El RUT chileno es obligatorio.', null);
+    }
+
+    const rutNormalizado = normalizarRut(rut);
+    if (!validarRut(rutNormalizado)) {
+      return enviarRespuesta(res, 400, 'El RUT ingresado no es válido. Verifica el dígito verificador.', null);
+    }
+
+    const { rows } = await db.query(
+      `UPDATE USUARIO
+       SET rut = $1
+       WHERE id_usuario = $2
+       RETURNING id_usuario AS id, rut, nombre_usuario AS nombre, correo_usuario AS correo, rol, avatar_url`,
+      [rutNormalizado, req.user.id]
+    );
+
+    if (!rows[0]) {
+      return enviarRespuesta(res, 404, 'Usuario no encontrado.', null);
+    }
+
+    const vinculadas = await db.query(
+      `UPDATE DIRECTORIO_ALBACEAS
+       SET id_usuario_invitado = $1,
+           nombre_albacea = $2,
+           email_albacea = $3,
+           estado_validacion = CASE WHEN estado_validacion = 'INVITADO' THEN 'PENDIENTE' ELSE estado_validacion END
+       WHERE rut_albacea = $4 AND id_usuario_invitado IS NULL
+       RETURNING id_directorio`,
+      [req.user.id, rows[0].nombre, rows[0].correo, rutNormalizado]
+    );
+
+    const cant = vinculadas.rowCount || 0;
+    await registrarAuditoria(`Completó su RUT chileno (${rutNormalizado}) en cuenta OAuth`, obtenerIp(req), req.user.id);
+
+    const mensaje =
+      cant > 0
+        ? `RUT registrado con éxito. Se vincularon ${cant} designación(es) pendiente(s) como albacea.`
+        : 'RUT registrado correctamente en tu perfil.';
+
+    return enviarRespuesta(res, 200, mensaje, {
+      ...rows[0],
+      requiere_rut: false,
+      designaciones_vinculadas: cant,
+    });
+  } catch (e) {
+    if (e.code === '23505') {
+      return enviarRespuesta(res, 409, 'Este RUT ya se encuentra asociado a otra cuenta.', null);
+    }
+    console.error('Error en completarRut:', e);
+    return enviarRespuesta(res, 500, 'Error interno del servidor al guardar el RUT.', null);
   }
 };

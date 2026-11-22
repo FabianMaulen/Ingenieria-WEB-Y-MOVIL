@@ -196,9 +196,27 @@ export const Polizas: React.FC = () => {
                 </p>
               )}
 
-              <button type="submit" className="be-btn be-btn-primary be-btn-block" disabled={enviando}>
-                {enviando ? <IonSpinner name="crescent" color="light" /> : 'Guardar en bóveda'}
-              </button>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="be-btn be-btn-outline"
+                  style={{ flex: '1 1 130px' }}
+                  onClick={() => {
+                    setMostrandoForm(false);
+                    setErrorMsg('');
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="be-btn be-btn-primary"
+                  style={{ flex: '2 1 200px' }}
+                  disabled={enviando}
+                >
+                  {enviando ? <IonSpinner name="crescent" color="light" /> : 'Guardar en bóveda'}
+                </button>
+              </div>
             </form>
           )}
 

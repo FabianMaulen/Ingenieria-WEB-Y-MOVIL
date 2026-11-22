@@ -8,7 +8,7 @@ import {
   useIonViewWillEnter,
 } from '@ionic/react';
 import { closeCircleOutline, cloudUploadOutline, documentAttachOutline } from 'ionicons/icons';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { VaultLoader } from '../components/VaultLoader';
@@ -18,6 +18,7 @@ import { normalizarRut, rutValido } from '../utils/rut';
 import { fechaHora, tiempoRestante } from '../services/utils/formato';
 
 export const Apertura: React.FC = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const rutInicial = (location.state as { rut_titular?: string } | null)?.rut_titular || '';
 
@@ -217,9 +218,30 @@ export const Apertura: React.FC = () => {
               </p>
             )}
 
-            <button type="submit" className="be-btn be-btn-danger be-btn-block" disabled={cargando}>
-              {cargando ? <IonSpinner name="crescent" color="light" /> : 'Iniciar solicitud de apertura'}
-            </button>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="be-btn be-btn-outline"
+                style={{ flex: '1 1 140px' }}
+                onClick={() => {
+                  setRutTitular('');
+                  setArchivos([]);
+                  setErrorMsg('');
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                  navigate('/guia');
+                }}
+              >
+                Cancelar y volver
+              </button>
+              <button
+                type="submit"
+                className="be-btn be-btn-danger"
+                style={{ flex: '2 1 200px' }}
+                disabled={cargando}
+              >
+                {cargando ? <IonSpinner name="crescent" color="light" /> : 'Iniciar solicitud de apertura'}
+              </button>
+            </div>
           </form>
 
           <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--be-text)', margin: '0 0 12px 0' }}>

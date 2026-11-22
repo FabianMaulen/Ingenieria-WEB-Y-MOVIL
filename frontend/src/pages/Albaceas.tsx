@@ -214,9 +214,32 @@ export const Albaceas: React.FC = () => {
               </p>
             )}
 
-            <button type="submit" className="be-btn be-btn-accent be-btn-block" disabled={enviando}>
-              {enviando ? <IonSpinner name="crescent" color="light" /> : 'Registrar albacea'}
-            </button>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {(nombre.trim() || rut.trim() || email.trim()) && (
+                <button
+                  type="button"
+                  className="be-btn be-btn-outline"
+                  style={{ flex: '1 1 130px' }}
+                  onClick={() => {
+                    setNombre('');
+                    setRut('');
+                    setEmail('');
+                    setParentesco('Familiar');
+                    setErrorMsg('');
+                  }}
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                type="submit"
+                className="be-btn be-btn-accent"
+                style={{ flex: '2 1 200px' }}
+                disabled={enviando}
+              >
+                {enviando ? <IonSpinner name="crescent" color="light" /> : 'Registrar albacea'}
+              </button>
+            </div>
           </form>
 
           {cargando ? (

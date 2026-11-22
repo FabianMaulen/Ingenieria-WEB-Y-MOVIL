@@ -5,10 +5,13 @@ export type ModoApp = 'TITULAR' | 'ALBACEA';
 
 export interface Usuario {
   id: number;
-  rut?: string;
+  rut?: string | null;
   nombre: string;
   correo?: string;
   rol: Rol;
+  avatar_url?: string | null;
+  requiere_rut?: boolean;
+  tiene_password?: boolean;
   es_albacea?: boolean;
   designaciones_pendientes?: number;
   designaciones_validadas?: number;
@@ -80,6 +83,41 @@ export const restablecerPassword = async (
     codigo,
     nuevaPassword,
   });
+  return res.data;
+};
+
+// Google OAuth 2.0 (Authorization Code + state + PKCE)
+export const obtenerUrlGoogle = async (): Promise<string> => {
+  const res = await api.get<ApiResponse<{ url: string }>>('/auth/google/url');
+  return res.data.data.url;
+};
+
+export const iniciarSesionConGoogle = async (code: string, state: string): Promise<Usuario> => {
+  const res = await api.post<ApiResponse<{ token: string; usuario: Usuario }>>('/auth/google', {
+    code,
+    state,
+  });
+  const { token, usuario } = res.data.data;
+  guardarSesion(token, usuario);
+  return usuario;
+};
+
+export const completarRutUsuario = async (rut: string) => {
+  const res = await api.put<ApiResponse<Usuario & { designaciones_vinculadas?: number }>>(
+    '/auth/completar-rut',
+    { rut }
+  );
+  const actual = usuarioGuardado();
+  if (actual && res.data.data) {
+    const actualizado: Usuario = {
+      ...actual,
+      rut: res.data.data.rut,
+      requiere_rut: false,
+    };
+    localStorage.setItem('usuario', JSON.stringify(actualizado));
+    window.dispatchEvent(new Event('auth-updated'));
+    window.dispatchEvent(new Event('designaciones-actualizadas'));
+  }
   return res.data;
 };
 

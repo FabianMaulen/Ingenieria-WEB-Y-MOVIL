@@ -37,6 +37,7 @@ export const AppMenu: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [nombre, setNombre] = useState<string>('Usuario');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [esAdmin, setEsAdmin] = useState<boolean>(false);
   const [modo, setModo] = useState<ModoApp>(
     (localStorage.getItem('modo_activo') as ModoApp) || 'TITULAR'
@@ -62,6 +63,7 @@ export const AppMenu: React.FC = () => {
     const nombreGuardado = usuario?.nombre || localStorage.getItem('user_nombre');
     const rolGuardado = usuario?.rol || localStorage.getItem('user_rol');
     if (nombreGuardado) setNombre(nombreGuardado);
+    setAvatarUrl(usuario?.avatar_url || null);
     setEsAdmin(rolGuardado === 'ADMIN');
 
     const token = localStorage.getItem('auth_token');
@@ -178,27 +180,43 @@ export const AppMenu: React.FC = () => {
             color: 'var(--be-text)',
           }}
         >
-          <div
-            style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
-              background: enModoAlbacea
-                ? 'linear-gradient(135deg, #6d4b33 0%, #9b704e 100%)'
-                : 'linear-gradient(135deg, #194580 0%, #2d6ec2 100%)',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: 'var(--be-font-serif)',
-              fontWeight: 700,
-              fontSize: '1.1rem',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.18)',
-            }}
-          >
-            {inicial}
-          </div>
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={nombre}
+              referrerPolicy="no-referrer"
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                objectFit: 'cover',
+                flexShrink: 0,
+                border: '1px solid var(--be-border)',
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                background: enModoAlbacea
+                  ? 'linear-gradient(135deg, #6d4b33 0%, #9b704e 100%)'
+                  : 'linear-gradient(135deg, #194580 0%, #2d6ec2 100%)',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'var(--be-font-serif)',
+                fontWeight: 700,
+                fontSize: '1.1rem',
+                flexShrink: 0,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.18)',
+              }}
+            >
+              {inicial}
+            </div>
+          )}
 
           <div style={{ minWidth: 0, flex: 1 }}>
             <h3

@@ -7,11 +7,15 @@ import {
   eyeOutline,
   eyeOffOutline,
   arrowBackOutline,
+  moonOutline,
+  sunnyOutline,
+  closeOutline,
 } from 'ionicons/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { mensajeError } from '../services/api';
 import { solicitarRecuperacion, restablecerPassword } from '../services/auth.service';
 import { emailValido } from '../utils/rut';
+import { alternarTema, obtenerTemaOscuro } from '../utils/theme';
 import { VaultChestIcon } from '../components/VaultChestIcon';
 
 export const ForgotPassword: React.FC = () => {
@@ -28,6 +32,13 @@ export const ForgotPassword: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [toastColor, setToastColor] = useState<'success' | 'danger' | 'warning'>('success');
+  const [isDark, setIsDark] = useState<boolean>(() => obtenerTemaOscuro());
+
+  useEffect(() => {
+    const onTheme = () => setIsDark(obtenerTemaOscuro());
+    window.addEventListener('theme-changed', onTheme);
+    return () => window.removeEventListener('theme-changed', onTheme);
+  }, []);
 
   // Si el usuario llegó desde el enlace del correo (?correo=...&codigo=...)
   useEffect(() => {
@@ -39,6 +50,15 @@ export const ForgotPassword: React.FC = () => {
       setPaso(2);
     }
   }, [searchParams]);
+
+  const handleCancelarProceso = () => {
+    setCorreo('');
+    setCodigo('');
+    setNuevaPassword('');
+    setConfirmarPassword('');
+    setErrorMsg('');
+    navigate('/login', { replace: true });
+  };
 
   const handleSolicitarCodigo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,7 +118,45 @@ export const ForgotPassword: React.FC = () => {
     <IonPage>
       <IonContent fullscreen>
         <div className="be-auth-wrapper">
-          <div className="be-card" style={{ width: '100%', maxWidth: '470px', padding: '34px 30px', borderRadius: '22px' }}>
+          <div
+            className="be-card"
+            style={{ width: '100%', maxWidth: '480px', padding: '24px 30px 32px', borderRadius: '22px', position: 'relative' }}
+          >
+            {/* Barra superior de control: Volver + Cambio de tema claro/oscuro */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <button
+                type="button"
+                className="be-btn be-btn-outline"
+                style={{ padding: '7px 12px', fontSize: '0.8rem' }}
+                onClick={() => (paso === 2 ? setPaso(1) : handleCancelarProceso())}
+              >
+                <IonIcon icon={arrowBackOutline} />
+                {paso === 2 ? 'Paso anterior' : 'Volver'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsDark(alternarTema())}
+                title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--be-border)',
+                  backgroundColor: 'var(--be-surface-alt)',
+                  color: 'var(--be-text)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '1.15rem',
+                }}
+              >
+                <IonIcon icon={isDark ? sunnyOutline : moonOutline} />
+              </button>
+            </div>
+
             <div style={{ textAlign: 'center', marginBottom: '22px' }}>
               <VaultChestIcon size={64} mode="static" />
               <h2 style={{ margin: '10px 0 6px 0', fontSize: '1.5rem', color: 'var(--be-text)' }}>
@@ -134,9 +192,25 @@ export const ForgotPassword: React.FC = () => {
                   </p>
                 )}
 
-                <button type="submit" className="be-btn be-btn-primary be-btn-block" disabled={cargando}>
-                  {cargando ? <IonSpinner name="crescent" color="light" /> : 'Enviar código de recuperación'}
-                </button>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="be-btn be-btn-outline"
+                    style={{ flex: '1 1 120px' }}
+                    onClick={handleCancelarProceso}
+                  >
+                    <IonIcon icon={closeOutline} />
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="be-btn be-btn-primary"
+                    style={{ flex: '2 1 180px' }}
+                    disabled={cargando}
+                  >
+                    {cargando ? <IonSpinner name="crescent" color="light" /> : 'Enviar código'}
+                  </button>
+                </div>
               </form>
             ) : (
               <form onSubmit={handleRestablecer}>
@@ -213,37 +287,27 @@ export const ForgotPassword: React.FC = () => {
                   {cargando ? <IonSpinner name="crescent" color="light" /> : 'Restablecer contraseña'}
                 </button>
 
-                <button
-                  type="button"
-                  className="be-btn be-btn-outline be-btn-block"
-                  style={{ marginTop: '10px' }}
-                  onClick={() => setPaso(1)}
-                >
-                  Reenviar código
-                </button>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="be-btn be-btn-outline"
+                    style={{ flex: '1 1 130px' }}
+                    onClick={() => setPaso(1)}
+                  >
+                    Reenviar código
+                  </button>
+                  <button
+                    type="button"
+                    className="be-btn be-btn-outline"
+                    style={{ flex: '1 1 130px', color: 'var(--be-danger)' }}
+                    onClick={handleCancelarProceso}
+                  >
+                    <IonIcon icon={closeOutline} />
+                    Anular proceso
+                  </button>
+                </div>
               </form>
             )}
-
-            <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--be-border)' }}>
-              <button
-                type="button"
-                onClick={() => navigate('/login')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--be-primary)',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '0.88rem',
-                }}
-              >
-                <IonIcon icon={arrowBackOutline} />
-                Volver al inicio de sesión
-              </button>
-            </div>
           </div>
         </div>
 

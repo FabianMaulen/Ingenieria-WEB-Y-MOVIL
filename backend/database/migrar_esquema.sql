@@ -105,6 +105,23 @@ CREATE TABLE IF NOT EXISTS RESET_PASSWORD_TOKEN (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- 6b. Soporte OAuth 2.0 con Google (usuarios sin contraseña local y RUT completable)
+ALTER TABLE USUARIO
+  ADD COLUMN IF NOT EXISTS google_id VARCHAR(128),
+  ADD COLUMN IF NOT EXISTS avatar_url TEXT,
+  ALTER COLUMN contrasena_hash DROP NOT NULL,
+  ALTER COLUMN rut DROP NOT NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'usuario_google_id_key') THEN
+    ALTER TABLE USUARIO ADD CONSTRAINT usuario_google_id_key UNIQUE (google_id);
+  END IF;
+END $$;
+
+ALTER TABLE USUARIO DROP CONSTRAINT IF EXISTS chk_usuario_rut;
+ALTER TABLE USUARIO ADD CONSTRAINT chk_usuario_rut CHECK (rut IS NULL OR rut ~ '^[0-9]{7,8}-[0-9K]$');
+
 -- 7. Índices recomendados
 CREATE INDEX IF NOT EXISTS idx_directorio_titular ON DIRECTORIO_ALBACEAS(id_titular);
 CREATE INDEX IF NOT EXISTS idx_directorio_rut ON DIRECTORIO_ALBACEAS(rut_albacea);

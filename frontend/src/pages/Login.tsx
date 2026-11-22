@@ -19,6 +19,7 @@ import { login } from '../services/auth.service';
 import { alternarTema, obtenerTemaOscuro } from '../utils/theme';
 import { VaultChestIcon } from '../components/VaultChestIcon';
 import { VaultUnlockOverlay } from '../components/VaultUnlockOverlay';
+import { GoogleAuthButton } from '../components/GoogleAuthButton';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -299,6 +300,24 @@ export const Login: React.FC = () => {
                   )}
                 </button>
               </form>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  margin: '18px 0 14px',
+                  color: 'var(--be-text-muted)',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                }}
+              >
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--be-border)' }} />
+                <span>o continúa con</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--be-border)' }} />
+              </div>
+
+              <GoogleAuthButton texto="Continuar con Google" onError={(msg) => setErrorMessage(msg)} />
 
               <div
                 style={{

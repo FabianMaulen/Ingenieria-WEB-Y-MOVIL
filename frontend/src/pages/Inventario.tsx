@@ -185,9 +185,31 @@ export const Inventario: React.FC = () => {
               </p>
             )}
 
-            <button type="submit" className="be-btn be-btn-primary be-btn-block" disabled={enviando}>
-              {enviando ? <IonSpinner name="crescent" color="light" /> : 'Agregar al inventario'}
-            </button>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {(plataforma.trim() || instruccion.trim()) && (
+                <button
+                  type="button"
+                  className="be-btn be-btn-outline"
+                  style={{ flex: '1 1 130px' }}
+                  onClick={() => {
+                    setPlataforma('');
+                    setInstruccion('');
+                    setCategoria('Digital');
+                    setErrorMsg('');
+                  }}
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                type="submit"
+                className="be-btn be-btn-primary"
+                style={{ flex: '2 1 200px' }}
+                disabled={enviando}
+              >
+                {enviando ? <IonSpinner name="crescent" color="light" /> : 'Agregar al inventario'}
+              </button>
+            </div>
           </form>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
