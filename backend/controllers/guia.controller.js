@@ -81,6 +81,7 @@ exports.obtenerGuia = async (req, res) => {
       db.query(
         `SELECT p.id_poliza, p.tipo_seguro, p.aseguradora, p.numero_poliza,
                 p.ubicacion_fisica, p.monto_referencial, p.tramitada,
+                p.documento_nombre, (p.documento_cifrado IS NOT NULL) AS tiene_documento,
                 t.id_usuario AS id_titular, t.nombre_usuario AS nombre_titular
          FROM POLIZA p
          JOIN USUARIO t ON t.id_usuario = p.id_usuario

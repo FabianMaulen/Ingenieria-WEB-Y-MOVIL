@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#194580" />
+      <stop offset="100%" stop-color="#0f2c56" />
+    </linearGradient>
+    <linearGradient id="wood" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a2744e" />
+      <stop offset="100%" stop-color="#6b482e" />
+    </linearGradient>
+    <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0dcc2" />
+      <stop offset="100%" stop-color="#b99060" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)" />
+  <path d="M12 26 C12 17 20 14 32 14 C44 14 52 17 52 26 Z" fill="url(#wood)" stroke="#3e2817" stroke-width="1.6" />
+  <rect x="12" y="26" width="40" height="24" rx="4" fill="url(#wood)" stroke="#3e2817" stroke-width="1.6" />
+  <rect x="12" y="25" width="40" height="4" fill="url(#metal)" />
+  <rect x="18" y="15" width="3.5" height="35" fill="url(#metal)" opacity="0.88" />
+  <rect x="42.5" y="15" width="3.5" height="35" fill="url(#metal)" opacity="0.88" />
+  <rect x="27" y="24" width="10" height="11" rx="2.5" fill="url(#metal)" stroke="#4f3620" stroke-width="1.2" />
+  <circle cx="32" cy="28.5" r="1.8" fill="#194580" />
+  <path d="M31.2 29.8 L32.8 29.8 L33.2 33 L30.8 33 Z" fill="#194580" />
+</svg>

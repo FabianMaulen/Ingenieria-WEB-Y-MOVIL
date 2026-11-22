@@ -27,9 +27,9 @@ const AppShellProtegido: React.FC = () => (
     when="md"
     style={
       {
-        '--side-width': '250px',
-        '--side-min-width': '250px',
-        '--side-max-width': '250px',
+        '--side-width': '264px',
+        '--side-min-width': '264px',
+        '--side-max-width': '264px',
       } as React.CSSProperties
     }
   >

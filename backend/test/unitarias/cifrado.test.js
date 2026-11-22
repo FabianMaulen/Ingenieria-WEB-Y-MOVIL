@@ -1,6 +1,6 @@
 const { describe, test } = require('node:test');
 const assert = require('node:assert/strict');
-const { cifrarTexto, descifrarTexto } = require('../../utils/cifrado');
+const { cifrarTexto, descifrarTexto, cifrarBuffer, descifrarBuffer } = require('../../utils/cifrado');
 
 describe('Cifrado AES-256-CBC (RNF-03)', () => {
   test('cifra y descifra correctamente texto con tildes, ñ y saltos de línea', () => {
@@ -27,5 +27,17 @@ describe('Cifrado AES-256-CBC (RNF-03)', () => {
     const manipulado = `${iv}:${'ff'.repeat(cuerpo.length / 2)}`;
 
     assert.throws(() => descifrarTexto(manipulado));
+  });
+
+  test('cifrarBuffer y descifrarBuffer protegen archivos binarios en reposo', () => {
+    const pdfSimulado = Buffer.from('%PDF-1.4 contenido confidencial de poliza');
+    const cifrado = cifrarBuffer(pdfSimulado);
+
+    assert.ok(Buffer.isBuffer(cifrado));
+    assert.ok(cifrado.length > pdfSimulado.length);
+    assert.equal(cifrado.includes(Buffer.from('contenido confidencial')), false);
+
+    const recuperado = descifrarBuffer(cifrado);
+    assert.deepEqual(recuperado, pdfSimulado);
   });
 });

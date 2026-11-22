@@ -83,6 +83,7 @@ app.use('/api/asistente', require('./routes/asistente.routes'));
 app.use('/api/contingencia', require('./routes/contingencia.routes'));
 app.use('/api/indicadores', require('./routes/indicadores.routes'));
 app.use('/api/soporte', require('./routes/soporte.routes'));
+app.use('/api/boveda', require('./routes/boveda.routes'));
 
 // Alias protegido de perfil
 app.get('/api/perfil', verificarToken, perfil);

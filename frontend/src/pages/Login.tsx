@@ -108,8 +108,8 @@ export const Login: React.FC = () => {
                     >
                       Baúl Eterno
                     </span>
-                    <span style={{ fontSize: '0.73rem', color: '#d8c3ae', fontWeight: 600, letterSpacing: '0.06em' }}>
-                      RESGUARDO Y LEGADO PERSONAL
+                    <span style={{ fontSize: '0.72rem', color: '#d8c3ae', fontWeight: 600, letterSpacing: '0.04em' }}>
+                      RESGUARDO HOY, TRANQUILIDAD MAÑANA
                     </span>
                   </div>
                 </div>

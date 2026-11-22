@@ -14,6 +14,8 @@ export interface PolizaGuia {
   ubicacion_fisica: string;
   monto_referencial: string;
   tramitada: boolean;
+  documento_nombre?: string | null;
+  tiene_documento?: boolean;
   id_titular: number;
   nombre_titular: string;
   contacto: Contacto | null;

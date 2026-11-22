@@ -68,6 +68,9 @@ CREATE TABLE IF NOT EXISTS POLIZA (
   monto_referencial NUMERIC(14,2) NOT NULL DEFAULT 0
     CONSTRAINT chk_poliza_monto CHECK (monto_referencial >= 0),
   tramitada BOOLEAN NOT NULL DEFAULT FALSE,
+  documento_cifrado VARCHAR(180) NULL,
+  documento_nombre VARCHAR(200) NULL,
+  documento_mime VARCHAR(80) NULL,
   id_usuario INT NOT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE
 );
 

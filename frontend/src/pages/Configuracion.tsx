@@ -20,12 +20,15 @@ import {
   mailUnreadOutline,
   sendOutline,
   headsetOutline,
+  documentTextOutline,
+  downloadOutline,
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { SoporteModal } from '../components/SoporteModal';
 import { mensajeError } from '../services/api';
+import { descargarKitEmergenciaPdf } from '../services/boveda.service';
 import {
   cambiarPassword,
   logout,
@@ -71,6 +74,7 @@ export const Configuracion: React.FC = () => {
   const [enviando, setEnviando] = useState(false);
 
   const [confirmarLogout, setConfirmarLogout] = useState(false);
+  const [descargandoKit, setDescargandoKit] = useState(false);
   const [abriendoSoporte, setAbriendoSoporte] = useState(false);
   const [misTickets, setMisTickets] = useState<TicketSoporte[]>([]);
   const [showToast, setShowToast] = useState(false);
@@ -187,6 +191,18 @@ export const Configuracion: React.FC = () => {
       mostrarAviso(mensajeError(error), 'danger');
     } finally {
       setProcesandoVerif(false);
+    }
+  };
+
+  const handleDescargarKit = async () => {
+    try {
+      setDescargandoKit(true);
+      await descargarKitEmergenciaPdf();
+      mostrarAviso('Kit de Emergencia descargado en PDF. Guárdalo en un lugar seguro.', 'success');
+    } catch (error) {
+      mostrarAviso(mensajeError(error), 'danger');
+    } finally {
+      setDescargandoKit(false);
     }
   };
 
@@ -344,6 +360,52 @@ export const Configuracion: React.FC = () => {
                 )}
               </div>
             )}
+          </div>
+
+          {/* 1b. Kit de Emergencia Patrimonial en PDF con QR */}
+          <div
+            className="be-card"
+            style={{
+              borderColor: 'var(--be-primary)',
+              background: 'linear-gradient(135deg, var(--be-surface) 0%, var(--be-surface-alt) 100%)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 260px' }}>
+                <div className="be-icon-box">
+                  <IonIcon icon={documentTextOutline} />
+                </div>
+                <div>
+                  <h3 style={{ margin: '0 0 3px 0', fontSize: '1.02rem', fontWeight: 800, color: 'var(--be-text)' }}>
+                    Kit de Emergencia Patrimonial (PDF)
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.81rem', color: 'var(--be-text-muted)', lineHeight: 1.45 }}>
+                    Genera una guía imprimible con tu resumen de albaceas, seguros, inventario y un{' '}
+                    <strong>código QR</strong> directo al portal de consulta familiar (sin exponer contraseñas ni cartas
+                    selladas).
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="be-btn be-btn-primary"
+                disabled={descargandoKit}
+                onClick={handleDescargarKit}
+              >
+                {descargandoKit ? (
+                  <>
+                    <IonSpinner name="crescent" color="light" style={{ width: '16px', height: '16px' }} />
+                    Generando PDF...
+                  </>
+                ) : (
+                  <>
+                    <IonIcon icon={downloadOutline} />
+                    Descargar PDF con QR
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* 2. Vigencia de Bóveda, Correos de Respaldo y Notificaciones */}

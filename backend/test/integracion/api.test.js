@@ -357,4 +357,74 @@ describe('Reglas de negocio: Pólizas, Albaceas (máx. 5), Mensajes externos, Co
     assert.equal(res.status, 200);
     assert.equal(res.body.data.boveda_activa, true);
   });
+
+  test('GET /api/boveda/kit-emergencia genera y entrega un PDF válido con cabecera %PDF-', async () => {
+    let paso = 0;
+    mock.method(db, 'query', async () => {
+      paso += 1;
+      if (paso === 1) {
+        return {
+          rows: [
+            {
+              id_usuario: 10,
+              rut: '12345678-5',
+              nombre_usuario: 'Roberto Morales',
+              correo_usuario: 'roberto@correo.cl',
+              correo_verificado: true,
+              correo_alternativo: null,
+              nombre_contacto_confianza: null,
+              correo_contacto_confianza: null,
+              boveda_activa: true,
+              terminos_aceptados_en: new Date().toISOString(),
+              frecuencia_checkin_dias: 180,
+              plazo_gracia_dias: 7,
+              fecha_ultimo_checkin: new Date().toISOString(),
+            },
+          ],
+        };
+      }
+      if (paso === 2) return { rows: [{ nombre: 'Camila', correo: 'camila@cl', rut_albacea: '19876543-0', parentesco: 'Hijo/a', estado_validacion: 'VALIDADO' }] };
+      if (paso === 3) return { rows: [{ tipo_seguro: 'Vida', aseguradora: 'Consorcio', numero_poliza: 'POL-1', ubicacion_fisica: 'Escritorio', monto_referencial: '50000000', tiene_documento: true }] };
+      if (paso === 4) return { rows: [{ plataforma: 'Drive', categoria: 'Digital', instruccion: 'Descargar fotos' }] };
+      if (paso === 5) return { rows: [{ total_cartas: 2 }] };
+      return { rows: [], rowCount: 1 };
+    });
+
+    const res = await request(app)
+      .get('/api/boveda/kit-emergencia')
+      .set('Authorization', `Bearer ${tokenTitular}`)
+      .buffer(true)
+      .parse((resStream, cb) => {
+        const chunks = [];
+        resStream.on('data', (c) => chunks.push(c));
+        resStream.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+
+    assert.equal(res.status, 200);
+    assert.match(res.headers['content-type'], /application\/pdf/);
+    assert.ok(Buffer.isBuffer(res.body));
+    assert.equal(res.body.subarray(0, 5).toString('utf8'), '%PDF-');
+  });
+
+  test('GET /api/polizas/:id/documento rechaza con 403 a usuarios no autorizados', async () => {
+    mock.method(db, 'query', async () => ({
+      rows: [
+        {
+          id_poliza: 7,
+          id_usuario: 99,
+          documento_cifrado: 'poliza-7.enc',
+          documento_nombre: 'seguro.pdf',
+          documento_mime: 'application/pdf',
+          autorizado: false,
+        },
+      ],
+    }));
+
+    const res = await request(app)
+      .get('/api/polizas/7/documento')
+      .set('Authorization', `Bearer ${tokenTitular}`);
+
+    assert.equal(res.status, 403);
+    assert.match(res.body.mensaje, /no tienes autorización/i);
+  });
 });

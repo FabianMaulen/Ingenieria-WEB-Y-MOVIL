@@ -18,11 +18,24 @@ import {
   locationOutline,
   sparklesOutline,
   trendingUpOutline,
+  attachOutline,
+  downloadOutline,
+  lockClosedOutline,
+  closeCircleOutline,
 } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { VaultLoader } from '../components/VaultLoader';
-import { listarPolizas, crearPoliza, eliminarPoliza, extraerPolizaConIA, Poliza } from '../services/polizas.service';
+import {
+  listarPolizas,
+  crearPoliza,
+  eliminarPoliza,
+  extraerPolizaConIA,
+  adjuntarDocumentoPoliza,
+  descargarDocumentoPoliza,
+  eliminarDocumentoPoliza,
+  Poliza,
+} from '../services/polizas.service';
 import { obtenerValorUf, IndicadorUf } from '../services/indicadores.service';
 import { mensajeError } from '../services/api';
 
@@ -35,6 +48,7 @@ export const Polizas: React.FC = () => {
   const [toastMsg, setToastMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [idEliminar, setIdEliminar] = useState<number | null>(null);
+  const [procesandoDocId, setProcesandoDocId] = useState<number | null>(null);
 
   const [tipoSeguro, setTipoSeguro] = useState('Seguro de Vida Individual');
   const [aseguradora, setAseguradora] = useState('');
@@ -144,6 +158,51 @@ export const Polizas: React.FC = () => {
       setToastMsg(mensajeError(error));
     } finally {
       setIdEliminar(null);
+    }
+  };
+
+  const handleAdjuntarDoc = async (idPoliza: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setToastMsg('El documento de respaldo no puede superar los 5 MB.');
+      e.target.value = '';
+      return;
+    }
+    try {
+      setProcesandoDocId(idPoliza);
+      await adjuntarDocumentoPoliza(idPoliza, file);
+      setToastMsg('Documento cifrado y resguardado correctamente en tu póliza.');
+      await cargarDatos();
+    } catch (error) {
+      setToastMsg(mensajeError(error));
+    } finally {
+      setProcesandoDocId(null);
+      e.target.value = '';
+    }
+  };
+
+  const handleDescargarDoc = async (p: Poliza) => {
+    try {
+      setProcesandoDocId(p.id_poliza);
+      await descargarDocumentoPoliza(p.id_poliza, p.documento_nombre);
+    } catch (error) {
+      setToastMsg(mensajeError(error));
+    } finally {
+      setProcesandoDocId(null);
+    }
+  };
+
+  const handleQuitarDoc = async (idPoliza: number) => {
+    try {
+      setProcesandoDocId(idPoliza);
+      await eliminarDocumentoPoliza(idPoliza);
+      setToastMsg('Documento de respaldo eliminado de la póliza.');
+      await cargarDatos();
+    } catch (error) {
+      setToastMsg(mensajeError(error));
+    } finally {
+      setProcesandoDocId(null);
     }
   };
 
@@ -427,6 +486,82 @@ export const Polizas: React.FC = () => {
                       <IonIcon icon={locationOutline} />
                       {p.ubicacion_fisica}
                     </p>
+
+                    {/* Bóveda documental cifrada en reposo */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '9px' }}>
+                      {p.tiene_documento ? (
+                        <>
+                          <span
+                            className="be-badge be-badge-info"
+                            style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                            title={p.documento_nombre || 'Documento cifrado'}
+                          >
+                            <IonIcon icon={lockClosedOutline} />
+                            {p.documento_nombre || 'Respaldo cifrado'}
+                          </span>
+
+                          <button
+                            type="button"
+                            className="be-btn be-btn-outline"
+                            style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                            disabled={procesandoDocId === p.id_poliza}
+                            onClick={() => handleDescargarDoc(p)}
+                          >
+                            <IonIcon icon={downloadOutline} />
+                            Descargar
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleQuitarDoc(p.id_poliza)}
+                            disabled={procesandoDocId === p.id_poliza}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--be-danger)',
+                              fontSize: '0.74rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              padding: '4px 6px',
+                            }}
+                          >
+                            <IonIcon icon={closeCircleOutline} />
+                            Quitar
+                          </button>
+                        </>
+                      ) : (
+                        <label
+                          className="be-btn be-btn-outline"
+                          style={{
+                            padding: '5px 10px',
+                            fontSize: '0.74rem',
+                            cursor: procesandoDocId === p.id_poliza ? 'wait' : 'pointer',
+                          }}
+                        >
+                          {procesandoDocId === p.id_poliza ? (
+                            <>
+                              <IonSpinner name="crescent" style={{ width: '13px', height: '13px' }} />
+                              Cifrando archivo...
+                            </>
+                          ) : (
+                            <>
+                              <IonIcon icon={attachOutline} />
+                              Adjuntar respaldo cifrado (PDF / Foto)
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept=".pdf,image/jpeg,image/png,image/webp"
+                            disabled={procesandoDocId === p.id_poliza}
+                            onChange={(e) => handleAdjuntarDoc(p.id_poliza, e)}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                      )}
+                    </div>
                   </div>
                 </div>
 

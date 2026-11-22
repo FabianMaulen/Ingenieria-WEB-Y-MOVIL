@@ -8,6 +8,11 @@ router.use(verificarToken);
 // Extracción asistida por IA (antes de /:id para evitar colisión de ruta)
 router.post('/extraer', polizasController.subirArchivoPoliza, polizasController.extraerDesdeArchivo);
 
+// Bóveda documental cifrada en reposo (subida, descarga descifrada y eliminación)
+router.post('/:id/documento', polizasController.subirArchivoPoliza, polizasController.adjuntarDocumento);
+router.get('/:id/documento', polizasController.descargarDocumento);
+router.delete('/:id/documento', polizasController.eliminarDocumento);
+
 router.get('/', polizasController.listar);
 router.get('/:id', polizasController.obtener);
 router.post('/', polizasController.crear);

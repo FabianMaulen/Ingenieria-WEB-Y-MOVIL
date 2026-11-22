@@ -11,6 +11,8 @@ import {
   mailUnreadOutline,
   lockOpenOutline,
   headsetOutline,
+  downloadOutline,
+  documentTextOutline,
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
@@ -20,6 +22,7 @@ import { MobileBottomNav } from '../components/MobileBottomNav';
 import { SoporteModal } from '../components/SoporteModal';
 
 import { mensajeError } from '../services/api';
+import { descargarKitEmergenciaPdf } from '../services/boveda.service';
 import {
   activarBovedaPersonal,
   completarRutUsuario,
@@ -51,6 +54,7 @@ export const Dashboard: React.FC = () => {
     () => usuarioGuardado()?.boveda_activa !== false
   );
   const [activandoBoveda, setActivandoBoveda] = useState(false);
+  const [descargandoKit, setDescargandoKit] = useState(false);
   const [correoVerificado, setCorreoVerificado] = useState<boolean>(true);
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [alertasLiberadas, setAlertasLiberadas] = useState<Alerta[]>([]);
@@ -179,6 +183,20 @@ export const Dashboard: React.FC = () => {
       setShowToast(true);
     } finally {
       setActivandoBoveda(false);
+    }
+  };
+
+  const handleDescargarKit = async () => {
+    try {
+      setDescargandoKit(true);
+      await descargarKitEmergenciaPdf();
+      setToastMsg('Kit de Emergencia Patrimonial descargado en PDF.');
+      setShowToast(true);
+    } catch (error) {
+      setToastMsg(mensajeError(error));
+      setShowToast(true);
+    } finally {
+      setDescargandoKit(false);
     }
   };
 
@@ -539,19 +557,60 @@ export const Dashboard: React.FC = () => {
               }}
             />
           ) : (
-            <VaultStatusCard
-              daysLeft={alertasLiberadas.length > 0 ? 0 : daysLeft}
-              totalCycleDays={frecuenciaDias}
-              status={
-                alertasLiberadas.length > 0
-                  ? 'LIBERADA'
-                  : alertas.length > 0
-                  ? 'EN_REVISION'
-                  : 'PROTEGIDA'
-              }
-              onCheckin={handleCheckin}
-              loading={cargandoCheckin}
-            />
+            <>
+              <VaultStatusCard
+                daysLeft={alertasLiberadas.length > 0 ? 0 : daysLeft}
+                totalCycleDays={frecuenciaDias}
+                status={
+                  alertasLiberadas.length > 0
+                    ? 'LIBERADA'
+                    : alertas.length > 0
+                    ? 'EN_REVISION'
+                    : 'PROTEGIDA'
+                }
+                onCheckin={handleCheckin}
+                loading={cargandoCheckin}
+              />
+
+              {/* Acceso directo al Kit de Emergencia Patrimonial (PDF con QR) */}
+              <div
+                className="be-card"
+                style={{
+                  padding: '14px 18px',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                  background: 'linear-gradient(135deg, var(--be-surface) 0%, var(--be-surface-alt) 100%)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 240px' }}>
+                  <div className="be-icon-box be-icon-box-accent" style={{ width: '38px', height: '38px', fontSize: '1.15rem' }}>
+                    <IonIcon icon={documentTextOutline} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--be-text)' }}>
+                      Kit de Emergencia Patrimonial (PDF con QR)
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--be-text-muted)' }}>
+                      Respaldo imprimible con tu resumen y QR de orientación para tu familia, sin exponer secretos.
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="be-btn be-btn-outline"
+                  style={{ padding: '8px 14px', fontSize: '0.8rem' }}
+                  disabled={descargandoKit}
+                  onClick={handleDescargarKit}
+                >
+                  <IonIcon icon={downloadOutline} />
+                  {descargandoKit ? 'Generando PDF...' : 'Descargar Kit PDF'}
+                </button>
+              </div>
+            </>
           )}
 
           {/* Módulos del Baúl (visualmente subordinados mientras la activación sea la prioridad) */}

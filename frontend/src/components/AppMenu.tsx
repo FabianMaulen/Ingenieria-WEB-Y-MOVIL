@@ -3,7 +3,6 @@ import {
   IonMenu,
   IonHeader,
   IonToolbar,
-  IonTitle,
   IonContent,
   IonFooter,
   IonList,
@@ -33,6 +32,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { logout, ModoApp, usuarioGuardado } from '../services/auth.service';
 import { obtenerDesignaciones } from '../services/guia.service';
+import { VaultChestIcon } from './VaultChestIcon';
 
 const RUTAS_ALBACEA = ['/guia', '/apertura'];
 const RUTAS_TITULAR = ['/dashboard', '/polizas', '/inventario', '/albaceas', '/mensajes'];
@@ -172,7 +172,7 @@ export const AppMenu: React.FC = () => {
   modosDisponibles.push({ id: 'TITULAR', label: 'Mi Baúl' });
   if (tieneDesignaciones) modosDisponibles.push({ id: 'ALBACEA', label: 'Albacea' });
 
-  const estiloItemCompacto = { '--min-height': '40px' } as React.CSSProperties;
+  const estiloItemCompacto = { '--min-height': '36px', fontSize: '0.86rem' } as React.CSSProperties;
 
   return (
     <IonMenu contentId="main-content" type="overlay">
@@ -182,14 +182,60 @@ export const AppMenu: React.FC = () => {
             {
               '--background': 'var(--ion-toolbar-background)',
               '--color': 'var(--ion-toolbar-color)',
-              '--min-height': '52px',
-              borderBottom: '1px solid rgba(216, 163, 85, 0.18)',
+              '--min-height': '56px',
+              '--padding-start': '12px',
+              '--padding-end': '12px',
+              borderBottom: '1px solid rgba(216, 163, 85, 0.22)',
             } as React.CSSProperties
           }
         >
-          <IonTitle style={{ fontFamily: 'var(--be-font-serif)', fontSize: '1.08rem', fontWeight: 700 }}>
-            {enModoAdmin ? 'Consola Admin' : enModoAlbacea ? 'Panel Albacea' : 'Baúl Eterno'}
-          </IonTitle>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'rgba(255, 255, 255, 0.12)',
+                border: '1px solid rgba(255, 255, 255, 0.22)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <VaultChestIcon size={30} mode="static" />
+            </div>
+            <div style={{ minWidth: 0, lineHeight: 1.15 }}>
+              <div
+                style={{
+                  fontFamily: 'var(--be-font-serif)',
+                  fontSize: '1.05rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Baúl Eterno
+              </div>
+              <div
+                style={{
+                  fontSize: '0.67rem',
+                  fontWeight: 600,
+                  color: '#d8c3ae',
+                  letterSpacing: '0.02em',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {enModoAdmin
+                  ? 'Consola de Administración'
+                  : enModoAlbacea
+                  ? 'Portal de Custodia Albacea'
+                  : 'Resguardo hoy, tranquilidad mañana'}
+              </div>
+            </div>
+          </div>
         </IonToolbar>
       </IonHeader>
 
@@ -197,9 +243,9 @@ export const AppMenu: React.FC = () => {
         {/* Cabecera compacta unificada: perfil + selector inline sin desperdiciar altura */}
         <div
           style={{
-            padding: '10px 11px',
-            margin: '10px 10px 6px',
-            borderRadius: '13px',
+            padding: '8px 10px',
+            margin: '8px 10px 4px',
+            borderRadius: '12px',
             backgroundColor: 'var(--be-surface-alt)',
             border: '1px solid var(--be-border)',
             color: 'var(--be-text)',

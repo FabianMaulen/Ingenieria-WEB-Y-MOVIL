@@ -30,6 +30,7 @@ import {
   closeOutline,
   eyeOutline,
   informationCircleOutline,
+  downloadOutline,
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
@@ -37,6 +38,7 @@ import { MobileBottomNav } from '../components/MobileBottomNav';
 import { VaultLoader } from '../components/VaultLoader';
 import { mensajeError } from '../services/api';
 import { obtenerPerfil, usuarioGuardado } from '../services/auth.service';
+import { descargarDocumentoPoliza } from '../services/polizas.service';
 import {
   obtenerDesignaciones,
   responderDesignacion,
@@ -119,6 +121,15 @@ export const Guia: React.FC = () => {
       setToastColor('success');
       setToastMsg(tramitada ? 'Póliza marcada como tramitada.' : 'Póliza marcada como pendiente.');
       await cargarDatosAlbacea();
+    } catch (error) {
+      setToastColor('danger');
+      setToastMsg(mensajeError(error));
+    }
+  };
+
+  const handleDescargarRespaldoPoliza = async (idPoliza: number, nombre?: string | null) => {
+    try {
+      await descargarDocumentoPoliza(idPoliza, nombre);
     } catch (error) {
       setToastColor('danger');
       setToastMsg(mensajeError(error));
@@ -418,6 +429,19 @@ export const Guia: React.FC = () => {
                               )}
                             </div>
                           )}
+                          {pol.tiene_documento && (
+                            <div style={{ marginTop: '8px' }}>
+                              <button
+                                type="button"
+                                className="be-btn be-btn-outline"
+                                style={{ padding: '5px 10px', fontSize: '0.76rem' }}
+                                onClick={() => handleDescargarRespaldoPoliza(pol.id_poliza, pol.documento_nombre)}
+                              >
+                                <IonIcon icon={downloadOutline} />
+                                Descargar documento ({pol.documento_nombre || 'respaldo'})
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -643,6 +667,19 @@ export const Guia: React.FC = () => {
                                     <IonIcon icon={globeOutline} /> Portal Web
                                   </a>
                                 )}
+                              </div>
+                            )}
+                            {pol.tiene_documento && (
+                              <div style={{ marginTop: '8px' }}>
+                                <button
+                                  type="button"
+                                  className="be-btn be-btn-outline"
+                                  style={{ padding: '5px 10px', fontSize: '0.75rem' }}
+                                  onClick={() => handleDescargarRespaldoPoliza(pol.id_poliza, pol.documento_nombre)}
+                                >
+                                  <IonIcon icon={downloadOutline} />
+                                  Descargar respaldo ({pol.documento_nombre || 'archivo'})
+                                </button>
                               </div>
                             )}
                           </div>

@@ -302,19 +302,25 @@ ion-menu ion-content {
   --background: var(--be-surface);
 }
 
+ion-menu ion-content::part(scroll) {
+  scrollbar-width: thin;
+}
+
 ion-menu ion-list {
   background: transparent !important;
-  padding: 8px 10px;
+  padding: 4px 8px;
 }
 
 ion-menu ion-item {
   --background: transparent;
   --background-hover: var(--be-surface-hover);
   --color: var(--be-text);
-  --border-radius: 12px;
-  --min-height: 44px;
-  margin-bottom: 4px;
-  font-size: 0.9rem;
+  --border-radius: 10px;
+  --min-height: 38px;
+  --padding-start: 10px;
+  --inner-padding-end: 10px;
+  margin-bottom: 2px;
+  font-size: 0.87rem;
   font-weight: 500;
   transition: background-color 0.18s ease, color 0.18s ease;
 }

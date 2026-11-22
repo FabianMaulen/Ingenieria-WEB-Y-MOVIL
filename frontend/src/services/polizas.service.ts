@@ -8,6 +8,9 @@ export interface Poliza {
   ubicacion_fisica: string;
   monto_referencial: string;
   tramitada: boolean;
+  documento_nombre?: string | null;
+  documento_mime?: string | null;
+  tiene_documento?: boolean;
 }
 
 export interface PolizaInput {
@@ -57,4 +60,41 @@ export const extraerPolizaConIA = async (archivo: File): Promise<PolizaExtraidaI
     timeout: 30000,
   });
   return res.data.data;
+};
+
+export const adjuntarDocumentoPoliza = async (idPoliza: number, archivo: File): Promise<Poliza> => {
+  const form = new FormData();
+  form.append('archivo', archivo);
+  const res = await api.post<ApiResponse<Poliza>>(`/polizas/${idPoliza}/documento`, form, {
+    timeout: 25000,
+  });
+  return res.data.data;
+};
+
+export const descargarDocumentoPoliza = async (
+  idPoliza: number,
+  nombrePorDefecto?: string | null
+): Promise<void> => {
+  const res = await api.get(`/polizas/${idPoliza}/documento`, {
+    responseType: 'blob',
+    timeout: 25000,
+  });
+  const contentType = String(res.headers?.['content-type'] || 'application/octet-stream');
+  const disposicion = String(res.headers?.['content-disposition'] || '');
+  const match = disposicion.match(/filename="?([^"]+)"?/i);
+  const nombre = match?.[1] || nombrePorDefecto || `poliza-${idPoliza}`;
+
+  const blob = new Blob([res.data], { type: contentType });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = nombre;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+export const eliminarDocumentoPoliza = async (idPoliza: number): Promise<void> => {
+  await api.delete(`/polizas/${idPoliza}/documento`);
 };
