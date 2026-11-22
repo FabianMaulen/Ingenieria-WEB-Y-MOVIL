@@ -5,6 +5,10 @@ BEGIN;
 
 -- Limpieza total reseteando identidades y respetando integridad referencial
 TRUNCATE TABLE
+  TICKET_SOPORTE,
+  EMAIL_VERIFICACION_TOKEN,
+  REPORTE_FAMILIAR,
+  RESET_PASSWORD_TOKEN,
   AUDITORIA,
   SOLICITUD_APERTURA,
   MENSAJE_POSTUMO,
@@ -20,11 +24,12 @@ RESTART IDENTITY CASCADE;
 -- Hash bcrypt: $2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG
 -- Todos los RUT cumplen el formato y dígito verificador chileno (Módulo 11).
 -- ============================================================================
-INSERT INTO USUARIO (id_usuario, rut, nombre_usuario, contrasena_hash, rol, fecha_ultimo_checkin, correo_usuario) VALUES
-(1, '12345678-5', 'Roberto Morales', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'TITULAR', NOW() - INTERVAL '5 days', 'roberto.morales@correo.cl'),
-(2, '19876543-0', 'Camila Morales', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'TITULAR', NOW() - INTERVAL '2 days', 'camila.morales@correo.cl'),
-(3, '15432987-0', 'Diego Cárdenas', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'TITULAR', NOW() - INTERVAL '10 days', 'diego.cardenas@correo.cl'),
-(4, '17654321-3', 'Marcela Valenzuela', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'TITULAR', NOW() - INTERVAL '1 day', 'marcela.valenzuela@correo.cl');
+INSERT INTO USUARIO (id_usuario, rut, nombre_usuario, contrasena_hash, rol, fecha_ultimo_checkin, correo_usuario, correo_verificado) VALUES
+(1, '12345678-5', 'Roberto Morales', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'TITULAR', NOW() - INTERVAL '5 days', 'roberto.morales@correo.cl', TRUE),
+(2, '19876543-0', 'Camila Morales', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'TITULAR', NOW() - INTERVAL '2 days', 'camila.morales@correo.cl', TRUE),
+(3, '15432987-0', 'Diego Cárdenas', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'TITULAR', NOW() - INTERVAL '10 days', 'diego.cardenas@correo.cl', TRUE),
+(4, '17654321-3', 'Marcela Valenzuela', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'TITULAR', NOW() - INTERVAL '1 day', 'marcela.valenzuela@correo.cl', TRUE),
+(5, '11111111-1', 'Administrador Baúl Eterno', '$2b$10$lp8jwsBS6uxDTmn3RrCk/.PhbLbdGL.COTetAjyIS/TLsEoKHiSpG', 'ADMIN', NOW(), 'admin@bauleterno.cl', TRUE);
 
 -- ============================================================================
 -- 2. DIRECTORIO_ALBACEAS

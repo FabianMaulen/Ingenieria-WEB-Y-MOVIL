@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: baul_eterno_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin}
+      POSTGRES_DB: ${DB_NAME:-baul_eterno}
+    ports:
+      - "5433:5432"
+    volumes:
+      - baul_pgdata:/var/lib/postgresql/data
+      - ./backend/database/baul_eterno.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-baul_eterno}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: baul_eterno_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "3000:3000"
+    volumes:
+      - baul_uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3000/api
+    container_name: baul_eterno_web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8100:80"
+
+volumes:
+  baul_pgdata:
+  baul_uploads:
