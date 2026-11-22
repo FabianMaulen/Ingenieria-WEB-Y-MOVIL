@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 let transporterCache = null;
 
 function estaConfiguradoSmtp() {
+  if (process.env.NODE_ENV === 'test') return false;
   return Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
 }
 

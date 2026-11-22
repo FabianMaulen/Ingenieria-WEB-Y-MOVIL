@@ -1,0 +1,363 @@
+{
+  "info": {
+    "_postman_id": "baul-eterno-api-v2-2026",
+    "name": "Baúl Eterno — API REST Completa (Entrega Final)",
+    "description": "Colección completa de pruebas funcionales para Baúl Eterno: Autenticación JWT, Google OAuth 2.0 + PKCE, Preferencias de Check-in, Pólizas + IA + UF, Inventario, Albaceas (máx. 5), Mensajes Póstumos (Albacea + Externo), Contingencia, Guía Global, Tickets de Soporte y Consola Admin.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "token", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "state", "value": "" },
+    { "key": "polizaId", "value": "" },
+    { "key": "ticketId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Diagnóstico",
+      "item": [
+        {
+          "name": "Test servidor Express",
+          "request": { "method": "GET", "url": "{{baseUrl}}/test" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Status ok en data', () => pm.expect(pm.response.json().data.status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Health PostgreSQL",
+          "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('BD operativa (200)', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Autenticación, OAuth 2.0 y Preferencias",
+      "item": [
+        {
+          "name": "Login Titular (guarda {{token}})",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo_usuario\": \"titular@correo.cl\",\n  \"password\": \"Clave1234!\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login exitoso (200)', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.token) { pm.collectionVariables.set('token', json.data.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Admin (guarda {{adminToken}})",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo_usuario\": \"admin@bauleterno.cl\",\n  \"password\": \"Admin1234!\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login Admin (200)', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.token) { pm.collectionVariables.set('adminToken', json.data.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil actual (JWT)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/auth/perfil"
+          }
+        },
+        {
+          "name": "Actualizar preferencias de Check-in y respaldo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"frecuencia_checkin_dias\": 90,\n  \"plazo_gracia_dias\": 7,\n  \"correo_alternativo\": \"respaldo@correo.cl\",\n  \"nombre_contacto_confianza\": \"Camila Confianza\",\n  \"correo_contacto_confianza\": \"camila@correo.cl\",\n  \"notificar_recordatorios\": true\n}"
+            },
+            "url": "{{baseUrl}}/auth/preferencias"
+          }
+        },
+        {
+          "name": "Google OAuth — Obtener URL con state + PKCE",
+          "request": { "method": "GET", "url": "{{baseUrl}}/auth/google/url" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('URL Google generada', () => pm.response.to.have.status(200));",
+                  "const url = new URL(pm.response.json().data.url);",
+                  "pm.collectionVariables.set('state', url.searchParams.get('state'));",
+                  "pm.test('Incluye PKCE S256', () => pm.expect(url.searchParams.get('code_challenge_method')).to.eql('S256'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Google OAuth — Rechazar state inválido (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"codigo-falso\",\n  \"state\": \"state-invalido-000\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/google"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('Rechaza state inválido (400)', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Pólizas, Indicador UF y Asistente IA",
+      "item": [
+        {
+          "name": "Obtener valor diario UF (mindicador.cl con caché 6h)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/indicadores/uf" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Valor UF numérico', () => pm.expect(pm.response.json().data.valor_uf).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar pólizas (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/polizas?limit=20&offset=0"
+          }
+        },
+        {
+          "name": "Crear póliza",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_seguro\": \"Seguro de Vida Individual\",\n  \"aseguradora\": \"Consorcio\",\n  \"numero_poliza\": \"POL-2026-889\",\n  \"ubicacion_fisica\": \"Carpeta azul en estudio\",\n  \"monto_referencial\": 25000000\n}"
+            },
+            "url": "{{baseUrl}}/polizas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Póliza creada (201)', () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json().data;",
+                  "if (d && d.id_poliza) pm.collectionVariables.set('polizaId', d.id_poliza);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preguntar al asistente IA",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Cómo funciona el Check-in y el plazo de gracia?\"\n}"
+            },
+            "url": "{{baseUrl}}/asistente/preguntar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Albaceas (máx. 5), Inventario y Mensajes Póstumos",
+      "item": [
+        {
+          "name": "Listar albaceas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/albaceas"
+          }
+        },
+        {
+          "name": "Listar inventario digital",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/inventario"
+          }
+        },
+        {
+          "name": "Crear mensaje póstumo a destinatario externo por correo",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_destinatario\": \"EXTERNO\",\n  \"nombre_destinatario\": \"Familiar Externo\",\n  \"correo_destinatario\": \"externo@correo.cl\",\n  \"contenido\": \"Mensaje de prueba cifrado para entrega automática por correo.\"\n}"
+            },
+            "url": "{{baseUrl}}/mensajes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Check-in, Contingencia, Guía y Soporte",
+      "item": [
+        {
+          "name": "Realizar Check-in de presencia",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/checkin"
+          }
+        },
+        {
+          "name": "Alertas unificadas de apertura (Titular)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/solicitudes/alertas"
+          }
+        },
+        {
+          "name": "Consulta familiar pública por RUT",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rut_titular\": \"12345678-5\"\n}" },
+            "url": "{{baseUrl}}/contingencia/consultar"
+          }
+        },
+        {
+          "name": "Guía global de bóvedas liberadas (Albacea)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/guia"
+          }
+        },
+        {
+          "name": "Crear ticket de soporte",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoria\": \"Consulta sobre albaceas o pólizas\",\n  \"mensaje\": \"Prueba funcional de generación de ticket trazable desde Postman.\"\n}"
+            },
+            "url": "{{baseUrl}}/soporte/contacto"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Ticket creado (201)', () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json().data;",
+                  "if (d && d.id_ticket) pm.collectionVariables.set('ticketId', d.id_ticket);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Consola Administración (Rol ADMIN)",
+      "item": [
+        {
+          "name": "Resumen administrativo y KPIs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/admin/resumen"
+          }
+        },
+        {
+          "name": "Listar tickets de soporte",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/admin/tickets"
+          }
+        },
+        {
+          "name": "Ejecutar motor de vigilancia y alertas manualmente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/admin/vigilancia/ejecutar"
+          }
+        }
+      ]
+    }
+  ]
+}

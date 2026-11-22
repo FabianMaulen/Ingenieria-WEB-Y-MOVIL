@@ -8,6 +8,7 @@ const oauthController = require('../controllers/oauth.controller');
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 10,
+  skip: () => process.env.NODE_ENV === 'test',
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -20,6 +21,7 @@ const loginLimiter = rateLimit({
 const recoveryLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
+  skip: () => process.env.NODE_ENV === 'test',
   standardHeaders: true,
   legacyHeaders: false,
   message: {
