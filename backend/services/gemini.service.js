@@ -7,9 +7,10 @@
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MODELOS_PREFERIDOS = [
-  process.env.GEMINI_MODEL || 'gemini-flash-latest',
+  process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+  'gemini-flash-latest',
   'gemini-3.8-flash',
-  'gemini-3-flash-preview',
+  'gemini-3.1-flash-lite',
 ];
 
 function tieneGeminiKey() {
@@ -37,11 +38,22 @@ async function llamarGemini({ contents, systemInstruction, responseMimeType }) {
       body.generationConfig = { temperature: 0.4, maxOutputTokens: 450 };
     }
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    let res;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch (fetchErr) {
+      clearTimeout(timer);
+      ultimoError = new Error(`Gemini (${modelo}) error de red/timeout: ${fetchErr.message}`);
+      continue;
+    }
+    clearTimeout(timer);
 
     if (res.ok) {
       const json = await res.json();
@@ -55,8 +67,8 @@ async function llamarGemini({ contents, systemInstruction, responseMimeType }) {
 
     const errText = await res.text().catch(() => '');
     ultimoError = new Error(`Gemini (${modelo}) HTTP ${res.status}: ${errText.slice(0, 180)}`);
-    // Si no es 404 (modelo no disponible), detenemos reintento
-    if (res.status !== 404) break;
+    // Reintenta con siguiente modelo si es 404 (no disponible), 503 (alta demanda) o 429 (límite temporal)
+    if (![404, 429, 503].includes(res.status)) break;
   }
 
   throw ultimoError || new Error('No se pudo conectar con Google Gemini.');
