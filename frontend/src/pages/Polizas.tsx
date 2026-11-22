@@ -22,6 +22,7 @@ import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { VaultLoader } from '../components/VaultLoader';
 import { listarPolizas, crearPoliza, eliminarPoliza, extraerPolizaConIA, Poliza } from '../services/polizas.service';
+import { obtenerValorUf } from '../services/indicadores.service';
 import { mensajeError } from '../services/api';
 
 export const Polizas: React.FC = () => {
@@ -39,12 +40,18 @@ export const Polizas: React.FC = () => {
   const [numeroPoliza, setNumeroPoliza] = useState('');
   const [ubicacionFisica, setUbicacionFisica] = useState('');
   const [montoReferencial, setMontoReferencial] = useState('');
+  const [monedaIngreso, setMonedaIngreso] = useState<'CLP' | 'UF'>('CLP');
+  const [valorUf, setValorUf] = useState<number | null>(null);
 
   const cargarDatos = async () => {
     try {
       setCargando(true);
-      const data = await listarPolizas();
+      const [data, ufData] = await Promise.all([
+        listarPolizas(),
+        obtenerValorUf().catch(() => null),
+      ]);
       setPolizas(Array.isArray(data) ? data : []);
+      if (ufData?.valor_uf) setValorUf(ufData.valor_uf);
     } catch (error) {
       console.error('Error al cargar pólizas:', mensajeError(error));
     } finally {
@@ -73,7 +80,10 @@ export const Polizas: React.FC = () => {
       if (datos.tipo_seguro) setTipoSeguro(datos.tipo_seguro);
       if (datos.aseguradora) setAseguradora(datos.aseguradora);
       if (datos.numero_poliza) setNumeroPoliza(datos.numero_poliza);
-      if (datos.monto_referencial > 0) setMontoReferencial(String(datos.monto_referencial));
+      if (datos.monto_referencial > 0) {
+        setMontoReferencial(String(datos.monto_referencial));
+        if (datos.moneda_detectada === 'UF') setMonedaIngreso('UF');
+      }
       setToastMsg(datos.observaciones || 'Campos completados automáticamente con IA. Revísalos antes de guardar.');
     } catch (error) {
       setErrorMsg(mensajeError(error));
@@ -94,18 +104,23 @@ export const Polizas: React.FC = () => {
 
     try {
       setEnviando(true);
+      const montoIngresado = parseFloat(montoReferencial) || 0;
+      const montoEnClp =
+        monedaIngreso === 'UF' && valorUf ? Math.round(montoIngresado * valorUf) : montoIngresado;
+
       await crearPoliza({
         tipo_seguro: tipoSeguro,
         aseguradora: aseguradora.trim(),
         numero_poliza: numeroPoliza.trim(),
         ubicacion_fisica: ubicacionFisica.trim(),
-        monto_referencial: parseFloat(montoReferencial) || 0,
+        monto_referencial: montoEnClp,
       });
 
       setAseguradora('');
       setNumeroPoliza('');
       setUbicacionFisica('');
       setMontoReferencial('');
+      setMonedaIngreso('CLP');
       setMostrandoForm(false);
       setToastMsg('Póliza guardada en tu bóveda patrimonial.');
       await cargarDatos();
@@ -141,6 +156,11 @@ export const Polizas: React.FC = () => {
               <p className="be-page-subtitle">
                 Coberturas activas documentadas para orientar a tus albaceas al momento de tramitarlas.
               </p>
+              {valorUf && (
+                <span className="be-badge be-badge-info" style={{ marginTop: '8px' }}>
+                  UF hoy: ${Math.round(valorUf).toLocaleString('es-CL')} CLP
+                </span>
+              )}
             </div>
 
             <button
@@ -233,15 +253,50 @@ export const Polizas: React.FC = () => {
                 </div>
 
                 <div className="be-field">
-                  <label className="be-label">Monto referencial (CLP)</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label className="be-label" style={{ marginBottom: 0 }}>
+                      Monto referencial ({monedaIngreso})
+                    </label>
+                    {valorUf && (
+                      <div style={{ display: 'inline-flex', gap: '4px' }}>
+                        {(['CLP', 'UF'] as const).map((mon) => (
+                          <button
+                            key={mon}
+                            type="button"
+                            onClick={() => setMonedaIngreso(mon)}
+                            style={{
+                              padding: '2px 8px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              borderRadius: '6px',
+                              border: '1px solid var(--be-border)',
+                              backgroundColor: monedaIngreso === mon ? 'var(--be-primary)' : 'var(--be-surface-alt)',
+                              color: monedaIngreso === mon ? '#ffffff' : 'var(--be-text-muted)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {mon}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <input
                     type="number"
                     min="0"
+                    step={monedaIngreso === 'UF' ? '0.01' : '1'}
                     className="be-input"
-                    placeholder="Ej: 15000000"
+                    placeholder={monedaIngreso === 'UF' ? 'Ej: 1500' : 'Ej: 15000000'}
                     value={montoReferencial}
                     onChange={(e) => setMontoReferencial(e.target.value)}
                   />
+                  {valorUf && Number(montoReferencial) > 0 && (
+                    <span style={{ display: 'block', fontSize: '0.74rem', color: 'var(--be-text-muted)', marginTop: '4px' }}>
+                      {monedaIngreso === 'UF'
+                        ? `≈ $${Math.round(Number(montoReferencial) * valorUf).toLocaleString('es-CL')} CLP`
+                        : `≈ ${(Number(montoReferencial) / valorUf).toFixed(1)} UF`}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -306,10 +361,17 @@ export const Polizas: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="be-badge be-badge-success">
-                    ${Number(p.monto_referencial || 0).toLocaleString('es-CL')}
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <span className="be-badge be-badge-success">
+                      ${Number(p.monto_referencial || 0).toLocaleString('es-CL')}
+                    </span>
+                    {valorUf && Number(p.monto_referencial) > 0 && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--be-text-muted)', marginTop: '2px', fontWeight: 600 }}>
+                        ≈ {(Number(p.monto_referencial) / valorUf).toFixed(1)} UF
+                      </div>
+                    )}
+                  </div>
 
                   <IonButton
                     fill="clear"
