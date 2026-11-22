@@ -132,11 +132,11 @@ export const Albaceas: React.FC = () => {
             <div>
               <h2 className="be-page-title">Red de Confianza</h2>
               <p className="be-page-subtitle">
-                Designa hasta 3 personas autorizadas para solicitar la apertura de tu bóveda. Si aún no tienen cuenta,
+                Designa hasta 5 personas autorizadas para solicitar la apertura de tu bóveda. Si aún no tienen cuenta,
                 quedan invitadas y se vinculan automáticamente al registrarse con su RUT.
               </p>
             </div>
-            <span className="be-badge be-badge-info">{albaceas.length} / 3 registrados</span>
+            <span className="be-badge be-badge-info">{albaceas.length} / 5 registrados</span>
           </div>
 
           <form onSubmit={handleAgregar} className="be-card">

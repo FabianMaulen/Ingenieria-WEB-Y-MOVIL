@@ -56,13 +56,14 @@ export const Login: React.FC = () => {
 
     try {
       const usuario = await login(identifier.trim(), password);
-      localStorage.setItem('modo_activo', 'TITULAR');
+      const destino = usuario.rol === 'ADMIN' ? '/admin?tab=resumen' : '/dashboard';
+      localStorage.setItem('modo_activo', usuario.rol === 'ADMIN' ? 'ADMIN' : 'TITULAR');
       setNombreBienvenida((usuario.nombre || '').split(' ')[0]);
       setAbriendoBaul(true);
 
-      // Animación suave de apertura del baúl antes de entrar al Dashboard
+      // Animación suave de apertura del baúl antes de entrar
       setTimeout(() => {
-        navigate('/dashboard', { replace: true });
+        navigate(destino, { replace: true });
       }, 920);
     } catch (error: any) {
       setErrorMessage(mensajeError(error));
@@ -137,7 +138,7 @@ export const Login: React.FC = () => {
                 <div className="be-auth-pillar">
                   <IonIcon icon={shieldCheckmarkOutline} style={{ fontSize: '1.25rem', color: '#d8c3ae', marginTop: '2px' }} />
                   <div>
-                    <strong style={{ display: 'block', fontSize: '0.84rem' }}>Custodia cifrada AES-256</strong>
+                    <strong style={{ display: 'block', fontSize: '0.84rem' }}>Custodia con cifrado de alto estándar</strong>
                     <span style={{ fontSize: '0.77rem', color: 'rgba(241, 246, 252, 0.8)' }}>
                       Tus cartas póstumas permanecen selladas hasta la apertura validada.
                     </span>
@@ -157,9 +158,9 @@ export const Login: React.FC = () => {
                 <div className="be-auth-pillar">
                   <IonIcon icon={timeOutline} style={{ fontSize: '1.25rem', color: '#d8c3ae', marginTop: '2px' }} />
                   <div>
-                    <strong style={{ display: 'block', fontSize: '0.84rem' }}>Periodo de gracia de 72 horas</strong>
+                    <strong style={{ display: 'block', fontSize: '0.84rem' }}>Plazo de gracia configurable</strong>
                     <span style={{ fontSize: '0.77rem', color: 'rgba(241, 246, 252, 0.8)' }}>
-                      Notificación inmediata y anulación en un clic si continúas activo.
+                      Alertas por correo, aviso 48h a tu contacto de confianza y anulación en un clic.
                     </span>
                   </div>
                 </div>

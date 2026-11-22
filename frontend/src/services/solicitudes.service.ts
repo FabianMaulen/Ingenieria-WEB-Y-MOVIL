@@ -7,15 +7,19 @@ export interface SolicitudAlbacea {
   estado_solicitud: EstadoSolicitud;
   fecha_solicitud: string;
   fecha_limite: string;
+  plazo_gracia_horas?: number;
   nombre_titular: string;
   rut_titular?: string;
 }
 
 export interface Alerta {
   id_solicitud: number;
+  origen?: 'ALBACEA' | 'FAMILIAR';
   estado_solicitud: EstadoSolicitud;
   fecha_solicitud: string;
   fecha_limite: string;
+  plazo_gracia_horas?: number;
+  horas_restantes?: number;
   puede_cancelar: boolean;
   nombre_albacea: string;
   rut_albacea: string;
@@ -31,7 +35,6 @@ export const solicitarApertura = async (rut_titular: string, certificado: File) 
   return res.data;
 };
 
-// Alias de compatibilidad
 export const crearSolicitud = solicitarApertura;
 
 export const misSolicitudes = async (): Promise<SolicitudAlbacea[]> => {
@@ -39,7 +42,7 @@ export const misSolicitudes = async (): Promise<SolicitudAlbacea[]> => {
   return res.data.data || [];
 };
 
-// RF-06
+// RF-06: Alertas unificadas (albaceas + familiares externos)
 export const listarAlertas = async (): Promise<Alerta[]> => {
   const res = await api.get<ApiResponse<Alerta[]>>('/solicitudes/alertas');
   return res.data.data || [];
@@ -47,5 +50,10 @@ export const listarAlertas = async (): Promise<Alerta[]> => {
 
 export const cancelarSolicitud = async (id: number) => {
   const res = await api.put<ApiResponse<any>>(`/solicitudes/${id}/cancelar`);
+  return res.data;
+};
+
+export const cancelarReporteFamiliar = async (id: number) => {
+  const res = await api.put<ApiResponse<any>>(`/solicitudes/reportes-familiares/${id}/cancelar`);
   return res.data;
 };

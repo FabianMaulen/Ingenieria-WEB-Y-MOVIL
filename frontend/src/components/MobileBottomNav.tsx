@@ -9,6 +9,8 @@ import {
   helpCircleOutline,
   documentAttachOutline,
   swapHorizontalOutline,
+  analyticsOutline,
+  pulseOutline,
 } from 'ionicons/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -18,9 +20,19 @@ import { useLocation, useNavigate } from 'react-router-dom';
  */
 export const MobileBottomNav: React.FC = () => {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const modo = localStorage.getItem('modo_activo') || 'TITULAR';
-  const enModoAlbacea = modo === 'ALBACEA' || pathname === '/guia' || pathname === '/apertura';
+  const { pathname, search } = useLocation();
+  const rol = localStorage.getItem('user_rol');
+  const modo = localStorage.getItem('modo_activo') || (rol === 'ADMIN' ? 'ADMIN' : 'TITULAR');
+  const enModoAdmin = rol === 'ADMIN' && (modo === 'ADMIN' || pathname === '/admin');
+  const enModoAlbacea = !enModoAdmin && (modo === 'ALBACEA' || pathname === '/guia' || pathname === '/apertura');
+
+  const itemsAdmin = [
+    { path: '/admin?tab=resumen', label: 'Resumen', icon: analyticsOutline },
+    { path: '/admin?tab=solicitudes', label: 'Alertas', icon: documentAttachOutline },
+    { path: '/admin?tab=usuarios', label: 'Usuarios', icon: peopleOutline },
+    { path: '/admin?tab=auditoria', label: 'Auditoría', icon: pulseOutline },
+    { path: '/configuracion', label: 'Ajustes', icon: settingsOutline },
+  ];
 
   const itemsTitular = [
     { path: '/dashboard', label: 'Inicio', icon: homeOutline },
@@ -37,7 +49,7 @@ export const MobileBottomNav: React.FC = () => {
     { path: '/configuracion', label: 'Ajustes', icon: settingsOutline },
   ];
 
-  const items = enModoAlbacea ? itemsAlbacea : itemsTitular;
+  const items = enModoAdmin ? itemsAdmin : enModoAlbacea ? itemsAlbacea : itemsTitular;
 
   return (
     <IonFooter className="be-mobile-footer">
@@ -54,7 +66,10 @@ export const MobileBottomNav: React.FC = () => {
       >
         <nav className="be-mobile-nav-bar" aria-label="Navegación móvil">
           {items.map((item) => {
-            const isActive = pathname === item.path && !('switchToTitular' in item);
+            const fullCurrent = pathname + search;
+            const isActive =
+              (item.path.includes('?') ? fullCurrent === item.path : pathname === item.path) &&
+              !('switchToTitular' in item);
             return (
               <button
                 key={item.path + item.label}

@@ -7,7 +7,6 @@ import {
   searchOutline,
   cloudUploadOutline,
   checkmarkCircleOutline,
-  openOutline,
   closeOutline,
   shieldCheckmarkOutline,
 } from 'ionicons/icons';
@@ -85,6 +84,11 @@ export const ConsultaFamiliar: React.FC = () => {
       return;
     }
 
+    if (normalizarRut(rutFamiliar) === normalizarRut(rutTitular)) {
+      setErrorMsg('Tu RUT de solicitante no puede ser el mismo que el RUT del titular de la bóveda.');
+      return;
+    }
+
     if (!archivo) {
       setErrorMsg('Debes adjuntar el certificado de defunción (PDF, JPG o PNG, máx. 5 MB).');
       return;
@@ -156,7 +160,7 @@ export const ConsultaFamiliar: React.FC = () => {
               </h2>
               <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--be-text-muted)', lineHeight: 1.5 }}>
                 Si un ser querido falleció y aún no tienes cuenta en Baúl Eterno, verifica si mantenía una bóveda
-                activa y envía el certificado de defunción para revisión oficial.
+                activa e inicia una solicitud de apertura con periodo de gracia para proteger al titular.
               </p>
             </div>
 
@@ -345,11 +349,12 @@ export const ConsultaFamiliar: React.FC = () => {
               <div style={{ textAlign: 'center' }}>
                 <IonIcon icon={checkmarkCircleOutline} style={{ fontSize: '3rem', color: 'var(--be-success)', marginBottom: '8px' }} />
                 <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem' }}>
-                  Reporte #{comprobante.id_reporte} registrado
+                  Solicitud #{comprobante.id_reporte} iniciada
                 </h3>
                 <p style={{ margin: '0 0 16px 0', fontSize: '0.88rem', color: 'var(--be-text-muted)', lineHeight: 1.55 }}>
-                  Sellamos tu certificado con huella criptográfica SHA-256 y notificamos a soporte para su validación en
-                  el Registro Civil de Chile.
+                  Notificamos inmediatamente al titular (y a su correo de respaldo) activando su periodo de gracia de
+                  seguridad. Si el titular no confirma presencia al vencer el plazo, se liberará el proceso y te
+                  avisaremos a tu correo electrónico.
                 </p>
 
                 <div
@@ -359,34 +364,23 @@ export const ConsultaFamiliar: React.FC = () => {
                     border: '1px solid var(--be-border)',
                     borderRadius: '12px',
                     padding: '14px',
-                    fontSize: '0.8rem',
+                    fontSize: '0.84rem',
                     marginBottom: '18px',
-                    wordBreak: 'break-all',
+                    lineHeight: 1.6,
                   }}
                 >
                   <div>
                     <strong>RUT consultado:</strong> {comprobante.rut_titular_consultado}
                   </div>
-                  {comprobante.folio_extraido && (
-                    <div>
-                      <strong>Folio / Código detectado (IA):</strong> {comprobante.folio_extraido}
-                    </div>
-                  )}
                   <div>
-                    <strong>SHA-256:</strong> <code>{comprobante.hash_documento}</code>
+                    <strong>Correo de seguimiento:</strong> {correoFamiliar.trim().toLowerCase()}
+                  </div>
+                  <div>
+                    <strong>Resguardo del documento:</strong> Archivo recibido y protegido con cifrado de integridad.
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <a
-                    href={comprobante.portal_registro_civil}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="be-btn be-btn-outline be-btn-block"
-                    style={{ textDecoration: 'none' }}
-                  >
-                    <IonIcon icon={openOutline} /> Portal oficial de verificación (Registro Civil)
-                  </a>
                   <button
                     type="button"
                     className="be-btn be-btn-primary be-btn-block"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { IonIcon, IonSpinner } from '@ionic/react';
 import {
   chatbubbleEllipsesOutline,
@@ -14,29 +14,42 @@ interface MensajeChat {
   texto: string;
 }
 
-const PREGUNTAS_RAPIDAS = [
-  '¿Cómo funciona el Check-in de 180 días?',
+const TEMAS_SUGERIDOS = [
+  '¿Cómo funciona el Check-in y su vigencia?',
   '¿Puedo invitar a un albacea sin cuenta?',
   '¿Cómo se protegen mis mensajes póstumos?',
-  '¿Qué pasa durante el periodo de gracia de 72h?',
+  '¿Qué pasa durante el plazo de gracia de apertura?',
+  '¿Para qué sirve la persona de confianza de aviso 48h?',
+  '¿Cómo funciona el lector de pólizas con IA?',
+  '¿Cómo puedo contactar a soporte si tengo un problema?',
 ];
 
 export const AsistenteWidget: React.FC = () => {
   const [abierto, setAbierto] = useState(false);
   const [consulta, setConsulta] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [preguntadas, setPreguntadas] = useState<string[]>([]);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
   const [mensajes, setMensajes] = useState<MensajeChat[]>([
     {
       emisor: 'asistente',
       texto:
-        '¡Hola! Soy el asistente orientador de Baúl Eterno. Pregúntame sobre pólizas, albaceas, cifrado AES-256, check-in o aperturas.',
+        '¡Hola! Soy el asistente orientador de Baúl Eterno. Pregúntame sobre pólizas, albaceas, seguridad de tus cartas, Check-in o aperturas. ¿Por dónde partimos?',
     },
   ]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [mensajes, cargando, abierto]);
 
   const enviarConsulta = async (textoPregunta: string) => {
     const limpio = textoPregunta.trim();
     if (!limpio || cargando) return;
 
+    setPreguntadas((prev) => [...prev, limpio]);
     setMensajes((prev) => [...prev, { emisor: 'usuario', texto: limpio }]);
     setConsulta('');
     setCargando(true);
@@ -47,12 +60,18 @@ export const AsistenteWidget: React.FC = () => {
     } catch (error) {
       setMensajes((prev) => [
         ...prev,
-        { emisor: 'asistente', texto: `No pude responder ahora: ${mensajeError(error)}` },
+        {
+          emisor: 'asistente',
+          texto: `No pude responder en este momento (${mensajeError(error)}). ¿Quieres intentar con otra pregunta o elegir uno de los temas sugeridos?`,
+        },
       ]);
     } finally {
       setCargando(false);
     }
   };
+
+  // Muestra siempre 3 sugerencias dinámicas que el usuario aún no haya consultado
+  const sugerenciasDisponibles = TEMAS_SUGERIDOS.filter((q) => !preguntadas.includes(q)).slice(0, 3);
 
   return (
     <>
@@ -95,7 +114,7 @@ export const AsistenteWidget: React.FC = () => {
             bottom: '72px',
             zIndex: 950,
             width: 'min(360px, calc(100vw - 32px))',
-            maxHeight: 'min(500px, calc(100vh - 130px))',
+            maxHeight: 'min(520px, calc(100vh - 130px))',
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: 'var(--be-surface)',
@@ -148,6 +167,7 @@ export const AsistenteWidget: React.FC = () => {
 
           {/* Historial de mensajes */}
           <div
+            ref={scrollRef}
             style={{
               flex: 1,
               overflowY: 'auto',
@@ -183,29 +203,41 @@ export const AsistenteWidget: React.FC = () => {
               </div>
             )}
 
-            {/* Sugerencias rápidas al inicio */}
-            {mensajes.length <= 2 && !cargando && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
-                {PREGUNTAS_RAPIDAS.map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => enviarConsulta(q)}
-                    style={{
-                      backgroundColor: 'var(--be-primary-soft)',
-                      color: 'var(--be-primary)',
-                      border: '1px solid var(--be-border)',
-                      borderRadius: '999px',
-                      padding: '5px 10px',
-                      fontSize: '0.74rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                    }}
-                  >
-                    {q}
-                  </button>
-                ))}
+            {/* Sugerencias dinámicas continuas para seguir consultando */}
+            {!cargando && sugerenciasDisponibles.length > 0 && (
+              <div style={{ marginTop: '4px' }}>
+                <div
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    color: 'var(--be-text-muted)',
+                    marginBottom: '6px',
+                  }}
+                >
+                  {mensajes.length <= 1 ? 'Preguntas frecuentes:' : 'También puedes consultar:'}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {sugerenciasDisponibles.map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => enviarConsulta(q)}
+                      style={{
+                        backgroundColor: 'var(--be-primary-soft)',
+                        color: 'var(--be-primary)',
+                        border: '1px solid var(--be-border)',
+                        borderRadius: '999px',
+                        padding: '5px 10px',
+                        fontSize: '0.73rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -228,7 +260,7 @@ export const AsistenteWidget: React.FC = () => {
               type="text"
               className="be-input"
               style={{ padding: '9px 12px', fontSize: '0.85rem' }}
-              placeholder="Escribe tu duda sobre la app..."
+              placeholder="Escribe otra duda sobre la app..."
               value={consulta}
               onChange={(e) => setConsulta(e.target.value)}
               maxLength={500}

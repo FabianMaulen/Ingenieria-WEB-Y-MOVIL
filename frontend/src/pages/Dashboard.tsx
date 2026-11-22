@@ -8,17 +8,26 @@ import {
   warningOutline,
   arrowForwardOutline,
   handLeftOutline,
+  mailUnreadOutline,
+  lockOpenOutline,
+  headsetOutline,
 } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import { HeaderBar } from '../components/HeaderBar';
 import { VaultStatusCard } from '../components/VaultStatusCard';
 import { MobileBottomNav } from '../components/MobileBottomNav';
+import { SoporteModal } from '../components/SoporteModal';
 
 import { mensajeError } from '../services/api';
-import { completarRutUsuario, usuarioGuardado } from '../services/auth.service';
+import { completarRutUsuario, obtenerPerfil, usuarioGuardado } from '../services/auth.service';
 import { normalizarRut, rutValido } from '../utils/rut';
 import { obtenerCheckin, renovarCheckin } from '../services/checkin.service';
-import { listarAlertas, cancelarSolicitud } from '../services/solicitudes.service';
+import {
+  listarAlertas,
+  cancelarSolicitud,
+  cancelarReporteFamiliar,
+  Alerta,
+} from '../services/solicitudes.service';
 import { listarPolizas } from '../services/polizas.service';
 import { getAlbaceas } from '../services/albaceas.service';
 import { getMensajes } from '../services/mensajes.service';
@@ -29,7 +38,16 @@ export const Dashboard: React.FC = () => {
 
   const [nombreTitular, setNombreTitular] = useState('Usuario');
   const [daysLeft, setDaysLeft] = useState(180);
-  const [alertas, setAlertas] = useState<any[]>([]);
+  const [frecuenciaDias, setFrecuenciaDias] = useState(180);
+  const [correoVerificado, setCorreoVerificado] = useState<boolean>(true);
+  const [alertas, setAlertas] = useState<Alerta[]>([]);
+  const [alertasLiberadas, setAlertasLiberadas] = useState<Alerta[]>([]);
+  const [abriendoSoporte, setAbriendoSoporte] = useState(false);
+  const [casoSoporte, setCasoSoporte] = useState<{
+    idSolicitud?: number | null;
+    idReporte?: number | null;
+    label?: string;
+  }>({});
   const [cargandoCheckin, setCargandoCheckin] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -48,6 +66,7 @@ export const Dashboard: React.FC = () => {
     const u = usuarioGuardado();
     setNombreTitular(u?.nombre || localStorage.getItem('user_nombre') || 'Usuario');
     setRequiereRut(Boolean(u && (!u.rut || u.requiere_rut)));
+    if (u?.correo_verificado !== undefined) setCorreoVerificado(Boolean(u.correo_verificado));
     localStorage.setItem('modo_activo', 'TITULAR');
     cargarDatosDashboard();
   });
@@ -77,8 +96,9 @@ export const Dashboard: React.FC = () => {
 
   const cargarDatosDashboard = async () => {
     try {
-      const [dataCheckin, dataAlertas, dataPolizas, dataAlbaceas, dataMensajes, dataInventario] =
+      const [perfilActual, dataCheckin, dataAlertas, dataPolizas, dataAlbaceas, dataMensajes, dataInventario] =
         await Promise.all([
+          obtenerPerfil().catch(() => null),
           obtenerCheckin().catch(() => null),
           listarAlertas().catch(() => []),
           listarPolizas().catch(() => []),
@@ -87,22 +107,37 @@ export const Dashboard: React.FC = () => {
           listarInventario().catch(() => []),
         ]);
 
-      const alertasPendientes = (Array.isArray(dataAlertas) ? dataAlertas : []).filter(
-        (a: any) => a.estado_solicitud === 'PENDIENTE'
-      );
+      if (perfilActual) {
+        setNombreTitular(perfilActual.nombre || 'Usuario');
+        setRequiereRut(Boolean(!perfilActual.rut || perfilActual.requiere_rut));
+        setCorreoVerificado(Boolean(perfilActual.correo_verificado));
+      }
+
+      const listaAlertas = Array.isArray(dataAlertas) ? dataAlertas : [];
+      const alertasPendientes = listaAlertas.filter((a) => a.estado_solicitud === 'PENDIENTE');
+      const liberadas = listaAlertas.filter((a) => a.estado_solicitud === 'APROBADA');
 
       setAlertas(alertasPendientes);
+      setAlertasLiberadas(liberadas);
       setCantPolizas(Array.isArray(dataPolizas) ? dataPolizas.length : 0);
       setCantAlbaceas(Array.isArray(dataAlbaceas) ? dataAlbaceas.length : 0);
       setCantMensajes(Array.isArray(dataMensajes) ? dataMensajes.length : 0);
       setCantInventario(Array.isArray(dataInventario) ? dataInventario.length : 0);
 
+      const freq = Number(dataCheckin?.frecuencia_checkin_dias || perfilActual?.frecuencia_checkin_dias || 180);
+      setFrecuenciaDias(freq);
+
       if (alertasPendientes.length > 0) {
-        setDaysLeft(3);
+        const horasMin = Math.min(
+          ...alertasPendientes.map((a) => Number(a.horas_restantes ?? a.plazo_gracia_horas ?? 168))
+        );
+        setDaysLeft(Math.max(1, Math.ceil(horasMin / 24)));
+      } else if (dataCheckin && typeof dataCheckin.dias_restantes === 'number') {
+        setDaysLeft(dataCheckin.dias_restantes);
       } else if (dataCheckin && typeof dataCheckin.dias_desde_ultimo === 'number') {
-        setDaysLeft(Math.max(0, 180 - dataCheckin.dias_desde_ultimo));
+        setDaysLeft(Math.max(0, freq - dataCheckin.dias_desde_ultimo));
       } else {
-        setDaysLeft(180);
+        setDaysLeft(freq);
       }
     } catch (error) {
       console.error('Error al cargar datos del dashboard:', mensajeError(error));
@@ -112,9 +147,12 @@ export const Dashboard: React.FC = () => {
   const handleCheckin = async () => {
     try {
       setCargandoCheckin(true);
-      await renovarCheckin();
-      setDaysLeft(180);
-      setToastMsg('Presencia confirmada. Tu bóveda queda sellada por un nuevo periodo de 180 días.');
+      const res = await renovarCheckin();
+      const nuevoCiclo = res.data?.frecuencia_checkin_dias || frecuenciaDias;
+      setDaysLeft(nuevoCiclo);
+      setToastMsg(
+        res.mensaje || `Presencia confirmada. Tu bóveda queda sellada por un nuevo periodo de ${nuevoCiclo} días.`
+      );
       setShowToast(true);
       await cargarDatosDashboard();
     } catch (error) {
@@ -125,16 +163,31 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleCancelarApertura = async (idSolicitud: number) => {
+  const handleCancelarApertura = async (alerta: Alerta) => {
     try {
-      await cancelarSolicitud(idSolicitud);
-      setToastMsg('Solicitud de apertura anulada. Tu bóveda continúa bajo tu custodia.');
+      setCargandoCheckin(true);
+      if (alerta.origen === 'FAMILIAR') {
+        await cancelarReporteFamiliar(alerta.id_solicitud);
+      } else {
+        await cancelarSolicitud(alerta.id_solicitud);
+      }
+      setToastMsg('Solicitud de apertura anulada y vigencia renovada. Notificamos al solicitante.');
       setShowToast(true);
       await cargarDatosDashboard();
     } catch (error) {
       setToastMsg(mensajeError(error));
       setShowToast(true);
+    } finally {
+      setCargandoCheckin(false);
     }
+  };
+
+  const formatearTiempoRestante = (horas?: number) => {
+    if (horas === undefined || horas === null) return 'En periodo de gracia';
+    const dias = Math.floor(horas / 24);
+    const hrs = horas % 24;
+    if (dias > 0) return `${dias} día(s) y ${hrs} h restantes`;
+    return `${hrs} hora(s) restantes`;
   };
 
   const primerNombre = nombreTitular.split(' ')[0];
@@ -145,7 +198,7 @@ export const Dashboard: React.FC = () => {
       kicker: 'PATRIMONIO Y COBERTURAS',
       titulo: 'Pólizas de Seguro',
       descripcion:
-        'Centraliza seguros de vida, salud y desgravamen para que tus beneficiarios puedan cobrarlos sin trabas.',
+        'Centraliza seguros de vida, salud y desgravamen con valoración en vivo UF / CLP para tus beneficiarios.',
       badge: `${cantPolizas} guardada${cantPolizas === 1 ? '' : 's'}`,
       badgeClass: 'be-badge be-badge-info',
       cta: cantPolizas === 0 ? 'Agregar primera póliza' : 'Gestionar pólizas',
@@ -157,8 +210,8 @@ export const Dashboard: React.FC = () => {
       kicker: 'RED DE CONFIANZA',
       titulo: 'Albaceas Designados',
       descripcion:
-        'Elige hasta 3 personas de confianza (incluso si aún no crean cuenta) para custodiar tu bóveda.',
-      badge: `${cantAlbaceas} / 3 designados`,
+        'Elige hasta 5 personas de confianza (incluso si aún no crean cuenta) para custodiar tu bóveda.',
+      badge: `${cantAlbaceas} / 5 designados`,
       badgeClass: cantAlbaceas > 0 ? 'be-badge be-badge-success' : 'be-badge be-badge-warning',
       cta: cantAlbaceas === 0 ? 'Designar albacea' : 'Administrar albaceas',
       icon: peopleOutline,
@@ -178,7 +231,7 @@ export const Dashboard: React.FC = () => {
     },
     {
       path: '/mensajes',
-      kicker: 'CUSTODIA AES-256',
+      kicker: 'CUSTODIA CIFRADA',
       titulo: 'Mensajes Póstumos',
       descripcion:
         'Redacta cartas personales o instrucciones confidenciales cifradas que solo se abren tras la liberación.',
@@ -204,6 +257,38 @@ export const Dashboard: React.FC = () => {
               actualiza tus registros cuando lo necesites.
             </p>
           </div>
+
+          {/* Aviso de confirmación de correo principal */}
+          {!correoVerificado && (
+            <div
+              className="be-card"
+              style={{
+                borderColor: 'var(--be-warning)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px',
+                padding: '14px 18px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 240px' }}>
+                <IonIcon icon={mailUnreadOutline} style={{ fontSize: '1.4rem', color: 'var(--be-warning)', flexShrink: 0 }} />
+                <div style={{ fontSize: '0.84rem', color: 'var(--be-text)' }}>
+                  <strong>Confirma tu correo electrónico principal</strong> para garantizar la entrega de alertas de
+                  apertura y recordatorios de Check-in.
+                </div>
+              </div>
+              <button
+                type="button"
+                className="be-btn be-btn-outline"
+                style={{ padding: '7px 14px', fontSize: '0.8rem' }}
+                onClick={() => navigate('/configuracion')}
+              >
+                Confirmar ahora
+              </button>
+            </div>
+          )}
 
           {/* Tarjeta para completar RUT en cuentas nuevas creadas vía Google OAuth */}
           {requiereRut && (
@@ -238,10 +323,60 @@ export const Dashboard: React.FC = () => {
             </form>
           )}
 
-          {/* ALERTA CRÍTICA DE APERTURA EN CURSO */}
+          {/* AVISO IMPORTANTE: BÓVEDA YA LIBERADA / AUTORIZADA */}
+          {alertasLiberadas.map((lib) => (
+            <div
+              key={`lib-${lib.origen || 'ALBACEA'}-${lib.id_solicitud}`}
+              style={{
+                background: 'linear-gradient(135deg, #4c1d95 0%, #7c2d12 100%)',
+                color: '#ffffff',
+                borderRadius: '16px',
+                padding: '22px 24px',
+                marginBottom: '20px',
+                boxShadow: '0 12px 28px rgba(76, 29, 149, 0.25)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.05em', marginBottom: '6px' }}>
+                <IonIcon icon={lockOpenOutline} style={{ fontSize: '1.2rem' }} />
+                ESTADO DE BÓVEDA — APERTURA AUTORIZADA
+              </div>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
+                Tu bóveda fue liberada para tus albaceas designados
+              </h3>
+              <p style={{ margin: '0 0 14px 0', fontSize: '0.88rem', lineHeight: 1.55, color: 'rgba(255,255,255,0.92)' }}>
+                Se autorizó la apertura asociada a{' '}
+                <strong>
+                  {lib.nombre_albacea || 'un solicitante'} ({lib.parentesco || 'Contacto'})
+                </strong>
+                . Tus albaceas validados ya tienen acceso a la guía de cobro y contenido liberado. Si te encuentras
+                activo y esto fue un error, comunícate de inmediato con soporte para revertir el estado.
+              </p>
+              <button
+                type="button"
+                className="be-btn be-btn-block"
+                onClick={() => {
+                  const esFam = lib.origen === 'FAMILIAR';
+                  setCasoSoporte({
+                    idSolicitud: esFam ? null : lib.id_solicitud,
+                    idReporte: esFam ? lib.id_solicitud : null,
+                    label: esFam
+                      ? `Reporte familiar #${lib.id_solicitud} (${lib.nombre_albacea})`
+                      : `Solicitud de apertura #${lib.id_solicitud} (${lib.nombre_albacea})`,
+                  });
+                  setAbriendoSoporte(true);
+                }}
+                style={{ backgroundColor: '#ffffff', color: '#4c1d95' }}
+              >
+                <IonIcon icon={headsetOutline} />
+                Apelar apertura / Reportar error a Soporte
+              </button>
+            </div>
+          ))}
+
+          {/* ALERTA CRÍTICA DE APERTURA EN CURSO (ALBACEAS + FAMILIARES EXTERNOS UNIFICADOS) */}
           {alertas.map((alerta) => (
             <div
-              key={alerta.id_solicitud}
+              key={`${alerta.origen || 'ALBACEA'}-${alerta.id_solicitud}`}
               style={{
                 background: 'linear-gradient(135deg, #991b1b 0%, #dc2626 100%)',
                 color: '#ffffff',
@@ -251,12 +386,28 @@ export const Dashboard: React.FC = () => {
                 boxShadow: '0 12px 28px rgba(220, 38, 38, 0.28)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.05em', marginBottom: '6px' }}>
-                <IonIcon icon={warningOutline} style={{ fontSize: '1.2rem' }} />
-                ALERTA CRÍTICA — PROCESO DE APERTURA DETECTADO
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.05em' }}>
+                  <IonIcon icon={warningOutline} style={{ fontSize: '1.2rem' }} />
+                  ALERTA CRÍTICA — SOLICITUD DE APERTURA DETECTADA
+                </div>
+                <span
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  {formatearTiempoRestante(alerta.horas_restantes)}
+                </span>
               </div>
+
               <h3 style={{ margin: '0 0 12px 0', fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
-                Un albacea solicitó liberar tu bóveda
+                {alerta.origen === 'FAMILIAR'
+                  ? 'Un familiar externo solicitó abrir tu bóveda'
+                  : 'Un albacea solicitó liberar tu bóveda'}
               </h3>
 
               <div
@@ -270,12 +421,18 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 <div>
-                  <strong>Albacea solicitante:</strong> {alerta.nombre_albacea || 'Contacto registrado'} (RUT{' '}
-                  {alerta.rut_albacea || 'No disponible'})
+                  <strong>Solicitante:</strong> {alerta.nombre_albacea || 'Contacto registrado'} ({alerta.parentesco || 'Familiar'}) · RUT{' '}
+                  {alerta.rut_albacea || 'No disponible'}
                 </div>
                 <div>
-                  <strong>Estado:</strong> Pendiente en periodo de gracia — puedes anular esta solicitud de inmediato si
-                  fue un error o prueba.
+                  <strong>Origen:</strong>{' '}
+                  {alerta.origen === 'FAMILIAR'
+                    ? 'Reporte familiar externo desde el acceso público'
+                    : 'Albacea designado en tu directorio'}
+                </div>
+                <div>
+                  <strong>¿Sigues activo?</strong> Si presionas anular (o haces Check-in), desactivas de inmediato el
+                  contador y notificamos al solicitante que tu bóveda sigue sellada.
                 </div>
               </div>
 
@@ -283,24 +440,31 @@ export const Dashboard: React.FC = () => {
                 type="button"
                 className="be-btn be-btn-block"
                 disabled={cargandoCheckin}
-                onClick={() => handleCancelarApertura(alerta.id_solicitud)}
+                onClick={() => handleCancelarApertura(alerta)}
                 style={{ backgroundColor: '#ffffff', color: '#b91c1c' }}
               >
                 <IonIcon icon={handLeftOutline} />
-                Anular solicitud de apertura y proteger bóveda
+                Anular solicitud de apertura y confirmar que estoy activo
               </button>
             </div>
           ))}
 
           {/* Tarjeta de Vigencia y Check-in */}
           <VaultStatusCard
-            daysLeft={daysLeft}
-            status={alertas.length > 0 ? 'EN_REVISION' : 'PROTEGIDA'}
+            daysLeft={alertasLiberadas.length > 0 ? 0 : daysLeft}
+            totalCycleDays={frecuenciaDias}
+            status={
+              alertasLiberadas.length > 0
+                ? 'LIBERADA'
+                : alertas.length > 0
+                ? 'EN_REVISION'
+                : 'PROTEGIDA'
+            }
             onCheckin={handleCheckin}
             loading={cargandoCheckin}
           />
 
-          {/* Módulos del Baúl (2 columnas en tablet/PC, 1 columna en móvil) */}
+          {/* Módulos del Baúl */}
           <div className="be-grid-2">
             {modulos.map((mod) => (
               <div
@@ -337,11 +501,24 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
+        <SoporteModal
+          isOpen={abriendoSoporte}
+          onClose={() => setAbriendoSoporte(false)}
+          categoriaInicial="Error en apertura de bóveda"
+          idSolicitudAsociada={casoSoporte.idSolicitud || null}
+          idReporteAsociado={casoSoporte.idReporte || null}
+          referenciaLabel={casoSoporte.label}
+          onEnviado={(msg) => {
+            setToastMsg(msg);
+            setShowToast(true);
+          }}
+        />
+
         <IonToast
           isOpen={showToast}
           onDidDismiss={() => setShowToast(false)}
           message={toastMsg}
-          duration={3500}
+          duration={3800}
           color={toastMsg.includes('anulada') ? 'warning' : 'success'}
         />
       </IonContent>

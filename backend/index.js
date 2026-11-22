@@ -78,6 +78,7 @@ app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/asistente', require('./routes/asistente.routes'));
 app.use('/api/contingencia', require('./routes/contingencia.routes'));
 app.use('/api/indicadores', require('./routes/indicadores.routes'));
+app.use('/api/soporte', require('./routes/soporte.routes'));
 
 // Alias protegido de perfil
 app.get('/api/perfil', verificarToken, perfil);
@@ -119,8 +120,10 @@ app.use((err, req, res, next) => {
 // ============================================================================
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
+  const { iniciarMotorVigilancia } = require('./services/vigilancia.service');
   app.listen(PORT, () => {
     console.log(`Servidor Baúl Eterno corriendo en el puerto ${PORT}`);
+    iniciarMotorVigilancia();
   });
 }
 

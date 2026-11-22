@@ -43,11 +43,12 @@ export const GoogleCallback: React.FC = () => {
     }
 
     iniciarSesionConGoogle(code, state)
-      .then(() => {
-        localStorage.setItem('modo_activo', 'TITULAR');
+      .then((usuario) => {
+        const destino = usuario.rol === 'ADMIN' ? '/admin?tab=resumen' : '/dashboard';
+        localStorage.setItem('modo_activo', usuario.rol === 'ADMIN' ? 'ADMIN' : 'TITULAR');
         setAbriendo(true);
         setTimeout(() => {
-          navigate('/dashboard', { replace: true });
+          navigate(destino, { replace: true });
         }, 850);
       })
       .catch((err) => {

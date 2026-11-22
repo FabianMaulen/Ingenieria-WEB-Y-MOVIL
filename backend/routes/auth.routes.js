@@ -33,11 +33,17 @@ router.post('/login', loginLimiter, authController.login);
 router.post('/forgot-password', recoveryLimiter, authController.forgotPassword);
 router.post('/reset-password', recoveryLimiter, authController.resetPassword);
 
+// Confirmación de correo vía enlace directo (desde Gmail)
+router.get('/verificar-correo/enlace', authController.confirmarVerificacionPorEnlace);
+
 // Google OAuth 2.0 (Authorization Code + state + PKCE S256)
 router.get('/google/url', oauthController.obtenerUrlGoogle);
 router.post('/google', oauthController.callbackGoogle);
 
 router.get('/perfil', verificarToken, authController.perfil);
+router.put('/preferencias', verificarToken, authController.actualizarPreferencias);
+router.post('/verificar-correo/enviar', verificarToken, authController.enviarCodigoVerificacion);
+router.post('/verificar-correo/confirmar', verificarToken, authController.confirmarVerificacionCorreo);
 router.put('/change-password', verificarToken, authController.changePassword);
 router.put('/completar-rut', verificarToken, authController.completarRut);
 

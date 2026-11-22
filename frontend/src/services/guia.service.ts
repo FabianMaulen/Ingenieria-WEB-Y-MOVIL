@@ -19,8 +19,35 @@ export interface PolizaGuia {
   contacto: Contacto | null;
 }
 
+export interface InventarioGuia {
+  id_inventario: number;
+  plataforma: string;
+  instruccion: string;
+  categoria: string;
+  fecha_creacion: string;
+  id_titular: number;
+  nombre_titular: string;
+}
+
+export interface MensajeGuia {
+  id_mensaje: number;
+  fecha_creacion: string;
+  id_titular: number;
+  nombre_titular: string;
+  contenido: string;
+}
+
+export interface TitularLiberado {
+  id_titular: number;
+  nombre_titular: string;
+  rut_titular: string;
+}
+
 export interface Guia {
+  titulares_liberados: TitularLiberado[];
   polizas: PolizaGuia[];
+  inventario: InventarioGuia[];
+  mensajes: MensajeGuia[];
   resumen: { total: number; tramitadas: number };
   mensaje?: string;
 }
@@ -36,14 +63,25 @@ export interface DesignacionAlbacea {
   parentesco: string;
   estado_validacion: EstadoDesignacion;
   fecha_designacion: string;
+  boveda_liberada?: boolean;
+  apertura_en_curso?: boolean;
 }
 
 export const obtenerGuia = async (): Promise<Guia> => {
-  const res = await api.get<ApiResponse<{ polizas: PolizaGuia[]; resumen: { total: number; tramitadas: number } }>>(
-    '/guia'
-  );
+  const res = await api.get<
+    ApiResponse<{
+      titulares_liberados?: TitularLiberado[];
+      polizas: PolizaGuia[];
+      inventario?: InventarioGuia[];
+      mensajes?: MensajeGuia[];
+      resumen: { total: number; tramitadas: number };
+    }>
+  >('/guia');
   return {
+    titulares_liberados: res.data.data?.titulares_liberados || [],
     polizas: res.data.data?.polizas || [],
+    inventario: res.data.data?.inventario || [],
+    mensajes: res.data.data?.mensajes || [],
     resumen: res.data.data?.resumen || { total: 0, tramitadas: 0 },
     mensaje: res.data.mensaje,
   };

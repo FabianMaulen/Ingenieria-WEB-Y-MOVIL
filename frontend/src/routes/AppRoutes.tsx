@@ -10,6 +10,7 @@ import { Register } from '../pages/Register';
 import { ForgotPassword } from '../pages/ForgotPassword';
 import { GoogleCallback } from '../pages/GoogleCallback';
 import { ConsultaFamiliar } from '../pages/ConsultaFamiliar';
+import { VerificarCorreo } from '../pages/VerificarCorreo';
 import { Dashboard } from '../pages/Dashboard';
 import { Polizas } from '../pages/Polizas';
 import { Albaceas } from '../pages/Albaceas';
@@ -69,6 +70,7 @@ export const AppRoutes: React.FC = () => {
       <Route path="/recuperar" element={<ForgotPassword />} />
       <Route path="/auth/google/callback" element={<GoogleCallback />} />
       <Route path="/consulta-familiar" element={<ConsultaFamiliar />} />
+      <Route path="/verificar-correo" element={<VerificarCorreo />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* Rutas Privadas protegidas con RutaProtegida */}

@@ -17,12 +17,13 @@ import {
   trashOutline,
   locationOutline,
   sparklesOutline,
+  trendingUpOutline,
 } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { VaultLoader } from '../components/VaultLoader';
 import { listarPolizas, crearPoliza, eliminarPoliza, extraerPolizaConIA, Poliza } from '../services/polizas.service';
-import { obtenerValorUf } from '../services/indicadores.service';
+import { obtenerValorUf, IndicadorUf } from '../services/indicadores.service';
 import { mensajeError } from '../services/api';
 
 export const Polizas: React.FC = () => {
@@ -41,7 +42,9 @@ export const Polizas: React.FC = () => {
   const [ubicacionFisica, setUbicacionFisica] = useState('');
   const [montoReferencial, setMontoReferencial] = useState('');
   const [monedaIngreso, setMonedaIngreso] = useState<'CLP' | 'UF'>('CLP');
-  const [valorUf, setValorUf] = useState<number | null>(null);
+  const [indicadorUf, setIndicadorUf] = useState<IndicadorUf | null>(null);
+
+  const valorUf = indicadorUf?.valor_uf || null;
 
   const cargarDatos = async () => {
     try {
@@ -51,7 +54,7 @@ export const Polizas: React.FC = () => {
         obtenerValorUf().catch(() => null),
       ]);
       setPolizas(Array.isArray(data) ? data : []);
-      if (ufData?.valor_uf) setValorUf(ufData.valor_uf);
+      if (ufData?.valor_uf) setIndicadorUf(ufData);
     } catch (error) {
       console.error('Error al cargar pólizas:', mensajeError(error));
     } finally {
@@ -144,6 +147,12 @@ export const Polizas: React.FC = () => {
     }
   };
 
+  const totalClp = polizas.reduce((acc, p) => acc + (Number(p.monto_referencial) || 0), 0);
+  const totalUf = valorUf ? totalClp / valorUf : 0;
+  const fechaUfTexto = indicadorUf?.fecha
+    ? new Date(indicadorUf.fecha).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '';
+
   return (
     <IonPage id="main-content">
       <HeaderBar title="Pólizas y Seguros" />
@@ -156,11 +165,6 @@ export const Polizas: React.FC = () => {
               <p className="be-page-subtitle">
                 Coberturas activas documentadas para orientar a tus albaceas al momento de tramitarlas.
               </p>
-              {valorUf && (
-                <span className="be-badge be-badge-info" style={{ marginTop: '8px' }}>
-                  UF hoy: ${Math.round(valorUf).toLocaleString('es-CL')} CLP
-                </span>
-              )}
             </div>
 
             <button
@@ -172,6 +176,71 @@ export const Polizas: React.FC = () => {
               {mostrandoForm ? 'Cancelar' : 'Nueva póliza'}
             </button>
           </div>
+
+          {/* Resumen Patrimonial en Vivo conectado a la API oficial de UF (Banco Central / mindicador.cl) */}
+          {!cargando && (
+            <div
+              className="be-card"
+              style={{
+                padding: '18px 20px',
+                background: 'linear-gradient(135deg, var(--be-surface) 0%, var(--be-surface-alt) 100%)',
+                borderColor: 'var(--be-border)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                <div>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      color: 'var(--be-primary)',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    <IonIcon icon={trendingUpOutline} />
+                    Cobertura Total Protegida ({polizas.length} póliza{polizas.length === 1 ? '' : 's'})
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--be-text)', fontFamily: 'var(--be-font-display)' }}>
+                      ${totalClp.toLocaleString('es-CL')} CLP
+                    </span>
+                    {valorUf && (
+                      <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--be-accent)' }}>
+                        ≈ {totalUf.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} UF
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {indicadorUf && (
+                  <div
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '12px',
+                      backgroundColor: 'var(--be-surface)',
+                      border: '1px solid var(--be-border)',
+                      textAlign: 'right',
+                    }}
+                  >
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--be-text-muted)', textTransform: 'uppercase' }}>
+                      UF Oficial Chile {fechaUfTexto ? `· ${fechaUfTexto}` : ''}
+                    </div>
+                    <div style={{ fontSize: '1.08rem', fontWeight: 800, color: 'var(--be-primary)' }}>
+                      ${indicadorUf.valor_uf.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CLP
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--be-text-muted)' }}>
+                      Fuente: {indicadorUf.fuente}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {mostrandoForm && (
             <form onSubmit={handleAgregar} className="be-card">
@@ -293,8 +362,8 @@ export const Polizas: React.FC = () => {
                   {valorUf && Number(montoReferencial) > 0 && (
                     <span style={{ display: 'block', fontSize: '0.74rem', color: 'var(--be-text-muted)', marginTop: '4px' }}>
                       {monedaIngreso === 'UF'
-                        ? `≈ $${Math.round(Number(montoReferencial) * valorUf).toLocaleString('es-CL')} CLP`
-                        : `≈ ${(Number(montoReferencial) / valorUf).toFixed(1)} UF`}
+                        ? `≈ $${Math.round(Number(montoReferencial) * valorUf).toLocaleString('es-CL')} CLP (UF del día)`
+                        : `≈ ${(Number(montoReferencial) / valorUf).toFixed(1)} UF (UF del día)`}
                     </span>
                   )}
                 </div>

@@ -7,8 +7,8 @@ const { enviarRespuesta } = require('../utils/respuesta');
 const { registrarAuditoria } = require('../utils/auditoria');
 const { normalizarRut, validarRut, validarEmail, obtenerIp } = require('../utils/validadores');
 const { analizarCertificadoDefuncion } = require('../services/gemini.service');
-const { enviarAlertaApertura } = require('../services/email.service');
-const { PLAZO_HORAS } = require('../utils/solicitudes');
+const { enviarAlertaApertura, enviarNotificacionSolicitante } = require('../services/email.service');
+const { PLAZO_HORAS, aprobarVencidas } = require('../utils/solicitudes');
 
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'certificados');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -62,7 +62,7 @@ exports.consultarExistencia = async (req, res) => {
 
     const existe = rows.length > 0;
     const mensaje = existe
-      ? 'Confirmamos que existe un Baúl Eterno activo asociado a ese RUT. Por privacidad no mostramos datos personales; puedes reportar el fallecimiento adjuntando el certificado oficial.'
+      ? 'Confirmamos que existe un Baúl Eterno activo asociado a ese RUT. Por privacidad no mostramos datos personales; puedes iniciar una solicitud de apertura que notificará al titular durante su plazo de gracia.'
       : 'No encontramos un Baúl Eterno registrado para el RUT consultado.';
 
     return enviarRespuesta(res, 200, mensaje, {
@@ -94,18 +94,33 @@ exports.crearReporteFamiliar = async (req, res) => {
     const rutTitularNorm = normalizarRut(rut_titular);
     const rutFamiliarNorm = normalizarRut(rut_familiar);
     const correoLimpio = String(correo_familiar).trim().toLowerCase();
+    const nombreFamiliarLimpio = String(nombre_familiar).trim();
+    const parentescoLimpio = String(parentesco).trim();
 
     if (!validarRut(rutTitularNorm) || !validarRut(rutFamiliarNorm)) {
       return enviarRespuesta(res, 400, 'Verifica que tanto el RUT del titular como tu RUT sean válidos.', null);
+    }
+
+    if (rutFamiliarNorm === rutTitularNorm) {
+      return enviarRespuesta(
+        res,
+        400,
+        'Tu RUT de solicitante no puede ser el mismo que el RUT del titular de la bóveda.',
+        null
+      );
     }
 
     if (!validarEmail(correoLimpio)) {
       return enviarRespuesta(res, 400, 'Ingresa un correo electrónico válido de contacto.', null);
     }
 
-    // Buscar si el titular existe en BD
+    await aprobarVencidas();
+
+    // Buscar si el titular existe en BD y obtener su plazo de gracia y correo alternativo
     const titularRes = await db.query(
-      'SELECT id_usuario, nombre_usuario, correo_usuario FROM USUARIO WHERE UPPER(rut) = $1',
+      `SELECT id_usuario, nombre_usuario, correo_usuario, correo_alternativo, plazo_gracia_dias
+       FROM USUARIO
+       WHERE UPPER(rut) = $1`,
       [rutTitularNorm]
     );
     const titular = titularRes.rows[0] || null;
@@ -113,57 +128,124 @@ exports.crearReporteFamiliar = async (req, res) => {
       return enviarRespuesta(res, 404, 'No existe una bóveda registrada para el RUT consultado.', null);
     }
 
-    // Calcular SHA-256 del documento y guardarlo
-    const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
-    nombreArchivo = `familiar-${crypto.randomUUID()}${EXTENSIONES[req.file.mimetype]}`;
-    await fs.promises.writeFile(path.join(UPLOAD_DIR, nombreArchivo), req.file.buffer);
+    // Evitar duplicados si ya existe una solicitud/reporte activo o la bóveda ya fue liberada
+    const [repActivo, solActiva] = await Promise.all([
+      db.query(
+        `SELECT estado_reporte FROM REPORTE_FAMILIAR
+         WHERE id_titular_encontrado = $1 AND estado_reporte IN ('RECIBIDO', 'EN_REVISION', 'VALIDADO')
+         LIMIT 1`,
+        [titular.id_usuario]
+      ),
+      db.query(
+        `SELECT estado_solicitud FROM SOLICITUD_APERTURA
+         WHERE id_usuario = $1 AND estado_solicitud IN ('PENDIENTE', 'APROBADA')
+         LIMIT 1`,
+        [titular.id_usuario]
+      ),
+    ]);
 
-    // Extracción opcional de folio vía Gemini (no bloqueante)
-    const analisis = await analizarCertificadoDefuncion({
-      buffer: req.file.buffer,
-      mimetype: req.file.mimetype,
-    });
-    const folioExtraido = analisis?.folio || null;
+    const yaLiberada =
+      repActivo.rows[0]?.estado_reporte === 'VALIDADO' ||
+      solActiva.rows[0]?.estado_solicitud === 'APROBADA';
 
+    if (yaLiberada) {
+      return enviarRespuesta(
+        res,
+        409,
+        'La bóveda asociada a este RUT ya fue liberada previamente para los albaceas y beneficiarios designados.',
+        null
+      );
+    }
+
+    if (repActivo.rows.length > 0 || solActiva.rows.length > 0) {
+      return enviarRespuesta(
+        res,
+        409,
+        'Ya existe una solicitud de apertura en curso para este titular. El titular ya fue notificado y se encuentra dentro de su plazo de gracia.',
+        null
+      );
+    }
+
+    const plazoDias = Number(titular.plazo_gracia_dias) || Math.round(PLAZO_HORAS / 24) || 7;
+    const plazoHoras = plazoDias * 24;
+
+    // Calcular SHA-256 del documento y guardarlo en disco
+    const bufferArchivo = req.file.buffer;
+    const mimeArchivo = req.file.mimetype;
+    const hash = crypto.createHash('sha256').update(bufferArchivo).digest('hex');
+    nombreArchivo = `familiar-${crypto.randomUUID()}${EXTENSIONES[mimeArchivo]}`;
+    await fs.promises.writeFile(path.join(UPLOAD_DIR, nombreArchivo), bufferArchivo);
+
+    // Registrar reporte INMEDIATAMENTE sin bloquear la respuesta por llamadas externas
     const { rows } = await db.query(
       `INSERT INTO REPORTE_FAMILIAR
          (rut_titular_consultado, id_titular_encontrado, nombre_familiar, rut_familiar,
-          correo_familiar, parentesco, certificado_archivo, hash_documento, folio_extraido)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id_reporte, rut_titular_consultado, estado_reporte, hash_documento, folio_extraido, fecha_reporte`,
+          correo_familiar, parentesco, certificado_archivo, hash_documento, folio_extraido,
+          plazo_gracia_horas, ultimo_aviso_etapa)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, $9, 'INICIAL')
+       RETURNING id_reporte, rut_titular_consultado, estado_reporte, hash_documento,
+                 folio_extraido, plazo_gracia_horas, fecha_reporte,
+                 fecha_reporte + make_interval(hours => $9::int) AS fecha_limite`,
       [
         rutTitularNorm,
         titular.id_usuario,
-        String(nombre_familiar).trim(),
+        nombreFamiliarLimpio,
         rutFamiliarNorm,
         correoLimpio,
-        String(parentesco).trim(),
+        parentescoLimpio,
         nombreArchivo,
         hash,
-        folioExtraido,
+        plazoHoras,
       ]
     );
 
+    const reporte = rows[0];
+
     await registrarAuditoria(
-      `Reporte familiar externo (#${rows[0].id_reporte}) ingresado por ${String(nombre_familiar).trim()} (${rutFamiliarNorm}) para titular RUT ${rutTitularNorm}`,
+      `Reporte familiar externo (#${reporte.id_reporte}) ingresado por ${nombreFamiliarLimpio} (${rutFamiliarNorm}) para titular RUT ${rutTitularNorm} — plazo de gracia ${plazoDias} días`,
       obtenerIp(req),
       titular.id_usuario
     );
 
-    // Alerta preventiva al titular por correo electrónico
+    // Extracción de folio vía Gemini en segundo plano (NUNCA retrasa ni provoca timeout en el envío)
+    analizarCertificadoDefuncion({ buffer: bufferArchivo, mimetype: mimeArchivo })
+      .then((analisis) => {
+        if (analisis?.folio) {
+          return db.query(
+            'UPDATE REPORTE_FAMILIAR SET folio_extraido = $1 WHERE id_reporte = $2',
+            [analisis.folio, reporte.id_reporte]
+          );
+        }
+        return null;
+      })
+      .catch(() => {});
+
+    // 1) Alerta crítica al titular (correo principal + alternativo si existe)
     enviarAlertaApertura({
       correoTitular: titular.correo_usuario,
+      correoAlternativo: titular.correo_alternativo,
       nombreTitular: titular.nombre_usuario,
-      nombreAlbacea: `${String(nombre_familiar).trim()} (Familiar externo - ${String(parentesco).trim()})`,
-      plazoHoras: PLAZO_HORAS,
+      nombreAlbacea: `${nombreFamiliarLimpio} (Familiar externo - ${parentescoLimpio})`,
+      plazoHoras,
+      esReintento: false,
+    }).catch(() => {});
+
+    // 2) Confirmación al familiar solicitante
+    enviarNotificacionSolicitante({
+      correoSolicitante: correoLimpio,
+      nombreSolicitante: nombreFamiliarLimpio,
+      nombreTitular: `RUT ${rutTitularNorm}`,
+      estado: 'RECIBIDA',
+      detalle: `Recibimos tu solicitud de apertura (#${reporte.id_reporte}). Por seguridad, notificamos al titular e iniciamos un plazo de gracia de ${plazoDias} días para que confirme si continúa activo. Si no responde al finalizar el plazo (o si es validado), te informaremos de inmediato por este correo.`,
     }).catch(() => {});
 
     return enviarRespuesta(
       res,
       201,
-      'Reporte recibido correctamente. Nuestro equipo de soporte verificará el certificado en el Registro Civil y te contactará por correo.',
+      `Solicitud registrada (#${reporte.id_reporte}). Notificamos al titular e iniciamos un plazo de gracia de ${plazoDias} días; te avisaremos por correo cualquier actualización.`,
       {
-        ...rows[0],
+        ...reporte,
+        plazo_dias: plazoDias,
         portal_registro_civil: PORTAL_REGISTRO_CIVIL,
       }
     );

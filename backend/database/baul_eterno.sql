@@ -16,8 +16,20 @@ CREATE TABLE IF NOT EXISTS USUARIO (
   avatar_url TEXT NULL,
   rol VARCHAR(50) NOT NULL DEFAULT 'TITULAR'
     CONSTRAINT chk_usuario_rol CHECK (rol IN ('TITULAR', 'ALBACEA', 'ADMIN')),
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_ultimo_checkin TIMESTAMP NOT NULL DEFAULT NOW(),
-  correo_usuario VARCHAR(150) NOT NULL UNIQUE
+  frecuencia_checkin_dias INT NOT NULL DEFAULT 180
+    CONSTRAINT chk_usuario_frecuencia CHECK (frecuencia_checkin_dias IN (30, 90, 180, 365)),
+  plazo_gracia_dias INT NOT NULL DEFAULT 7
+    CONSTRAINT chk_usuario_gracia CHECK (plazo_gracia_dias IN (3, 7, 14)),
+  correo_usuario VARCHAR(150) NOT NULL UNIQUE,
+  correo_verificado BOOLEAN NOT NULL DEFAULT FALSE,
+  correo_alternativo VARCHAR(150) NULL,
+  correo_alternativo_verificado BOOLEAN NOT NULL DEFAULT FALSE,
+  nombre_contacto_confianza VARCHAR(150) NULL,
+  correo_contacto_confianza VARCHAR(150) NULL,
+  notificar_recordatorios BOOLEAN NOT NULL DEFAULT TRUE,
+  ultimo_recordatorio_enviado VARCHAR(30) NULL
 );
 
 -- ============================================================================
@@ -82,9 +94,13 @@ CREATE TABLE IF NOT EXISTS MENSAJE_POSTUMO (
   id_mensaje SERIAL PRIMARY KEY,
   fecha_creacion DATE NOT NULL DEFAULT CURRENT_DATE,
   contenido_cifrado TEXT NOT NULL,
-  rut_destinatario VARCHAR(12) NOT NULL
-    CONSTRAINT chk_mensaje_rut CHECK (rut_destinatario ~ '^[0-9]{7,8}-[0-9K]$'),
-  id_usuario INT NOT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE
+  rut_destinatario VARCHAR(12) NULL
+    CONSTRAINT chk_mensaje_rut CHECK (rut_destinatario IS NULL OR rut_destinatario ~ '^[0-9]{7,8}-[0-9K]$'),
+  nombre_destinatario_externo VARCHAR(150) NULL,
+  correo_destinatario VARCHAR(150) NULL,
+  enviado_por_correo BOOLEAN NOT NULL DEFAULT FALSE,
+  id_usuario INT NOT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE,
+  CONSTRAINT chk_mensaje_destinatario CHECK (rut_destinatario IS NOT NULL OR correo_destinatario IS NOT NULL)
 );
 
 -- ============================================================================
@@ -98,8 +114,10 @@ CREATE TABLE IF NOT EXISTS SOLICITUD_APERTURA (
   estado_solicitud VARCHAR(60) NOT NULL DEFAULT 'PENDIENTE'
     CONSTRAINT chk_estado_solicitud CHECK (estado_solicitud IN ('PENDIENTE', 'CANCELADA', 'APROBADA')),
   fecha_solicitud TIMESTAMP NOT NULL DEFAULT NOW(),
+  plazo_gracia_horas INT NOT NULL DEFAULT 168,
+  ultimo_aviso_etapa VARCHAR(30) NULL,
   id_usuario INT NOT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE,
-  id_albacea INT NOT NULL REFERENCES DIRECTORIO_ALBACEAS(id_directorio)
+  id_albacea INT NOT NULL REFERENCES DIRECTORIO_ALBACEAS(id_directorio) ON DELETE CASCADE
 );
 
 -- ============================================================================
@@ -135,7 +153,7 @@ CREATE TABLE IF NOT EXISTS REPORTE_FAMILIAR (
   id_reporte SERIAL PRIMARY KEY,
   rut_titular_consultado VARCHAR(12) NOT NULL
     CONSTRAINT chk_reporte_rut_titular CHECK (rut_titular_consultado ~ '^[0-9]{7,8}-[0-9K]$'),
-  id_titular_encontrado INT NULL REFERENCES USUARIO(id_usuario) ON DELETE SET NULL,
+  id_titular_encontrado INT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE,
   nombre_familiar VARCHAR(150) NOT NULL,
   rut_familiar VARCHAR(12) NOT NULL
     CONSTRAINT chk_reporte_rut_familiar CHECK (rut_familiar ~ '^[0-9]{7,8}-[0-9K]$'),
@@ -145,8 +163,47 @@ CREATE TABLE IF NOT EXISTS REPORTE_FAMILIAR (
   hash_documento VARCHAR(255) NOT NULL,
   folio_extraido VARCHAR(100) NULL,
   estado_reporte VARCHAR(30) NOT NULL DEFAULT 'RECIBIDO'
-    CONSTRAINT chk_estado_reporte CHECK (estado_reporte IN ('RECIBIDO', 'EN_REVISION', 'VALIDADO', 'RECHAZADO')),
+    CONSTRAINT chk_estado_reporte CHECK (
+      estado_reporte IN ('RECIBIDO', 'EN_REVISION', 'VALIDADO', 'RECHAZADO', 'CANCELADO_TITULAR')
+    ),
+  plazo_gracia_horas INT NOT NULL DEFAULT 168,
+  ultimo_aviso_etapa VARCHAR(30) NULL,
   fecha_reporte TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================================
+-- 10. EMAIL_VERIFICACION_TOKEN
+-- Códigos/tokens temporales para confirmar correo principal o alternativo.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS EMAIL_VERIFICACION_TOKEN (
+  id_token SERIAL PRIMARY KEY,
+  id_usuario INT NOT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE,
+  tipo VARCHAR(20) NOT NULL
+    CONSTRAINT chk_verif_tipo CHECK (tipo IN ('PRINCIPAL', 'ALTERNATIVO')),
+  correo_destino VARCHAR(150) NOT NULL,
+  token_hash VARCHAR(64) NOT NULL,
+  expira_en TIMESTAMP NOT NULL,
+  usado BOOLEAN NOT NULL DEFAULT FALSE,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================================
+-- 11. TICKET_SOPORTE
+-- Tickets de soporte y apelaciones trazables asociados a solicitudes o reportes.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS TICKET_SOPORTE (
+  id_ticket SERIAL PRIMARY KEY,
+  codigo_ticket VARCHAR(24) NOT NULL UNIQUE,
+  id_usuario INT NOT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE,
+  categoria VARCHAR(80) NOT NULL,
+  mensaje TEXT NOT NULL,
+  estado_ticket VARCHAR(30) NOT NULL DEFAULT 'ABIERTO'
+    CONSTRAINT chk_estado_ticket CHECK (estado_ticket IN ('ABIERTO', 'EN_PROCESO', 'RESUELTO', 'CERRADO')),
+  respuesta_admin TEXT NULL,
+  id_solicitud_asociada INT NULL REFERENCES SOLICITUD_APERTURA(id_solicitud) ON DELETE SET NULL,
+  id_reporte_asociado INT NULL REFERENCES REPORTE_FAMILIAR(id_reporte) ON DELETE SET NULL,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW(),
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Índices recomendados para consultas frecuentes
@@ -159,3 +216,8 @@ CREATE INDEX IF NOT EXISTS idx_mensaje_usuario ON MENSAJE_POSTUMO(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_solicitud_usuario ON SOLICITUD_APERTURA(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_reset_token_usuario ON RESET_PASSWORD_TOKEN(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_reset_token_hash ON RESET_PASSWORD_TOKEN(token_hash);
+CREATE INDEX IF NOT EXISTS idx_email_verif_usuario ON EMAIL_VERIFICACION_TOKEN(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_email_verif_hash ON EMAIL_VERIFICACION_TOKEN(token_hash);
+CREATE INDEX IF NOT EXISTS idx_ticket_usuario ON TICKET_SOPORTE(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_ticket_solicitud ON TICKET_SOPORTE(id_solicitud_asociada);
+CREATE INDEX IF NOT EXISTS idx_ticket_reporte ON TICKET_SOPORTE(id_reporte_asociado);

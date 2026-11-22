@@ -181,41 +181,42 @@ exports.analizarCertificadoDefuncion = async ({ buffer, mimetype }) => {
 function respuestaLocalRespaldo(pregunta) {
   const q = pregunta.toLowerCase();
   if (q.includes('check') || q.includes('180') || q.includes('vigencia')) {
-    return 'El Check-in confirma que sigues activo y renueva la protección de tu bóveda por 180 días. Además, si existiera una solicitud de apertura pendiente en periodo de gracia, realizar el check-in la anula automáticamente.';
+    return 'El Check-in confirma que sigues activo y renueva tu bóveda según el plazo que configuraste (30, 90, 180 o 365 días). Además, si hubiera una solicitud de apertura en curso, hacer Check-in la anula al instante.\n\n¿Te gustaría saber cómo configurar correos alternativos o tu persona de confianza?';
   }
   if (q.includes('albacea') || q.includes('invit')) {
-    return 'Puedes designar hasta 3 albaceas desde la sección "Albaceas". Incluso si la persona aún no tiene cuenta en Baúl Eterno, quedará registrada como INVITADO y se vinculará automáticamente cuando se registre con su RUT.';
+    return 'Puedes designar hasta 5 albaceas desde la sección "Albaceas". Incluso si aún no tienen cuenta en Baúl Eterno, quedarán como invitados y se vincularán automáticamente cuando se registren con su RUT.\n\n¿Quieres que te explique qué información ven los albaceas cuando se libera una bóveda?';
   }
-  if (q.includes('mensaje') || q.includes('cifra') || q.includes('aes')) {
-    return 'Los mensajes póstumos se cifran en el servidor con AES-256-CBC antes de guardarse en la base de datos. Nadie puede leer su contenido mientras tu bóveda siga sellada.';
+  if (q.includes('mensaje') || q.includes('cifra') || q.includes('segur')) {
+    return 'Tus mensajes póstumos se resguardan con cifrado de alto estándar de seguridad antes de guardarse. Puedes dirigirlos a tus albaceas o a cualquier persona externa por su correo electrónico (sin que tenga cuenta).\n\n¿Te ayudo con cómo redactar una carta póstuma o cómo gestionar tus pólizas?';
   }
-  if (q.includes('apertura') || q.includes('gracia') || q.includes('72')) {
-    return 'Un albacea validado puede iniciar una solicitud de apertura adjuntando el certificado de defunción (se guarda con hash SHA-256). Esto abre un periodo de gracia de 72 horas donde el titular recibe una alerta y puede anularla con un clic.';
+  if (q.includes('apertura') || q.includes('gracia') || q.includes('72') || q.includes('plazo')) {
+    return 'Cuando un albacea o familiar solicita la apertura, se activa un plazo de gracia (7 días por defecto, configurable en Ajustes) con alertas por correo y en tu panel principal para que puedas anularla con un clic si sigues activo.\n\n¿Quieres saber cómo funciona el aviso a tu persona de confianza 48 horas antes?';
   }
-  if (q.includes('poliza') || q.includes('seguro') || q.includes('pdf')) {
-    return 'En "Pólizas y Seguros" puedes registrar tus seguros manualmente o subir un PDF/foto para que la IA complete los campos automáticamente. Cuando se aprueba una apertura, tus albaceas ven la guía de cobro con datos de contacto de cada aseguradora.';
+  if (q.includes('poliza') || q.includes('seguro') || q.includes('pdf') || q.includes('uf')) {
+    return 'En "Pólizas y Seguros" puedes registrar tus seguros manualmente o subir un PDF/foto para que la IA complete los datos, y ver tu cobertura total valorizada al instante en pesos y UF.\n\n¿Te gustaría consultar sobre tu inventario digital o sobre cómo contactar a soporte?';
   }
-  return 'Baúl Eterno te permite resguardar tus pólizas de seguro, inventario digital, mensajes póstumos cifrados con AES-256 y designar hasta 3 albaceas. Si alguien te designa como albacea, verás un selector en el menú lateral para alternar entre "Mi Baúl" y "Panel Albacea".';
+  return 'Baúl Eterno te ayuda a resguardar tus pólizas de seguro, inventario digital, mensajes póstumos cifrados y hasta 3 albaceas de confianza. Si alguien te designa como albacea, verás un selector en la parte superior del menú lateral para alternar a "Albacea".\n\n¿Sobre cuál de estas secciones te gustaría profundizar ahora?';
 }
 
 /**
  * Asistente de orientación de Baúl Eterno (solo orientativo, sin ejecutar acciones).
  */
 exports.responderConsultaPlataforma = async (pregunta) => {
-  const systemInstruction = `Eres el asistente de orientación de "Baúl Eterno", una plataforma chilena de legado personal.
-Tu ÚNICO propósito es explicar de forma breve, clara, empática y en español cómo funciona la plataforma:
-- Cuenta dual unificada: todo usuario tiene su propia bóveda (Modo Titular) y, si otro usuario lo designa por RUT, aparece un selector en el menú lateral para alternar a "Panel Albacea".
-- Pólizas y Seguros: registro manual o autocompletado subiendo PDF/imagen con IA; checklist y contactos de aseguradoras en la Guía de Cobro tras apertura aprobada.
+  const systemInstruction = `Eres el asistente de orientación cercano y amable de "Baúl Eterno", una plataforma chilena de legado personal.
+Tu ÚNICO propósito es explicar de forma clara, humana y en español cómo funciona la plataforma:
+- Cuenta dual unificada: todo usuario tiene su propia bóveda (Mi Baúl) y, si otro usuario lo designa por RUT, aparece un selector en la cabecera del menú lateral para alternar a "Albacea".
+- Pólizas y Seguros: registro manual o autocompletado subiendo PDF/foto con IA, con valorización total en vivo en pesos chilenos y UF.
 - Inventario Digital: registro de cuentas, suscripciones y bienes con instrucciones póstumas.
-- Albaceas: hasta 3 personas de confianza; se puede invitar a personas no registradas (estado INVITADO) que se vinculan automáticamente al crear cuenta con su RUT.
-- Mensajes Póstumos: cartas cifradas con AES-256-CBC, ocultas hasta apertura aprobada.
-- Check-in: renueva vigencia por 180 días y anula aperturas pendientes.
-- Apertura por contingencia: el albacea validado sube certificado de defunción (PDF/JPG/PNG hasta 5 MB, sellado con SHA-256); se activa un periodo de gracia de 72 horas para que el titular pueda anular si sigue activo.
-- Seguridad: JWT, bcrypt, Google OAuth 2.0 + PKCE, recuperación de clave por correo, y auditoría.
+- Albaceas: hasta 5 personas de confianza; se puede invitar a personas no registradas que se vinculan automáticamente al crear cuenta con su RUT.
+- Mensajes Póstumos: cartas protegidas con cifrado de alto estándar de seguridad dirigidas a albaceas o a personas externas por correo electrónico (sin necesidad de cuenta), entregadas solo tras la apertura autorizada.
+- Check-in y correos de respaldo: frecuencia configurable en Ajustes (30, 90, 180 o 365 días), correo alternativo y persona de confianza (avisada 48h antes de una liberación).
+- Apertura por contingencia: inicia un plazo de gracia (7 días por defecto, configurable) con alertas al titular; si el titular hace Check-in o anula, se detiene. Si se aprueba, la bóveda se libera globalmente para todos sus albaceas validados.
+- Soporte: en Ajustes y Clave (o desde el panel principal si hay un inconveniente) el usuario puede escribir directamente al equipo de soporte.
 Reglas estrictas:
-1. Responde en máximo 4-5 líneas claras y directas.
-2. Nunca inventes funciones que no existen ni afirmes que ejecutaste acciones en la base de datos.
-3. Si preguntan por temas ajenos a Baúl Eterno o asesoría legal específica, indícales amablemente que solo orientas sobre el uso de la plataforma.`;
+1. Usa un lenguaje cercano, claro y evita siglas técnicas innecesarias como SHA-256, AES-256-CBC o JWT.
+2. Responde en máximo 4 líneas directas y CIERRA SIEMPRE invitando amablemente a seguir consultando o sugiriendo un tema relacionado concreto.
+3. Nunca inventes funciones que no existen ni afirmes que ejecutaste acciones en la base de datos.
+4. Si preguntan por temas ajenos a Baúl Eterno o asesoría legal específica, indícales amablemente que solo orientas sobre el uso de la plataforma y sugiere una pregunta útil.`;
 
   try {
     const { texto, modelo } = await llamarGemini({

@@ -141,6 +141,99 @@ CREATE TABLE IF NOT EXISTS REPORTE_FAMILIAR (
   fecha_reporte TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- 6d. Preferencias de vigilancia, correos de respaldo, estado activo y verificación de correos
+ALTER TABLE USUARIO
+  ADD COLUMN IF NOT EXISTS activo BOOLEAN NOT NULL DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS frecuencia_checkin_dias INT NOT NULL DEFAULT 180,
+  ADD COLUMN IF NOT EXISTS plazo_gracia_dias INT NOT NULL DEFAULT 7,
+  ADD COLUMN IF NOT EXISTS correo_verificado BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS correo_alternativo VARCHAR(150) NULL,
+  ADD COLUMN IF NOT EXISTS correo_alternativo_verificado BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS nombre_contacto_confianza VARCHAR(150) NULL,
+  ADD COLUMN IF NOT EXISTS correo_contacto_confianza VARCHAR(150) NULL,
+  ADD COLUMN IF NOT EXISTS notificar_recordatorios BOOLEAN NOT NULL DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS ultimo_recordatorio_enviado VARCHAR(30) NULL;
+
+-- Cuentas creadas con Google ya tienen correo verificado por Google
+UPDATE USUARIO SET correo_verificado = TRUE WHERE google_id IS NOT NULL AND correo_verificado = FALSE;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_usuario_frecuencia') THEN
+    ALTER TABLE USUARIO ADD CONSTRAINT chk_usuario_frecuencia CHECK (frecuencia_checkin_dias IN (30, 90, 180, 365));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_usuario_gracia') THEN
+    ALTER TABLE USUARIO ADD CONSTRAINT chk_usuario_gracia CHECK (plazo_gracia_dias IN (3, 7, 14));
+  END IF;
+END $$;
+
+-- Evolución de SOLICITUD_APERTURA (plazo configurable, tracking de avisos y ON DELETE CASCADE en id_albacea)
+ALTER TABLE SOLICITUD_APERTURA
+  ADD COLUMN IF NOT EXISTS plazo_gracia_horas INT NOT NULL DEFAULT 168,
+  ADD COLUMN IF NOT EXISTS ultimo_aviso_etapa VARCHAR(30) NULL;
+
+ALTER TABLE SOLICITUD_APERTURA DROP CONSTRAINT IF EXISTS solicitud_apertura_id_albacea_fkey;
+ALTER TABLE SOLICITUD_APERTURA
+  ADD CONSTRAINT solicitud_apertura_id_albacea_fkey
+  FOREIGN KEY (id_albacea) REFERENCES DIRECTORIO_ALBACEAS(id_directorio) ON DELETE CASCADE;
+
+-- Evolución de REPORTE_FAMILIAR (plazo configurable, tracking de avisos y estado CANCELADO_TITULAR)
+ALTER TABLE REPORTE_FAMILIAR
+  ADD COLUMN IF NOT EXISTS plazo_gracia_horas INT NOT NULL DEFAULT 168,
+  ADD COLUMN IF NOT EXISTS ultimo_aviso_etapa VARCHAR(30) NULL;
+
+ALTER TABLE REPORTE_FAMILIAR DROP CONSTRAINT IF EXISTS chk_estado_reporte;
+ALTER TABLE REPORTE_FAMILIAR
+  ADD CONSTRAINT chk_estado_reporte
+  CHECK (estado_reporte IN ('RECIBIDO', 'EN_REVISION', 'VALIDADO', 'RECHAZADO', 'CANCELADO_TITULAR'));
+
+-- Tabla de tokens de confirmación de correo principal / alternativo
+CREATE TABLE IF NOT EXISTS EMAIL_VERIFICACION_TOKEN (
+  id_token SERIAL PRIMARY KEY,
+  id_usuario INT NOT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE,
+  tipo VARCHAR(20) NOT NULL
+    CONSTRAINT chk_verif_tipo CHECK (tipo IN ('PRINCIPAL', 'ALTERNATIVO')),
+  correo_destino VARCHAR(150) NOT NULL,
+  token_hash VARCHAR(64) NOT NULL,
+  expira_en TIMESTAMP NOT NULL,
+  usado BOOLEAN NOT NULL DEFAULT FALSE,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- 6e. Mensajes póstumos a personas externas (por correo sin cuenta) + Tickets de Soporte trazables
+ALTER TABLE MENSAJE_POSTUMO
+  ALTER COLUMN rut_destinatario DROP NOT NULL,
+  ADD COLUMN IF NOT EXISTS nombre_destinatario_externo VARCHAR(150) NULL,
+  ADD COLUMN IF NOT EXISTS correo_destinatario VARCHAR(150) NULL,
+  ADD COLUMN IF NOT EXISTS enviado_por_correo BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE MENSAJE_POSTUMO DROP CONSTRAINT IF EXISTS chk_mensaje_rut;
+ALTER TABLE MENSAJE_POSTUMO
+  ADD CONSTRAINT chk_mensaje_rut CHECK (rut_destinatario IS NULL OR rut_destinatario ~ '^[0-9]{7,8}-[0-9K]$');
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_mensaje_destinatario') THEN
+    ALTER TABLE MENSAJE_POSTUMO
+      ADD CONSTRAINT chk_mensaje_destinatario CHECK (rut_destinatario IS NOT NULL OR correo_destinatario IS NOT NULL);
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS TICKET_SOPORTE (
+  id_ticket SERIAL PRIMARY KEY,
+  codigo_ticket VARCHAR(24) NOT NULL UNIQUE,
+  id_usuario INT NOT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE,
+  categoria VARCHAR(80) NOT NULL,
+  mensaje TEXT NOT NULL,
+  estado_ticket VARCHAR(30) NOT NULL DEFAULT 'ABIERTO'
+    CONSTRAINT chk_estado_ticket CHECK (estado_ticket IN ('ABIERTO', 'EN_PROCESO', 'RESUELTO', 'CERRADO')),
+  respuesta_admin TEXT NULL,
+  id_solicitud_asociada INT NULL REFERENCES SOLICITUD_APERTURA(id_solicitud) ON DELETE SET NULL,
+  id_reporte_asociado INT NULL REFERENCES REPORTE_FAMILIAR(id_reporte) ON DELETE SET NULL,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW(),
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 -- 7. Índices recomendados
 CREATE INDEX IF NOT EXISTS idx_directorio_titular ON DIRECTORIO_ALBACEAS(id_titular);
 CREATE INDEX IF NOT EXISTS idx_directorio_rut ON DIRECTORIO_ALBACEAS(rut_albacea);
@@ -151,5 +244,10 @@ CREATE INDEX IF NOT EXISTS idx_mensaje_usuario ON MENSAJE_POSTUMO(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_solicitud_usuario ON SOLICITUD_APERTURA(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_reset_token_usuario ON RESET_PASSWORD_TOKEN(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_reset_token_hash ON RESET_PASSWORD_TOKEN(token_hash);
+CREATE INDEX IF NOT EXISTS idx_email_verif_usuario ON EMAIL_VERIFICACION_TOKEN(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_email_verif_hash ON EMAIL_VERIFICACION_TOKEN(token_hash);
+CREATE INDEX IF NOT EXISTS idx_ticket_usuario ON TICKET_SOPORTE(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_ticket_solicitud ON TICKET_SOPORTE(id_solicitud_asociada);
+CREATE INDEX IF NOT EXISTS idx_ticket_reporte ON TICKET_SOPORTE(id_reporte_asociado);
 
 COMMIT;

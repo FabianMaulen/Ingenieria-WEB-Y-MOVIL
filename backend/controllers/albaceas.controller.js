@@ -91,15 +91,15 @@ exports.crear = async (req, res) => {
       return enviarRespuesta(res, 400, 'No puedes designarte a ti mismo como albacea.', null);
     }
 
-    // 2. Límite máximo de 3 albaceas activos por titular
+    // 2. Límite máximo de 5 albaceas activos por titular
     const countQuery = await db.query(
       `SELECT COUNT(*)::int AS total
        FROM DIRECTORIO_ALBACEAS
        WHERE id_titular = $1 AND estado_validacion <> 'RECHAZADO'`,
       [id_titular]
     );
-    if ((countQuery.rows[0]?.total ?? 0) >= 3) {
-      return enviarRespuesta(res, 400, 'Ya has alcanzado el límite máximo de 3 albaceas permitidos.', null);
+    if ((countQuery.rows[0]?.total ?? 0) >= 5) {
+      return enviarRespuesta(res, 400, 'Ya has alcanzado el límite máximo de 5 albaceas permitidos.', null);
     }
 
     // 3. Buscar si el RUT ya existe en USUARIO (vinculación directa o invitación externa)

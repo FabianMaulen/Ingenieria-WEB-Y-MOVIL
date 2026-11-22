@@ -5,7 +5,42 @@ const db = require('../db');
 const { enviarRespuesta } = require('../utils/respuesta');
 const { registrarAuditoria } = require('../utils/auditoria');
 const { normalizarRut, validarRut, validarEmail, obtenerIp } = require('../utils/validadores');
-const { enviarBienvenida, enviarRecuperacionPassword } = require('../services/email.service');
+const {
+  enviarBienvenida,
+  enviarRecuperacionPassword,
+  enviarConfirmacionCorreo,
+  enviarAlertaCambioPassword,
+  obtenerUrlFrontend,
+} = require('../services/email.service');
+
+async function generarYEnviarVerificacion({ idUsuario, nombre, correo, tipo }) {
+  const codigo = String(crypto.randomInt(100000, 1000000));
+  const tokenHash = crypto.createHash('sha256').update(codigo).digest('hex');
+
+  await db.query(
+    `UPDATE EMAIL_VERIFICACION_TOKEN
+     SET usado = TRUE
+     WHERE id_usuario = $1 AND tipo = $2 AND usado = FALSE`,
+    [idUsuario, tipo]
+  );
+
+  await db.query(
+    `INSERT INTO EMAIL_VERIFICACION_TOKEN (id_usuario, tipo, correo_destino, token_hash, expira_en)
+     VALUES ($1, $2, $3, $4, NOW() + INTERVAL '24 hours')`,
+    [idUsuario, tipo, correo, tokenHash]
+  );
+
+  const urlBase = obtenerUrlFrontend();
+  const enlaceConfirmacion = `${urlBase}/verificar-correo?correo=${encodeURIComponent(correo)}&tipo=${tipo}&codigo=${codigo}`;
+
+  return enviarConfirmacionCorreo({
+    correo,
+    nombre,
+    tipo,
+    codigo,
+    enlaceConfirmacion,
+  });
+}
 
 // POST /api/auth/register
 exports.register = async (req, res) => {
@@ -13,12 +48,22 @@ exports.register = async (req, res) => {
     const { rut, nombre_usuario, correo_usuario, password } = req.body || {};
 
     if (!rut || !nombre_usuario || !correo_usuario || !password) {
-      return enviarRespuesta(res, 400, 'Todos los campos obligatorios (rut, nombre_usuario, correo_usuario, password) son requeridos.', null);
+      return enviarRespuesta(
+        res,
+        400,
+        'Todos los campos obligatorios (rut, nombre_usuario, correo_usuario, password) son requeridos.',
+        null
+      );
     }
 
     const rutNormalizado = normalizarRut(rut);
     if (!validarRut(rutNormalizado)) {
-      return enviarRespuesta(res, 400, 'El RUT ingresado no es válido. Usa formato chileno con dígito verificador correcto (Ej: 12345678-5).', null);
+      return enviarRespuesta(
+        res,
+        400,
+        'El RUT ingresado no es válido. Usa formato chileno con dígito verificador correcto (Ej: 12345678-5).',
+        null
+      );
     }
 
     const nombreLimpio = String(nombre_usuario).trim();
@@ -35,15 +80,13 @@ exports.register = async (req, res) => {
       return enviarRespuesta(res, 400, 'La contraseña debe tener al menos 8 caracteres.', null);
     }
 
-    // Modelo dual unificado: todo usuario registrado gestiona su propia bóveda (TITULAR)
-    // y puede actuar simultáneamente como albacea de terceros si su RUT figura en DIRECTORIO_ALBACEAS.
     const rolFinal = 'TITULAR';
     const hash = await bcrypt.hash(password, 10);
 
     const { rows } = await db.query(
-      `INSERT INTO USUARIO (rut, nombre_usuario, contrasena_hash, rol, correo_usuario)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id_usuario, rut, nombre_usuario, rol, correo_usuario`,
+      `INSERT INTO USUARIO (rut, nombre_usuario, contrasena_hash, rol, correo_usuario, correo_verificado)
+       VALUES ($1, $2, $3, $4, $5, FALSE)
+       RETURNING id_usuario, rut, nombre_usuario, rol, correo_usuario, correo_verificado`,
       [rutNormalizado, nombreLimpio, hash, rolFinal, correoNormalizado]
     );
     const nuevoUsuario = rows[0];
@@ -71,16 +114,23 @@ exports.register = async (req, res) => {
       nuevoUsuario.id_usuario
     );
 
-    // Envío de correo de bienvenida (no bloqueante)
+    // Envío de bienvenida + correo de confirmación (no bloqueantes)
     enviarBienvenida({
       correo: correoNormalizado,
       nombre: nombreLimpio,
       designacionesVinculadas: cantidadVinculadas,
     }).catch(() => {});
 
+    generarYEnviarVerificacion({
+      idUsuario: nuevoUsuario.id_usuario,
+      nombre: nombreLimpio,
+      correo: correoNormalizado,
+      tipo: 'PRINCIPAL',
+    }).catch(() => {});
+
     const mensaje = cantidadVinculadas > 0
-      ? `Usuario registrado con éxito. Se vincularon ${cantidadVinculadas} invitación(es) pendiente(s) como albacea.`
-      : 'Usuario registrado con éxito.';
+      ? `Usuario registrado con éxito. Enviamos un código de confirmación a tu correo y vinculamos ${cantidadVinculadas} invitación(es) de albacea.`
+      : 'Usuario registrado con éxito. Enviamos un enlace y código de confirmación a tu correo.';
 
     return enviarRespuesta(res, 201, mensaje, {
       ...nuevoUsuario,
@@ -124,12 +174,20 @@ exports.login = async (req, res) => {
       user = rows[0] || null;
     }
 
-    // Mismo mensaje si falla el correo/RUT, la contraseña o si la cuenta es solo OAuth (sin contrasena_hash)
     const passwordValida =
       user && user.contrasena_hash ? await bcrypt.compare(password, user.contrasena_hash) : false;
 
     if (!passwordValida) {
       return enviarRespuesta(res, 401, 'Credenciales inválidas.', null);
+    }
+
+    if (user.activo === false) {
+      return enviarRespuesta(
+        res,
+        403,
+        'Tu cuenta se encuentra suspendida por administración. Contacta a soporte para más información.',
+        null
+      );
     }
 
     // Vinculación defensiva si existían invitaciones por RUT aún sin enlazar
@@ -171,6 +229,14 @@ exports.login = async (req, res) => {
         rut: user.rut,
         nombre: user.nombre_usuario,
         correo: user.correo_usuario,
+        correo_verificado: Boolean(user.correo_verificado),
+        correo_alternativo: user.correo_alternativo || null,
+        correo_alternativo_verificado: Boolean(user.correo_alternativo_verificado),
+        nombre_contacto_confianza: user.nombre_contacto_confianza || null,
+        correo_contacto_confianza: user.correo_contacto_confianza || null,
+        frecuencia_checkin_dias: user.frecuencia_checkin_dias || 180,
+        plazo_gracia_dias: user.plazo_gracia_dias || 7,
+        notificar_recordatorios: user.notificar_recordatorios !== false,
         rol: user.rol,
         avatar_url: user.avatar_url || null,
         requiere_rut: !user.rut,
@@ -192,8 +258,11 @@ exports.perfil = async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT id_usuario AS id, rut, nombre_usuario AS nombre, correo_usuario AS correo,
-              rol, avatar_url, (contrasena_hash IS NOT NULL) AS tiene_password,
-              (rut IS NULL) AS requiere_rut, fecha_ultimo_checkin
+              rol, activo, avatar_url, (contrasena_hash IS NOT NULL) AS tiene_password,
+              (rut IS NULL) AS requiere_rut, fecha_ultimo_checkin,
+              frecuencia_checkin_dias, plazo_gracia_dias,
+              correo_verificado, correo_alternativo, correo_alternativo_verificado,
+              nombre_contacto_confianza, correo_contacto_confianza, notificar_recordatorios
        FROM USUARIO
        WHERE id_usuario = $1`,
       [req.user.id]
@@ -228,6 +297,271 @@ exports.perfil = async (req, res) => {
   }
 };
 
+// PUT /api/auth/preferencias
+exports.actualizarPreferencias = async (req, res) => {
+  try {
+    const {
+      frecuencia_checkin_dias,
+      plazo_gracia_dias,
+      correo_alternativo,
+      nombre_contacto_confianza,
+      correo_contacto_confianza,
+      notificar_recordatorios,
+    } = req.body || {};
+
+    const freq = Number(frecuencia_checkin_dias || 180);
+    const gracia = Number(plazo_gracia_dias || 7);
+
+    if (![30, 90, 180, 365].includes(freq)) {
+      return enviarRespuesta(res, 400, 'La frecuencia de Check-in permitida es 30, 90, 180 o 365 días.', null);
+    }
+
+    if (![3, 7, 14].includes(gracia)) {
+      return enviarRespuesta(res, 400, 'El plazo de gracia permitido es 3, 7 o 14 días.', null);
+    }
+
+    const actualRes = await db.query(
+      `SELECT nombre_usuario, correo_usuario, correo_alternativo, correo_alternativo_verificado
+       FROM USUARIO WHERE id_usuario = $1`,
+      [req.user.id]
+    );
+    const actual = actualRes.rows[0];
+    if (!actual) return enviarRespuesta(res, 404, 'Usuario no encontrado.', null);
+
+    const altLimpio = correo_alternativo ? String(correo_alternativo).trim().toLowerCase() : null;
+    if (altLimpio) {
+      if (!validarEmail(altLimpio)) {
+        return enviarRespuesta(res, 400, 'El correo alternativo ingresado no tiene un formato válido.', null);
+      }
+      if (altLimpio === actual.correo_usuario.toLowerCase()) {
+        return enviarRespuesta(res, 400, 'El correo alternativo debe ser distinto a tu correo principal.', null);
+      }
+    }
+
+    const confCorreoLimpio = correo_contacto_confianza
+      ? String(correo_contacto_confianza).trim().toLowerCase()
+      : null;
+    if (confCorreoLimpio && !validarEmail(confCorreoLimpio)) {
+      return enviarRespuesta(res, 400, 'El correo del contacto de confianza no tiene un formato válido.', null);
+    }
+
+    const confNombreLimpio = nombre_contacto_confianza
+      ? String(nombre_contacto_confianza).trim().slice(0, 150)
+      : null;
+
+    const cambioAlternativo = altLimpio !== (actual.correo_alternativo || null);
+    const altVerificado = altLimpio ? (cambioAlternativo ? false : Boolean(actual.correo_alternativo_verificado)) : false;
+
+    const { rows } = await db.query(
+      `UPDATE USUARIO
+       SET frecuencia_checkin_dias = $1,
+           plazo_gracia_dias = $2,
+           correo_alternativo = $3,
+           correo_alternativo_verificado = $4,
+           nombre_contacto_confianza = $5,
+           correo_contacto_confianza = $6,
+           notificar_recordatorios = $7
+       WHERE id_usuario = $8
+       RETURNING id_usuario AS id, rut, nombre_usuario AS nombre, correo_usuario AS correo,
+                 rol, avatar_url, frecuencia_checkin_dias, plazo_gracia_dias,
+                 correo_verificado, correo_alternativo, correo_alternativo_verificado,
+                 nombre_contacto_confianza, correo_contacto_confianza, notificar_recordatorios`,
+      [
+        freq,
+        gracia,
+        altLimpio,
+        altVerificado,
+        confNombreLimpio,
+        confCorreoLimpio,
+        notificar_recordatorios !== false,
+        req.user.id,
+      ]
+    );
+
+    await registrarAuditoria(
+      `Actualizó preferencias de vigilancia (Check-in cada ${freq}d, gracia ${gracia}d)`,
+      obtenerIp(req),
+      req.user.id
+    );
+
+    let envioVerifAlt = false;
+    if (altLimpio && cambioAlternativo) {
+      await generarYEnviarVerificacion({
+        idUsuario: req.user.id,
+        nombre: actual.nombre_usuario,
+        correo: altLimpio,
+        tipo: 'ALTERNATIVO',
+      }).catch(() => {});
+      envioVerifAlt = true;
+    }
+
+    return enviarRespuesta(
+      res,
+      200,
+      envioVerifAlt
+        ? 'Preferencias guardadas. Enviamos un código de confirmación a tu correo alternativo.'
+        : 'Preferencias de vigencia y notificaciones guardadas correctamente.',
+      rows[0]
+    );
+  } catch (e) {
+    console.error('Error en actualizarPreferencias:', e);
+    return enviarRespuesta(res, 500, 'Error interno del servidor al guardar preferencias.', null);
+  }
+};
+
+// POST /api/auth/verificar-correo/enviar
+exports.enviarCodigoVerificacion = async (req, res) => {
+  try {
+    const tipo = String(req.body?.tipo || 'PRINCIPAL').trim().toUpperCase();
+    if (!['PRINCIPAL', 'ALTERNATIVO'].includes(tipo)) {
+      return enviarRespuesta(res, 400, "El tipo debe ser 'PRINCIPAL' o 'ALTERNATIVO'.", null);
+    }
+
+    const { rows } = await db.query(
+      `SELECT nombre_usuario, correo_usuario, correo_verificado, correo_alternativo, correo_alternativo_verificado
+       FROM USUARIO WHERE id_usuario = $1`,
+      [req.user.id]
+    );
+    const u = rows[0];
+    if (!u) return enviarRespuesta(res, 404, 'Usuario no encontrado.', null);
+
+    const correoDestino = tipo === 'PRINCIPAL' ? u.correo_usuario : u.correo_alternativo;
+    if (!correoDestino) {
+      return enviarRespuesta(res, 400, 'Primero debes registrar un correo alternativo antes de confirmarlo.', null);
+    }
+
+    if ((tipo === 'PRINCIPAL' && u.correo_verificado) || (tipo === 'ALTERNATIVO' && u.correo_alternativo_verificado)) {
+      return enviarRespuesta(res, 200, 'Este correo ya se encuentra confirmado.', { ya_verificado: true });
+    }
+
+    await generarYEnviarVerificacion({
+      idUsuario: req.user.id,
+      nombre: u.nombre_usuario,
+      correo: correoDestino,
+      tipo,
+    });
+
+    return enviarRespuesta(
+      res,
+      200,
+      `Enviamos un código de 6 dígitos y enlace de confirmación a ${correoDestino}.`,
+      { correo_destino: correoDestino, tipo }
+    );
+  } catch (e) {
+    console.error('Error en enviarCodigoVerificacion:', e);
+    return enviarRespuesta(res, 500, 'Error al enviar el correo de confirmación.', null);
+  }
+};
+
+// POST /api/auth/verificar-correo/confirmar (autenticado con código de 6 dígitos)
+exports.confirmarVerificacionCorreo = async (req, res) => {
+  try {
+    const tipo = String(req.body?.tipo || 'PRINCIPAL').trim().toUpperCase();
+    const codigo = String(req.body?.codigo || '').trim();
+
+    if (!['PRINCIPAL', 'ALTERNATIVO'].includes(tipo) || !codigo) {
+      return enviarRespuesta(res, 400, 'Tipo y código de confirmación de 6 dígitos son obligatorios.', null);
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(codigo).digest('hex');
+
+    const tokenRes = await db.query(
+      `SELECT id_token, correo_destino
+       FROM EMAIL_VERIFICACION_TOKEN
+       WHERE id_usuario = $1 AND tipo = $2 AND token_hash = $3 AND usado = FALSE AND expira_en > NOW()
+       ORDER BY id_token DESC
+       LIMIT 1`,
+      [req.user.id, tipo, tokenHash]
+    );
+
+    if (!tokenRes.rows[0]) {
+      return enviarRespuesta(res, 400, 'El código de confirmación es incorrecto o ya expiró.', null);
+    }
+
+    await db.query('UPDATE EMAIL_VERIFICACION_TOKEN SET usado = TRUE WHERE id_token = $1', [
+      tokenRes.rows[0].id_token,
+    ]);
+
+    if (tipo === 'PRINCIPAL') {
+      await db.query('UPDATE USUARIO SET correo_verificado = TRUE WHERE id_usuario = $1', [req.user.id]);
+    } else {
+      await db.query(
+        'UPDATE USUARIO SET correo_alternativo_verificado = TRUE WHERE id_usuario = $1 AND LOWER(correo_alternativo) = LOWER($2)',
+        [req.user.id, tokenRes.rows[0].correo_destino]
+      );
+    }
+
+    await registrarAuditoria(
+      `Confirmó correo ${tipo.toLowerCase()} (${tokenRes.rows[0].correo_destino})`,
+      obtenerIp(req),
+      req.user.id
+    );
+
+    return enviarRespuesta(res, 200, `Correo ${tipo.toLowerCase()} confirmado correctamente.`, {
+      tipo,
+      verificado: true,
+    });
+  } catch (e) {
+    console.error('Error en confirmarVerificacionCorreo:', e);
+    return enviarRespuesta(res, 500, 'Error al confirmar el correo electrónico.', null);
+  }
+};
+
+// GET /api/auth/verificar-correo/enlace?correo=...&tipo=...&codigo=... (público desde botón del email)
+exports.confirmarVerificacionPorEnlace = async (req, res) => {
+  try {
+    const correo = String(req.query?.correo || '').trim().toLowerCase();
+    const tipo = String(req.query?.tipo || 'PRINCIPAL').trim().toUpperCase();
+    const codigo = String(req.query?.codigo || '').trim();
+
+    if (!correo || !codigo || !['PRINCIPAL', 'ALTERNATIVO'].includes(tipo)) {
+      return enviarRespuesta(res, 400, 'Enlace de confirmación incompleto o inválido.', null);
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(codigo).digest('hex');
+
+    const tokenRes = await db.query(
+      `SELECT id_token, id_usuario, correo_destino
+       FROM EMAIL_VERIFICACION_TOKEN
+       WHERE LOWER(correo_destino) = $1 AND tipo = $2 AND token_hash = $3 AND usado = FALSE AND expira_en > NOW()
+       ORDER BY id_token DESC
+       LIMIT 1`,
+      [correo, tipo, tokenHash]
+    );
+
+    if (!tokenRes.rows[0]) {
+      return enviarRespuesta(res, 400, 'El enlace de confirmación ya fue usado o expiró.', null);
+    }
+
+    const { id_token, id_usuario, correo_destino } = tokenRes.rows[0];
+    await db.query('UPDATE EMAIL_VERIFICACION_TOKEN SET usado = TRUE WHERE id_token = $1', [id_token]);
+
+    if (tipo === 'PRINCIPAL') {
+      await db.query('UPDATE USUARIO SET correo_verificado = TRUE WHERE id_usuario = $1', [id_usuario]);
+    } else {
+      await db.query(
+        'UPDATE USUARIO SET correo_alternativo_verificado = TRUE WHERE id_usuario = $1 AND LOWER(correo_alternativo) = LOWER($2)',
+        [id_usuario, correo_destino]
+      );
+    }
+
+    await registrarAuditoria(
+      `Confirmó correo ${tipo.toLowerCase()} vía enlace (${correo_destino})`,
+      obtenerIp(req),
+      id_usuario
+    );
+
+    return enviarRespuesta(res, 200, `¡Listo! Tu correo ${tipo.toLowerCase()} (${correo_destino}) quedó confirmado.`, {
+      tipo,
+      correo: correo_destino,
+      verificado: true,
+    });
+  } catch (e) {
+    console.error('Error en confirmarVerificacionPorEnlace:', e);
+    return enviarRespuesta(res, 500, 'Error al confirmar el enlace de verificación.', null);
+  }
+};
+
 // PUT /api/auth/change-password
 exports.changePassword = async (req, res) => {
   try {
@@ -250,7 +584,7 @@ exports.changePassword = async (req, res) => {
     }
 
     const { rows } = await db.query(
-      'SELECT id_usuario, contrasena_hash FROM USUARIO WHERE id_usuario = $1',
+      'SELECT id_usuario, nombre_usuario, correo_usuario, correo_alternativo, contrasena_hash FROM USUARIO WHERE id_usuario = $1',
       [req.user.id]
     );
 
@@ -281,7 +615,19 @@ exports.changePassword = async (req, res) => {
 
     await registrarAuditoria('Actualizó su contraseña de acceso', obtenerIp(req), req.user.id);
 
-    return enviarRespuesta(res, 200, 'Contraseña actualizada exitosamente.', null);
+    // Alerta de seguridad por correo (principal + alternativo si existe)
+    enviarAlertaCambioPassword({
+      correo: user.correo_usuario,
+      correoAlternativo: user.correo_alternativo,
+      nombre: user.nombre_usuario,
+    }).catch(() => {});
+
+    return enviarRespuesta(
+      res,
+      200,
+      'Contraseña actualizada exitosamente. Enviamos una alerta de seguridad a tu correo.',
+      null
+    );
   } catch (e) {
     console.error('Error en changePassword:', e);
     return enviarRespuesta(res, 500, 'Error interno del servidor al cambiar la contraseña.', null);
@@ -303,7 +649,6 @@ exports.forgotPassword = async (req, res) => {
       [correo]
     );
 
-    // Respuesta genérica para no revelar si un correo existe o no en el sistema
     const mensajeGenerico =
       'Si el correo está registrado, enviamos un código de recuperación de 6 dígitos (válido por 30 minutos).';
 
@@ -315,7 +660,6 @@ exports.forgotPassword = async (req, res) => {
     const codigo = String(crypto.randomInt(100000, 1000000));
     const tokenHash = crypto.createHash('sha256').update(codigo).digest('hex');
 
-    // Invalidar códigos previos sin usar del mismo usuario
     await db.query(
       'UPDATE RESET_PASSWORD_TOKEN SET usado = TRUE WHERE id_usuario = $1 AND usado = FALSE',
       [user.id_usuario]
@@ -327,7 +671,7 @@ exports.forgotPassword = async (req, res) => {
       [user.id_usuario, tokenHash]
     );
 
-    const urlBase = (process.env.FRONTEND_URL || 'http://localhost:8100').split(',')[0].trim();
+    const urlBase = obtenerUrlFrontend();
     const enlaceReset = `${urlBase}/recuperar?correo=${encodeURIComponent(user.correo_usuario)}&codigo=${codigo}`;
 
     await enviarRecuperacionPassword({
@@ -354,7 +698,12 @@ exports.resetPassword = async (req, res) => {
     const codigoLimpio = String(codigo || '').trim();
 
     if (!correo || !validarEmail(correo) || !codigoLimpio || !nuevaPassword) {
-      return enviarRespuesta(res, 400, 'Correo electrónico, código de 6 dígitos y nueva contraseña son obligatorios.', null);
+      return enviarRespuesta(
+        res,
+        400,
+        'Correo electrónico, código de 6 dígitos y nueva contraseña son obligatorios.',
+        null
+      );
     }
 
     if (typeof nuevaPassword !== 'string' || nuevaPassword.length < 8) {
@@ -362,7 +711,7 @@ exports.resetPassword = async (req, res) => {
     }
 
     const userRes = await db.query(
-      'SELECT id_usuario FROM USUARIO WHERE LOWER(correo_usuario) = $1',
+      'SELECT id_usuario, nombre_usuario, correo_usuario, correo_alternativo FROM USUARIO WHERE LOWER(correo_usuario) = $1',
       [correo]
     );
     const user = userRes.rows[0];
@@ -391,6 +740,12 @@ exports.resetPassword = async (req, res) => {
 
     await registrarAuditoria('Restableció su contraseña mediante código de recuperación', obtenerIp(req), user.id_usuario);
 
+    enviarAlertaCambioPassword({
+      correo: user.correo_usuario,
+      correoAlternativo: user.correo_alternativo,
+      nombre: user.nombre_usuario,
+    }).catch(() => {});
+
     return enviarRespuesta(res, 200, 'Contraseña restablecida con éxito. Ya puedes iniciar sesión.', null);
   } catch (e) {
     console.error('Error en resetPassword:', e);
@@ -399,7 +754,6 @@ exports.resetPassword = async (req, res) => {
 };
 
 // PUT /api/auth/completar-rut
-// Permite a usuarios creados vía Google OAuth registrar su RUT chileno y vincular invitaciones pendientes
 exports.completarRut = async (req, res) => {
   try {
     const { rut } = req.body || {};

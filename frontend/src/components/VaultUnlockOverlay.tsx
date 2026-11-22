@@ -19,7 +19,7 @@ export const VaultUnlockOverlay: React.FC<VaultUnlockOverlayProps> = ({ visible,
         {nombre ? `Abriendo el baúl de ${nombre}` : 'Abriendo tu Baúl Eterno'}
       </h2>
       <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(226, 238, 255, 0.85)' }}>
-        Verificando custodia y cifrado AES-256...
+        Verificando custodia y protección de seguridad...
       </p>
     </div>
   );

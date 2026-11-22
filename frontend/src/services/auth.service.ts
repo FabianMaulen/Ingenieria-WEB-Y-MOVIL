@@ -1,13 +1,21 @@
 import api, { ApiResponse } from './api';
 
 export type Rol = 'TITULAR' | 'ALBACEA' | 'ADMIN';
-export type ModoApp = 'TITULAR' | 'ALBACEA';
+export type ModoApp = 'TITULAR' | 'ALBACEA' | 'ADMIN';
 
 export interface Usuario {
   id: number;
   rut?: string | null;
   nombre: string;
   correo?: string;
+  correo_verificado?: boolean;
+  correo_alternativo?: string | null;
+  correo_alternativo_verificado?: boolean;
+  nombre_contacto_confianza?: string | null;
+  correo_contacto_confianza?: string | null;
+  frecuencia_checkin_dias?: number;
+  plazo_gracia_dias?: number;
+  notificar_recordatorios?: boolean;
   rol: Rol;
   avatar_url?: string | null;
   requiere_rut?: boolean;
@@ -18,6 +26,15 @@ export interface Usuario {
   total_designaciones?: number;
 }
 
+export interface PreferenciasPayload {
+  frecuencia_checkin_dias: number;
+  plazo_gracia_dias: number;
+  correo_alternativo: string;
+  nombre_contacto_confianza: string;
+  correo_contacto_confianza: string;
+  notificar_recordatorios: boolean;
+}
+
 export const AUTH_TOKEN_KEY = 'auth_token';
 
 export const guardarSesion = (token: string, usuario: Usuario) => {
@@ -25,9 +42,7 @@ export const guardarSesion = (token: string, usuario: Usuario) => {
   localStorage.setItem('usuario', JSON.stringify(usuario));
   localStorage.setItem('user_rol', usuario.rol);
   localStorage.setItem('user_nombre', usuario.nombre || 'Usuario');
-  if (!localStorage.getItem('modo_activo')) {
-    localStorage.setItem('modo_activo', 'TITULAR');
-  }
+  localStorage.setItem('modo_activo', usuario.rol === 'ADMIN' ? 'ADMIN' : 'TITULAR');
   window.dispatchEvent(new Event('auth-updated'));
 };
 
@@ -57,7 +72,41 @@ export const obtenerPerfil = async (): Promise<Usuario> => {
   localStorage.setItem('usuario', JSON.stringify(usuario));
   localStorage.setItem('user_nombre', usuario.nombre || 'Usuario');
   localStorage.setItem('user_rol', usuario.rol);
+  window.dispatchEvent(new Event('auth-updated'));
   return usuario;
+};
+
+export const actualizarPreferencias = async (payload: PreferenciasPayload) => {
+  const res = await api.put<ApiResponse<Usuario>>('/auth/preferencias', payload);
+  const actual = usuarioGuardado();
+  if (actual && res.data.data) {
+    const actualizado = { ...actual, ...res.data.data };
+    localStorage.setItem('usuario', JSON.stringify(actualizado));
+    window.dispatchEvent(new Event('auth-updated'));
+  }
+  return res.data;
+};
+
+export const enviarVerificacionCorreo = async (tipo: 'PRINCIPAL' | 'ALTERNATIVO') => {
+  const res = await api.post<ApiResponse<any>>('/auth/verificar-correo/enviar', { tipo });
+  return res.data;
+};
+
+export const confirmarVerificacionCorreo = async (tipo: 'PRINCIPAL' | 'ALTERNATIVO', codigo: string) => {
+  const res = await api.post<ApiResponse<any>>('/auth/verificar-correo/confirmar', { tipo, codigo });
+  await obtenerPerfil().catch(() => {});
+  return res.data;
+};
+
+export const confirmarVerificacionEnlace = async (
+  correo: string,
+  tipo: string,
+  codigo: string
+) => {
+  const res = await api.get<ApiResponse<any>>('/auth/verificar-correo/enlace', {
+    params: { correo, tipo, codigo },
+  });
+  return res.data;
 };
 
 export const cambiarPassword = async (passwordActual: string, nuevaPassword: string) => {

@@ -4,6 +4,7 @@ import { shieldCheckmarkOutline, alertCircleOutline, lockOpenOutline, checkmarkD
 
 interface VaultStatusProps {
   daysLeft: number;
+  totalCycleDays?: number;
   status: 'PROTEGIDA' | 'EN_REVISION' | 'LIBERADA';
   onCheckin: () => void;
   loading?: boolean;
@@ -11,11 +12,13 @@ interface VaultStatusProps {
 
 export const VaultStatusCard: React.FC<VaultStatusProps> = ({
   daysLeft,
+  totalCycleDays = 180,
   status,
   onCheckin,
   loading = false,
 }) => {
-  const porcentaje = Math.max(0, Math.min(100, Math.round((daysLeft / 180) * 100)));
+  const ciclo = Math.max(1, totalCycleDays);
+  const porcentaje = Math.max(0, Math.min(100, Math.round((daysLeft / ciclo) * 100)));
 
   const configEstado = {
     PROTEGIDA: {
@@ -65,7 +68,7 @@ export const VaultStatusCard: React.FC<VaultStatusProps> = ({
             {daysLeft}
           </span>
           <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--be-text-muted)', fontWeight: 600 }}>
-            días restantes
+            {status === 'EN_REVISION' ? 'días de gracia aprox.' : `de ${ciclo} días`}
           </span>
         </div>
       </div>
@@ -94,7 +97,8 @@ export const VaultStatusCard: React.FC<VaultStatusProps> = ({
 
       <p style={{ margin: '0 0 18px 0', fontSize: '0.88rem', color: 'var(--be-text-muted)', lineHeight: 1.5 }}>
         Confirma periódicamente tu actividad para mantener tu legado sellado por un nuevo ciclo de{' '}
-        <strong style={{ color: 'var(--be-text)' }}>180 días</strong> y desactivar cualquier alerta pendiente.
+        <strong style={{ color: 'var(--be-text)' }}>{ciclo} días</strong> y desactivar cualquier alerta pendiente.
+        Puedes cambiar esta frecuencia en <strong>Ajustes y Clave</strong>.
       </p>
 
       <button

@@ -124,8 +124,8 @@ export const Apertura: React.FC = () => {
             <div>
               <h2 className="be-page-title">Solicitud de Liberación</h2>
               <p className="be-page-subtitle">
-                Adjunta el certificado de defunción para activar el periodo de gracia de 72 horas. Debes figurar como
-                albacea validado del titular.
+                Adjunta el certificado de defunción para activar el plazo de gracia configurado por el titular. Debes
+                figurar como albacea validado del titular y no debe existir ya una apertura activa o liberada.
               </p>
             </div>
           </div>

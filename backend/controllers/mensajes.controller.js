@@ -5,6 +5,7 @@ const { registrarAuditoria } = require('../utils/auditoria'); // RNF-05
 const {
   normalizarRut,
   validarRut,
+  validarEmail,
   parsearIdEntero,
   parsearPaginacion,
   obtenerIp,
@@ -24,12 +25,17 @@ exports.listar = async (req, res) => {
     const [datosRes, totalRes] = await Promise.all([
       db.query(
         `SELECT m.id_mensaje, m.fecha_creacion, m.rut_destinatario,
-                COALESCE(u.nombre_usuario, d.nombre_albacea) AS nombre_destinatario
+                m.correo_destinatario, m.enviado_por_correo,
+                (m.rut_destinatario IS NULL) AS es_externo,
+                COALESCE(m.nombre_destinatario_externo, u.nombre_usuario, d.nombre_albacea) AS nombre_destinatario
          FROM MENSAJE_POSTUMO m
-         LEFT JOIN USUARIO u ON u.rut = m.rut_destinatario
-         LEFT JOIN DIRECTORIO_ALBACEAS d ON d.id_titular = m.id_usuario AND d.rut_albacea = m.rut_destinatario
+         LEFT JOIN USUARIO u ON m.rut_destinatario IS NOT NULL AND UPPER(u.rut) = UPPER(m.rut_destinatario)
+         LEFT JOIN DIRECTORIO_ALBACEAS d
+           ON m.rut_destinatario IS NOT NULL
+          AND d.id_titular = m.id_usuario
+          AND UPPER(d.rut_albacea) = UPPER(m.rut_destinatario)
          WHERE m.id_usuario = $1
-         ORDER BY m.id_mensaje
+         ORDER BY m.id_mensaje DESC
          LIMIT $2 OFFSET $3`,
         [req.user.id, limit, offset]
       ),
@@ -50,14 +56,68 @@ exports.listar = async (req, res) => {
 };
 
 // POST /api/mensajes
+// Soporta destinatario ALBACEA (por RUT) o EXTERNO (por nombre + correo, sin necesidad de cuenta).
 exports.crear = async (req, res) => {
   try {
-    const { rut_destinatario, contenido } = req.body || {};
+    const {
+      tipo_destinatario,
+      rut_destinatario,
+      nombre_destinatario,
+      correo_destinatario,
+      contenido,
+    } = req.body || {};
+
     const id_titular = req.user.id;
     const ip = obtenerIp(req);
 
-    if (!rut_destinatario || !contenido || !String(contenido).trim()) {
-      return enviarRespuesta(res, 400, 'El RUT del destinatario y el contenido son obligatorios.', null);
+    if (!contenido || !String(contenido).trim()) {
+      return enviarRespuesta(res, 400, 'El contenido del mensaje es obligatorio.', null);
+    }
+
+    const esExterno =
+      String(tipo_destinatario || '').toUpperCase() === 'EXTERNO' ||
+      (!rut_destinatario && Boolean(correo_destinatario));
+
+    const contenidoCifrado = cifrarTexto(String(contenido).trim());
+
+    if (esExterno) {
+      const nombreLimpio = String(nombre_destinatario || '').trim();
+      const correoLimpio = String(correo_destinatario || '').trim().toLowerCase();
+
+      if (nombreLimpio.length < 2) {
+        return enviarRespuesta(res, 400, 'Ingresa el nombre del destinatario externo.', null);
+      }
+      if (!correoLimpio || !validarEmail(correoLimpio)) {
+        return enviarRespuesta(res, 400, 'Ingresa un correo electrónico válido para el destinatario.', null);
+      }
+
+      const { rows } = await db.query(
+        `INSERT INTO MENSAJE_POSTUMO
+           (contenido_cifrado, rut_destinatario, nombre_destinatario_externo, correo_destinatario, id_usuario)
+         VALUES ($1, NULL, $2, $3, $4)
+         RETURNING id_mensaje, fecha_creacion, rut_destinatario,
+                   nombre_destinatario_externo AS nombre_destinatario,
+                   correo_destinatario, TRUE AS es_externo, enviado_por_correo`,
+        [contenidoCifrado, nombreLimpio, correoLimpio, id_titular]
+      );
+
+      await registrarAuditoria(
+        `Redactó un mensaje sellado (#${rows[0].id_mensaje}) para destinatario externo (${nombreLimpio} · ${correoLimpio})`,
+        ip,
+        id_titular
+      );
+
+      return enviarRespuesta(
+        res,
+        201,
+        'Mensaje sellado y cifrado con éxito. Se enviará automáticamente al correo indicado cuando se libere tu bóveda.',
+        rows[0]
+      );
+    }
+
+    // Modo ALBACEA (por RUT del directorio)
+    if (!rut_destinatario) {
+      return enviarRespuesta(res, 400, 'Debes indicar un albacea o un correo externo como destinatario.', null);
     }
 
     const rutNormalizado = normalizarRut(rut_destinatario);
@@ -65,34 +125,30 @@ exports.crear = async (req, res) => {
       return enviarRespuesta(res, 400, 'El RUT del destinatario no es válido.', null);
     }
 
-    // 1. Verificar que el destinatario pertenezca al Directorio de Albaceas del titular
     const albaceaQuery = await db.query(
-      `SELECT id_directorio, nombre_albacea
+      `SELECT id_directorio, nombre_albacea, email_albacea
        FROM DIRECTORIO_ALBACEAS
-       WHERE id_titular = $1 AND rut_albacea = $2 AND estado_validacion <> 'RECHAZADO'`,
+       WHERE id_titular = $1 AND UPPER(rut_albacea) = UPPER($2) AND estado_validacion <> 'RECHAZADO'`,
       [id_titular, rutNormalizado]
     );
     if (albaceaQuery.rows.length === 0) {
       return enviarRespuesta(
         res,
         403,
-        'Solo puedes enviar mensajes a contactos activos de tu Directorio de Albaceas.',
+        'Solo puedes asignar mensajes por RUT a contactos activos de tu Directorio de Albaceas.',
         null
       );
     }
 
-    // 2. Cifrar el mensaje con AES-256 (RNF-03)
-    const contenidoCifrado = cifrarTexto(String(contenido).trim());
-
-    // 3. Insertar en MENSAJE_POSTUMO
     const { rows } = await db.query(
-      `INSERT INTO MENSAJE_POSTUMO (contenido_cifrado, rut_destinatario, id_usuario)
-       VALUES ($1, $2, $3)
-       RETURNING id_mensaje, fecha_creacion, rut_destinatario`,
-      [contenidoCifrado, rutNormalizado, id_titular]
+      `INSERT INTO MENSAJE_POSTUMO
+         (contenido_cifrado, rut_destinatario, correo_destinatario, id_usuario)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id_mensaje, fecha_creacion, rut_destinatario, correo_destinatario,
+                 FALSE AS es_externo, enviado_por_correo`,
+      [contenidoCifrado, rutNormalizado, albaceaQuery.rows[0].email_albacea || null, id_titular]
     );
 
-    // 4. Auditoría (RNF-05)
     await registrarAuditoria(
       `Redactó un mensaje sellado (ID Mensaje: ${rows[0].id_mensaje}) para el RUT ${rutNormalizado}`,
       ip,
@@ -134,7 +190,7 @@ exports.actualizar = async (req, res) => {
       `UPDATE MENSAJE_POSTUMO
        SET contenido_cifrado = $1
        WHERE id_mensaje = $2 AND id_usuario = $3
-       RETURNING id_mensaje, fecha_creacion, rut_destinatario`,
+       RETURNING id_mensaje, fecha_creacion, rut_destinatario, correo_destinatario`,
       [cifrarTexto(String(contenido).trim()), id, id_titular]
     );
 

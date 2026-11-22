@@ -171,7 +171,8 @@ exports.callbackGoogle = async (req, res) => {
         const actualizado = await db.query(
           `UPDATE USUARIO
            SET google_id = $1,
-               avatar_url = COALESCE($2, avatar_url)
+               avatar_url = COALESCE($2, avatar_url),
+               correo_verificado = TRUE
            WHERE id_usuario = $3
            RETURNING *`,
           [googleId, avatarUrl, porCorreo.rows[0].id_usuario]
@@ -180,8 +181,8 @@ exports.callbackGoogle = async (req, res) => {
         await registrarAuditoria('Vinculó su cuenta existente con Google OAuth 2.0', obtenerIp(req), user.id_usuario);
       } else {
         const insertado = await db.query(
-          `INSERT INTO USUARIO (rut, nombre_usuario, contrasena_hash, google_id, avatar_url, rol, correo_usuario)
-           VALUES (NULL, $1, NULL, $2, $3, 'TITULAR', $4)
+          `INSERT INTO USUARIO (rut, nombre_usuario, contrasena_hash, google_id, avatar_url, rol, correo_usuario, correo_verificado)
+           VALUES (NULL, $1, NULL, $2, $3, 'TITULAR', $4, TRUE)
            RETURNING *`,
           [nombre, googleId, avatarUrl, correo]
         );
@@ -191,8 +192,21 @@ exports.callbackGoogle = async (req, res) => {
         enviarBienvenida({ correo, nombre, designacionesVinculadas: 0 }).catch(() => {});
       }
     } else if (avatarUrl && user.avatar_url !== avatarUrl) {
-      await db.query('UPDATE USUARIO SET avatar_url = $1 WHERE id_usuario = $2', [avatarUrl, user.id_usuario]);
+      await db.query('UPDATE USUARIO SET avatar_url = $1, correo_verificado = TRUE WHERE id_usuario = $2', [
+        avatarUrl,
+        user.id_usuario,
+      ]);
       user.avatar_url = avatarUrl;
+      user.correo_verificado = true;
+    }
+
+    if (user.activo === false) {
+      return enviarRespuesta(
+        res,
+        403,
+        'Tu cuenta se encuentra suspendida por administración. Contacta a soporte para más información.',
+        null
+      );
     }
 
     // 5. Vinculación defensiva de albacea si el usuario ya tiene RUT
@@ -231,6 +245,14 @@ exports.callbackGoogle = async (req, res) => {
         rut: user.rut,
         nombre: user.nombre_usuario,
         correo: user.correo_usuario,
+        correo_verificado: true,
+        correo_alternativo: user.correo_alternativo || null,
+        correo_alternativo_verificado: Boolean(user.correo_alternativo_verificado),
+        nombre_contacto_confianza: user.nombre_contacto_confianza || null,
+        correo_contacto_confianza: user.correo_contacto_confianza || null,
+        frecuencia_checkin_dias: user.frecuencia_checkin_dias || 180,
+        plazo_gracia_dias: user.plazo_gracia_dias || 7,
+        notificar_recordatorios: user.notificar_recordatorios !== false,
         rol: user.rol,
         avatar_url: user.avatar_url || null,
         requiere_rut: !user.rut,
