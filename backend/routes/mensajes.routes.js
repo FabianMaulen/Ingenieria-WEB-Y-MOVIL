@@ -6,7 +6,8 @@ const mensajesController = require('../controllers/mensajes.controller');
 router.use(verificarToken);
 
 router.get('/', mensajesController.listar);
-router.post('/', mensajesController.crear);
+router.post('/', mensajesController.subirAdjuntoOpcional, mensajesController.crear);
+router.get('/:id/adjunto', mensajesController.descargarAdjunto);
 router.put('/:id', mensajesController.actualizar);
 router.delete('/:id', mensajesController.eliminar);
 

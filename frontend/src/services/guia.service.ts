@@ -37,6 +37,8 @@ export interface MensajeGuia {
   id_titular: number;
   nombre_titular: string;
   contenido: string;
+  tiene_archivo?: boolean;
+  archivo_nombre?: string | null;
 }
 
 export interface TitularLiberado {

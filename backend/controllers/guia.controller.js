@@ -101,6 +101,7 @@ exports.obtenerGuia = async (req, res) => {
       rutAlbacea
         ? db.query(
             `SELECT m.id_mensaje, m.fecha_creacion, m.contenido_cifrado, m.rut_destinatario,
+                    m.archivo_nombre, (m.archivo_cifrado IS NOT NULL) AS tiene_archivo,
                     t.id_usuario AS id_titular, t.nombre_usuario AS nombre_titular
              FROM MENSAJE_POSTUMO m
              JOIN USUARIO t ON t.id_usuario = m.id_usuario
@@ -143,6 +144,8 @@ exports.obtenerGuia = async (req, res) => {
         id_titular: m.id_titular,
         nombre_titular: m.nombre_titular,
         contenido,
+        tiene_archivo: Boolean(m.tiene_archivo),
+        archivo_nombre: m.archivo_nombre || null,
       };
     });
 

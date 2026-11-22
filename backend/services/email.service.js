@@ -51,7 +51,7 @@ function envolverPlantillaHtml(titulo, cuerpoHtml, colorHeader = '#173d70') {
  * Envía correo de forma segura (no lanza excepción si falla el SMTP para no interrumpir flujos críticos).
  * Si SMTP_USER/SMTP_PASS no están configurados aún, muestra una vista previa en la consola del servidor.
  */
-async function enviarCorreo({ para, asunto, html, texto }) {
+async function enviarCorreo({ para, asunto, html, texto, adjuntos = [] }) {
   const destinatarios = (Array.isArray(para) ? para : [para])
     .map((c) => String(c || '').trim().toLowerCase())
     .filter(Boolean);
@@ -61,19 +61,23 @@ async function enviarCorreo({ para, asunto, html, texto }) {
 
   const transporter = obtenerTransporter();
   if (!transporter) {
-    console.log(`\n[EMAIL SIMULADO -> ${unicos.join(', ')}] Asunto: ${asunto}\n${texto || ''}\n`);
+    console.log(`\n[EMAIL SIMULADO -> ${unicos.join(', ')}] Asunto: ${asunto}${adjuntos.length ? ` [Adjuntos: ${adjuntos.map((a) => a.filename).join(', ')}]` : ''}\n${texto || ''}\n`);
     return { enviado: false, modo: 'simulado-consola', destinatarios: unicos };
   }
 
   try {
     const remitente = process.env.SMTP_FROM || `Baúl Eterno <${process.env.SMTP_USER}>`;
-    const info = await transporter.sendMail({
+    const mailOptions = {
       from: remitente,
       to: unicos.join(', '),
       subject: asunto,
       text: texto,
       html,
-    });
+    };
+    if (Array.isArray(adjuntos) && adjuntos.length > 0) {
+      mailOptions.attachments = adjuntos;
+    }
+    const info = await transporter.sendMail(mailOptions);
     return { enviado: true, modo: 'smtp', messageId: info.messageId, destinatarios: unicos };
   } catch (error) {
     console.error(`[EMAIL ERROR -> ${unicos.join(', ')}]`, error.message);
@@ -484,21 +488,30 @@ exports.enviarCartaPostumaExterna = async ({
   nombreTitular,
   contenido,
   fechaCreacion,
+  adjuntos = [],
 }) => {
   const fechaTexto = fechaCreacion
     ? new Date(fechaCreacion).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })
     : '';
+  const notaAdjunto =
+    Array.isArray(adjuntos) && adjuntos.length > 0
+      ? `<p style="background:#eef4fb;border-left:4px solid #1e5091;padding:10px 14px;border-radius:6px;font-size:13px;">
+           <strong>Archivo adjunto incluido:</strong> ${adjuntos.map((a) => a.filename).join(', ')} (resguardado de forma cifrada hasta esta entrega).
+         </p>`
+      : '';
   return enviarCorreo({
     para: correoDestinatario,
     asunto: `Mensaje personal resguardado de ${nombreTitular} — Baúl Eterno`,
-    texto: `Hola ${nombreDestinatario},\n\n${nombreTitular} dejó un mensaje privado resguardado para ti en Baúl Eterno${fechaTexto ? ` (redactado el ${fechaTexto})` : ''}.\n\n---\n${contenido}\n---`,
+    texto: `Hola ${nombreDestinatario},\n\n${nombreTitular} dejó un mensaje privado resguardado para ti en Baúl Eterno${fechaTexto ? ` (redactado el ${fechaTexto})` : ''}.\n\n---\n${contenido}\n---${adjuntos.length ? `\n\nIncluye archivo adjunto: ${adjuntos.map((a) => a.filename).join(', ')}` : ''}`,
     html: envolverPlantillaHtml(
       `Un mensaje personal de ${nombreTitular}`,
       `<p>Hola <strong>${nombreDestinatario}</strong>,</p>
        <p>Te escribimos desde <strong>Baúl Eterno</strong> con mucho respeto. <strong>${nombreTitular}</strong> resguardó esta carta privada para que te fuera entregada al momento de liberarse su bóveda${fechaTexto ? ` (sellada el ${fechaTexto})` : ''}:</p>
        <div style="background:#f8fafc;border:1px solid #d9e2ec;border-left:4px solid #8b6343;padding:16px 18px;border-radius:8px;white-space:pre-wrap;color:#1e293b;margin:18px 0;font-size:14.5px;line-height:1.65;">${contenido}</div>
+       ${notaAdjunto}
        <p style="font-size:12px;color:#64748b;">Esta carta se mantuvo cifrada y confidencial hasta la liberación autorizada de la bóveda.</p>`
     ),
+    adjuntos,
   });
 };
 

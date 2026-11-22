@@ -252,11 +252,16 @@ WHERE u.boveda_activa = FALSE
     OR EXISTS (SELECT 1 FROM DIRECTORIO_ALBACEAS d WHERE d.id_titular = u.id_usuario)
   );
 
--- 6g. Bóveda documental cifrada en reposo para pólizas (AES-256-CBC en disco)
+-- 6g. Bóveda documental cifrada en reposo (pólizas y archivos adjuntos a cartas póstumas)
 ALTER TABLE POLIZA
   ADD COLUMN IF NOT EXISTS documento_cifrado VARCHAR(180) NULL,
   ADD COLUMN IF NOT EXISTS documento_nombre VARCHAR(200) NULL,
   ADD COLUMN IF NOT EXISTS documento_mime VARCHAR(80) NULL;
+
+ALTER TABLE MENSAJE_POSTUMO
+  ADD COLUMN IF NOT EXISTS archivo_cifrado VARCHAR(180) NULL,
+  ADD COLUMN IF NOT EXISTS archivo_nombre VARCHAR(200) NULL,
+  ADD COLUMN IF NOT EXISTS archivo_mime VARCHAR(80) NULL;
 
 -- 7. Índices recomendados
 CREATE INDEX IF NOT EXISTS idx_directorio_titular ON DIRECTORIO_ALBACEAS(id_titular);

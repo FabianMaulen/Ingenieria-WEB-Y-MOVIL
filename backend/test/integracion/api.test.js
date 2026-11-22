@@ -358,7 +358,7 @@ describe('Reglas de negocio: Pólizas, Albaceas (máx. 5), Mensajes externos, Co
     assert.equal(res.body.data.boveda_activa, true);
   });
 
-  test('GET /api/boveda/kit-emergencia genera y entrega un PDF válido con cabecera %PDF-', async () => {
+  test('GET /api/boveda/kit-emergencia genera y entrega un PDF discreto válido con cabecera %PDF-', async () => {
     let paso = 0;
     mock.method(db, 'query', async () => {
       paso += 1;
@@ -369,24 +369,16 @@ describe('Reglas de negocio: Pólizas, Albaceas (máx. 5), Mensajes externos, Co
               id_usuario: 10,
               rut: '12345678-5',
               nombre_usuario: 'Roberto Morales',
-              correo_usuario: 'roberto@correo.cl',
-              correo_verificado: true,
-              correo_alternativo: null,
-              nombre_contacto_confianza: null,
-              correo_contacto_confianza: null,
               boveda_activa: true,
-              terminos_aceptados_en: new Date().toISOString(),
-              frecuencia_checkin_dias: 180,
-              plazo_gracia_dias: 7,
-              fecha_ultimo_checkin: new Date().toISOString(),
             },
           ],
         };
       }
-      if (paso === 2) return { rows: [{ nombre: 'Camila', correo: 'camila@cl', rut_albacea: '19876543-0', parentesco: 'Hijo/a', estado_validacion: 'VALIDADO' }] };
-      if (paso === 3) return { rows: [{ tipo_seguro: 'Vida', aseguradora: 'Consorcio', numero_poliza: 'POL-1', ubicacion_fisica: 'Escritorio', monto_referencial: '50000000', tiene_documento: true }] };
-      if (paso === 4) return { rows: [{ plataforma: 'Drive', categoria: 'Digital', instruccion: 'Descargar fotos' }] };
-      if (paso === 5) return { rows: [{ total_cartas: 2 }] };
+      if (paso === 2) {
+        return {
+          rows: [{ total_albaceas: 2, total_polizas: 3, total_inventario: 2, total_cartas: 1 }],
+        };
+      }
       return { rows: [], rowCount: 1 };
     });
 
@@ -422,6 +414,28 @@ describe('Reglas de negocio: Pólizas, Albaceas (máx. 5), Mensajes externos, Co
 
     const res = await request(app)
       .get('/api/polizas/7/documento')
+      .set('Authorization', `Bearer ${tokenTitular}`);
+
+    assert.equal(res.status, 403);
+    assert.match(res.body.mensaje, /no tienes autorización/i);
+  });
+
+  test('GET /api/mensajes/:id/adjunto rechaza con 403 a usuarios no autorizados', async () => {
+    mock.method(db, 'query', async () => ({
+      rows: [
+        {
+          id_mensaje: 15,
+          id_usuario: 99,
+          archivo_cifrado: 'mensaje-15.enc',
+          archivo_nombre: 'carta.pdf',
+          archivo_mime: 'application/pdf',
+          autorizado: false,
+        },
+      ],
+    }));
+
+    const res = await request(app)
+      .get('/api/mensajes/15/adjunto')
       .set('Authorization', `Bearer ${tokenTitular}`);
 
     assert.equal(res.status, 403);

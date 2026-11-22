@@ -39,6 +39,7 @@ import { VaultLoader } from '../components/VaultLoader';
 import { mensajeError } from '../services/api';
 import { obtenerPerfil, usuarioGuardado } from '../services/auth.service';
 import { descargarDocumentoPoliza } from '../services/polizas.service';
+import { descargarAdjuntoMensaje } from '../services/mensajes.service';
 import {
   obtenerDesignaciones,
   responderDesignacion,
@@ -130,6 +131,15 @@ export const Guia: React.FC = () => {
   const handleDescargarRespaldoPoliza = async (idPoliza: number, nombre?: string | null) => {
     try {
       await descargarDocumentoPoliza(idPoliza, nombre);
+    } catch (error) {
+      setToastColor('danger');
+      setToastMsg(mensajeError(error));
+    }
+  };
+
+  const handleDescargarAdjuntoCarta = async (idMensaje: number, nombre?: string | null) => {
+    try {
+      await descargarAdjuntoMensaje(idMensaje, nombre);
     } catch (error) {
       setToastColor('danger');
       setToastMsg(mensajeError(error));
@@ -530,6 +540,19 @@ export const Guia: React.FC = () => {
                         <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--be-text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                           {msg.contenido}
                         </p>
+                        {msg.tiene_archivo && (
+                          <div style={{ marginTop: '10px' }}>
+                            <button
+                              type="button"
+                              className="be-btn be-btn-outline"
+                              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                              onClick={() => handleDescargarAdjuntoCarta(msg.id_mensaje, msg.archivo_nombre)}
+                            >
+                              <IonIcon icon={downloadOutline} />
+                              Descargar archivo adjunto ({msg.archivo_nombre || 'archivo'})
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
@@ -753,6 +776,19 @@ export const Guia: React.FC = () => {
                         <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--be-text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                           {msg.contenido}
                         </p>
+                        {msg.tiene_archivo && (
+                          <div style={{ marginTop: '10px' }}>
+                            <button
+                              type="button"
+                              className="be-btn be-btn-outline"
+                              style={{ padding: '6px 12px', fontSize: '0.76rem' }}
+                              onClick={() => handleDescargarAdjuntoCarta(msg.id_mensaje, msg.archivo_nombre)}
+                            >
+                              <IonIcon icon={downloadOutline} />
+                              Descargar archivo adjunto ({msg.archivo_nombre || 'archivo'})
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}

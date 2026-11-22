@@ -182,7 +182,7 @@ export const AppMenu: React.FC = () => {
             {
               '--background': 'var(--ion-toolbar-background)',
               '--color': 'var(--ion-toolbar-color)',
-              '--min-height': '56px',
+              '--min-height': '64px',
               '--padding-start': '12px',
               '--padding-end': '12px',
               borderBottom: '1px solid rgba(216, 163, 85, 0.22)',
@@ -192,8 +192,8 @@ export const AppMenu: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0' }}>
             <div
               style={{
-                width: '36px',
-                height: '36px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '10px',
                 background: 'rgba(255, 255, 255, 0.12)',
                 border: '1px solid rgba(255, 255, 255, 0.22)',
@@ -203,36 +203,41 @@ export const AppMenu: React.FC = () => {
                 flexShrink: 0,
               }}
             >
-              <VaultChestIcon size={30} mode="static" />
+              <VaultChestIcon size={32} mode="static" />
             </div>
-            <div style={{ minWidth: 0, lineHeight: 1.15 }}>
+            <div style={{ minWidth: 0 }}>
               <div
                 style={{
                   fontFamily: 'var(--be-font-serif)',
-                  fontSize: '1.05rem',
+                  fontSize: '1.06rem',
                   fontWeight: 700,
                   color: '#ffffff',
-                  whiteSpace: 'nowrap',
+                  lineHeight: 1.15,
+                  marginBottom: '2px',
                 }}
               >
                 Baúl Eterno
               </div>
               <div
                 style={{
-                  fontSize: '0.67rem',
+                  fontSize: '0.66rem',
                   fontWeight: 600,
                   color: '#d8c3ae',
-                  letterSpacing: '0.02em',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  letterSpacing: '0.015em',
+                  lineHeight: 1.22,
                 }}
               >
-                {enModoAdmin
-                  ? 'Consola de Administración'
-                  : enModoAlbacea
-                  ? 'Portal de Custodia Albacea'
-                  : 'Resguardo hoy, tranquilidad mañana'}
+                {enModoAdmin ? (
+                  'Consola de Administración'
+                ) : enModoAlbacea ? (
+                  'Portal de Custodia Albacea'
+                ) : (
+                  <>
+                    Resguardo hoy,
+                    <br />
+                    tranquilidad mañana
+                  </>
+                )}
               </div>
             </div>
           </div>

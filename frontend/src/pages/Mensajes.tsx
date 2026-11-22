@@ -17,11 +17,20 @@ import {
   documentTextOutline,
   mailOutline,
   peopleOutline,
+  attachOutline,
+  downloadOutline,
+  closeCircleOutline,
 } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { VaultLoader } from '../components/VaultLoader';
-import { getMensajes, crearMensaje, eliminarMensaje, MensajeResumen } from '../services/mensajes.service';
+import {
+  getMensajes,
+  crearMensaje,
+  eliminarMensaje,
+  descargarAdjuntoMensaje,
+  MensajeResumen,
+} from '../services/mensajes.service';
 import { getAlbaceas, Albacea } from '../services/albaceas.service';
 import { mensajeError } from '../services/api';
 import { emailValido } from '../utils/rut';
@@ -55,6 +64,8 @@ export const Mensajes: React.FC = () => {
   const [nombreExterno, setNombreExterno] = useState('');
   const [correoExterno, setCorreoExterno] = useState('');
   const [contenido, setContenido] = useState('');
+  const [archivoAdjunto, setArchivoAdjunto] = useState<File | null>(null);
+  const [descargandoId, setDescargandoId] = useState<number | null>(null);
 
   const cargarDatos = async () => {
     try {
@@ -86,8 +97,8 @@ export const Mensajes: React.FC = () => {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!contenido.trim()) {
-      setErrorMsg('Debes redactar el contenido de tu mensaje.');
+    if (!contenido.trim() && !archivoAdjunto) {
+      setErrorMsg('Escribe tu mensaje o adjunta un archivo (PDF o foto) para sellar.');
       return;
     }
 
@@ -114,6 +125,7 @@ export const Mensajes: React.FC = () => {
           tipo_destinatario: 'ALBACEA',
           rut_destinatario: rutDestinatario.trim(),
           contenido: contenido.trim(),
+          archivo: archivoAdjunto,
         });
       } else {
         await crearMensaje({
@@ -121,18 +133,48 @@ export const Mensajes: React.FC = () => {
           nombre_destinatario: nombreExterno.trim(),
           correo_destinatario: correoExterno.trim().toLowerCase(),
           contenido: contenido.trim(),
+          archivo: archivoAdjunto,
         });
       }
 
       setContenido('');
       setNombreExterno('');
       setCorreoExterno('');
-      setToastMsg('Carta sellada y resguardada con cifrado de alto estándar.');
+      setArchivoAdjunto(null);
+      setToastMsg(
+        archivoAdjunto
+          ? 'Carta y archivo adjunto sellados con cifrado de alto estándar.'
+          : 'Carta sellada y resguardada con cifrado de alto estándar.'
+      );
       await cargarDatos();
     } catch (error) {
       setErrorMsg(mensajeError(error));
     } finally {
       setEnviando(false);
+    }
+  };
+
+  const handleSeleccionarArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('El archivo adjunto no puede superar los 5 MB.');
+      e.target.value = '';
+      return;
+    }
+    setErrorMsg('');
+    setArchivoAdjunto(file);
+    e.target.value = '';
+  };
+
+  const handleDescargarAdjunto = async (m: MensajeResumen) => {
+    try {
+      setDescargandoId(m.id_mensaje);
+      await descargarAdjuntoMensaje(m.id_mensaje, m.archivo_nombre);
+    } catch (error) {
+      setToastMsg(mensajeError(error));
+    } finally {
+      setDescargandoId(null);
     }
   };
 
@@ -309,15 +351,89 @@ export const Mensajes: React.FC = () => {
             </div>
 
             <div className="be-field">
-              <label className="be-label">Contenido confidencial *</label>
+              <label className="be-label">
+                Contenido confidencial {archivoAdjunto ? '(opcional si ya adjuntaste tu carta/archivo)' : '*'}
+              </label>
               <textarea
                 rows={5}
                 className="be-textarea"
-                placeholder="Escribe tu mensaje privado aquí..."
+                placeholder="Escribe tu mensaje privado aquí, o adjunta abajo una carta en PDF / fotografía especial..."
                 value={contenido}
                 onChange={(e) => setContenido(e.target.value)}
                 disabled={sinAlbaceasEnModoAlbacea}
               />
+            </div>
+
+            {/* Archivo cifrado adjunto (PDF o Fotografía, máx. 5 MB) */}
+            <div
+              className="be-field"
+              style={{
+                padding: '13px 15px',
+                borderRadius: '12px',
+                backgroundColor: 'var(--be-surface-alt)',
+                border: '1px dashed var(--be-border)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ flex: '1 1 220px' }}>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                    Adjuntar archivo cifrado (opcional · PDF o Foto)
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--be-text-muted)', marginTop: '2px' }}>
+                    Sube una carta escrita en PDF o una fotografía especial (máx. 5 MB). Quedará cifrada y se despachará
+                    junto con este mensaje al abrirse tu bóveda.
+                  </div>
+                </div>
+
+                {archivoAdjunto ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span
+                      className="be-badge be-badge-info"
+                      style={{ maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      title={archivoAdjunto.name}
+                    >
+                      <IonIcon icon={attachOutline} /> {archivoAdjunto.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setArchivoAdjunto(null)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--be-danger)',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                      }}
+                    >
+                      <IonIcon icon={closeCircleOutline} /> Quitar
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    className="be-btn be-btn-outline"
+                    style={{
+                      padding: '8px 13px',
+                      fontSize: '0.79rem',
+                      cursor: sinAlbaceasEnModoAlbacea ? 'not-allowed' : 'pointer',
+                      opacity: sinAlbaceasEnModoAlbacea ? 0.55 : 1,
+                    }}
+                  >
+                    <IonIcon icon={attachOutline} />
+                    Seleccionar PDF o Imagen
+                    <input
+                      type="file"
+                      accept=".pdf,image/jpeg,image/png,image/webp"
+                      onChange={handleSeleccionarArchivo}
+                      disabled={sinAlbaceasEnModoAlbacea}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                )}
+              </div>
             </div>
 
             {errorMsg && (
@@ -327,13 +443,14 @@ export const Mensajes: React.FC = () => {
             )}
 
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {contenido.trim().length > 0 && (
+              {(contenido.trim().length > 0 || archivoAdjunto) && (
                 <button
                   type="button"
                   className="be-btn be-btn-outline"
                   style={{ flex: '1 1 140px' }}
                   onClick={() => {
                     setContenido('');
+                    setArchivoAdjunto(null);
                     setErrorMsg('');
                   }}
                 >
@@ -385,6 +502,23 @@ export const Mensajes: React.FC = () => {
                         : `Albacea · RUT: ${m.rut_destinatario}`}{' '}
                       · Sellado el {new Date(m.fecha_creacion).toLocaleDateString('es-CL')}
                     </span>
+                    {m.tiene_archivo && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                        <span className="be-badge be-badge-info" style={{ fontSize: '0.72rem' }}>
+                          <IonIcon icon={attachOutline} /> {m.archivo_nombre || 'Archivo cifrado adjunto'}
+                        </span>
+                        <button
+                          type="button"
+                          className="be-btn be-btn-outline"
+                          style={{ padding: '3px 9px', fontSize: '0.72rem' }}
+                          disabled={descargandoId === m.id_mensaje}
+                          onClick={() => handleDescargarAdjunto(m)}
+                        >
+                          <IonIcon icon={downloadOutline} />
+                          {descargandoId === m.id_mensaje ? 'Descifrando...' : 'Descargar'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -377,12 +377,11 @@ export const Configuracion: React.FC = () => {
                 </div>
                 <div>
                   <h3 style={{ margin: '0 0 3px 0', fontSize: '1.02rem', fontWeight: 800, color: 'var(--be-text)' }}>
-                    Kit de Emergencia Patrimonial (PDF)
+                    Aviso Discreto de Bóveda / Kit QR (PDF)
                   </h3>
                   <p style={{ margin: 0, fontSize: '0.81rem', color: 'var(--be-text-muted)', lineHeight: 1.45 }}>
-                    Genera una guía imprimible con tu resumen de albaceas, seguros, inventario y un{' '}
-                    <strong>código QR</strong> directo al portal de consulta familiar (sin exponer contraseñas ni cartas
-                    selladas).
+                    Descarga una hoja imprimible con un <strong>código QR</strong> para orientar a tu familia hacia tu
+                    baúl en caso de contingencia, <strong>sin revelar montos, pólizas ni datos privados</strong>.
                   </p>
                 </div>
               </div>

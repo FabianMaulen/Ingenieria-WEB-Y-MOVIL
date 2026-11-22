@@ -10,8 +10,8 @@ RUN npm ci --omit=dev
 # Copiar código fuente del backend (excluyendo secretos y pruebas según .dockerignore)
 COPY . .
 
-# Crear carpeta de certificados con permisos para el usuario sin privilegios 'node'
-RUN mkdir -p /app/uploads/certificados && chown -R node:node /app
+# Crear carpetas de almacenamiento (certificados y bóveda cifrada) con permisos para el usuario 'node'
+RUN mkdir -p /app/uploads/certificados /app/uploads/boveda_cifrada && chown -R node:node /app
 
 USER node
 

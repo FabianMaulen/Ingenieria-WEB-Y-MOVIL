@@ -104,6 +104,9 @@ CREATE TABLE IF NOT EXISTS MENSAJE_POSTUMO (
   nombre_destinatario_externo VARCHAR(150) NULL,
   correo_destinatario VARCHAR(150) NULL,
   enviado_por_correo BOOLEAN NOT NULL DEFAULT FALSE,
+  archivo_cifrado VARCHAR(180) NULL,
+  archivo_nombre VARCHAR(200) NULL,
+  archivo_mime VARCHAR(80) NULL,
   id_usuario INT NOT NULL REFERENCES USUARIO(id_usuario) ON DELETE CASCADE,
   CONSTRAINT chk_mensaje_destinatario CHECK (rut_destinatario IS NOT NULL OR correo_destinatario IS NOT NULL)
 );

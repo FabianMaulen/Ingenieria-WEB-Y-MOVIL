@@ -592,10 +592,10 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <div>
                     <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--be-text)' }}>
-                      Kit de Emergencia Patrimonial (PDF con QR)
+                      Aviso Discreto de Bóveda / Kit QR (PDF)
                     </div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--be-text-muted)' }}>
-                      Respaldo imprimible con tu resumen y QR de orientación para tu familia, sin exponer secretos.
+                      Hoja privada con código QR para que tu familia sepa dónde consultar, sin exponer datos sensibles.
                     </div>
                   </div>
                 </div>

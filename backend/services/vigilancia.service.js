@@ -6,9 +6,11 @@
  *   hacia albaceas validados si el titular supera su frecuencia de Check-in sin responder.
  */
 
+const fs = require('fs');
+const path = require('path');
 const db = require('../db');
 const { registrarAuditoria } = require('../utils/auditoria');
-const { descifrarTexto } = require('../utils/cifrado');
+const { descifrarTexto, descifrarBuffer } = require('../utils/cifrado');
 const {
   enviarAlertaApertura,
   enviarAvisoContactoConfianza,
@@ -18,9 +20,12 @@ const {
   enviarCartaPostumaExterna,
 } = require('./email.service');
 
+const DIR_BOVEDA_CIFRADA = path.join(__dirname, '..', 'uploads', 'boveda_cifrada');
+
 async function entregarMensajesExternosPorCorreo(idTitular, nombreTitular) {
   const { rows } = await db.query(
-    `SELECT id_mensaje, fecha_creacion, contenido_cifrado, nombre_destinatario_externo, correo_destinatario
+    `SELECT id_mensaje, fecha_creacion, contenido_cifrado, nombre_destinatario_externo,
+            correo_destinatario, archivo_cifrado, archivo_nombre, archivo_mime
      FROM MENSAJE_POSTUMO
      WHERE id_usuario = $1
        AND rut_destinatario IS NULL
@@ -33,12 +38,25 @@ async function entregarMensajesExternosPorCorreo(idTitular, nombreTitular) {
   for (const m of rows) {
     try {
       const contenido = descifrarTexto(m.contenido_cifrado);
+      const adjuntos = [];
+      if (m.archivo_cifrado) {
+        const ruta = path.join(DIR_BOVEDA_CIFRADA, path.basename(m.archivo_cifrado));
+        if (fs.existsSync(ruta)) {
+          const bufferPlano = descifrarBuffer(fs.readFileSync(ruta));
+          adjuntos.push({
+            filename: m.archivo_nombre || `adjunto-${m.id_mensaje}`,
+            content: bufferPlano,
+            contentType: m.archivo_mime || 'application/octet-stream',
+          });
+        }
+      }
       await enviarCartaPostumaExterna({
         correoDestinatario: m.correo_destinatario,
         nombreDestinatario: m.nombre_destinatario_externo || 'Estimado/a',
         nombreTitular,
         contenido,
         fechaCreacion: m.fecha_creacion,
+        adjuntos,
       });
       await db.query('UPDATE MENSAJE_POSTUMO SET enviado_por_correo = TRUE WHERE id_mensaje = $1', [m.id_mensaje]);
       enviados += 1;
