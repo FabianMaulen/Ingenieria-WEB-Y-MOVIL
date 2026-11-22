@@ -8,6 +8,8 @@ import {
   login,
   obtenerUrlGoogle,
   rutaInicialUsuario,
+  esSoloAlbacea,
+  habilitarModoTitular,
 } from './auth.service';
 
 describe('Servicio de autenticación (auth.service.ts)', () => {
@@ -54,6 +56,12 @@ describe('Servicio de autenticación (auth.service.ts)', () => {
 
     expect(localStorage.getItem('modo_activo')).toBe('ALBACEA');
     expect(rutaInicialUsuario(invitado)).toBe('/guia');
+    expect(esSoloAlbacea(invitado)).toBe(true);
+
+    habilitarModoTitular(invitado.id);
+    expect(esSoloAlbacea(invitado)).toBe(false);
+    expect(localStorage.getItem('modo_activo')).toBe('TITULAR');
+    expect(rutaInicialUsuario(invitado)).toBe('/dashboard');
   });
 
   test('logout elimina completamente la sesión local', () => {

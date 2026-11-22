@@ -28,9 +28,16 @@ import {
   personCircleOutline,
   warningOutline,
   headsetOutline,
+  sparklesOutline,
 } from 'ionicons/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { logout, ModoApp, usuarioGuardado } from '../services/auth.service';
+import {
+  esSoloAlbacea,
+  habilitarModoTitular,
+  logout,
+  ModoApp,
+  usuarioGuardado,
+} from '../services/auth.service';
 import { obtenerDesignaciones } from '../services/guia.service';
 import { VaultChestIcon } from './VaultChestIcon';
 
@@ -51,6 +58,7 @@ export const AppMenu: React.FC = () => {
   });
   const [tieneDesignaciones, setTieneDesignaciones] = useState<boolean>(false);
   const [pendientes, setPendientes] = useState<number>(0);
+  const [soloAlbacea, setSoloAlbacea] = useState<boolean>(() => esSoloAlbacea(usuarioGuardado()));
   const [confirmarLogout, setConfirmarLogout] = useState<boolean>(false);
 
   const cerrarMenu = async () => {
@@ -74,6 +82,7 @@ export const AppMenu: React.FC = () => {
     setAvatarUrl(usuario?.avatar_url || null);
     const admin = rolGuardado === 'ADMIN';
     setEsAdmin(admin);
+    setSoloAlbacea(esSoloAlbacea(usuario));
 
     const token = localStorage.getItem('auth_token');
     if (!token) return;
@@ -87,6 +96,9 @@ export const AppMenu: React.FC = () => {
 
       setTieneDesignaciones(total > 0);
       setPendientes(cantPendientes);
+
+      const usuarioConDesig = usuario ? { ...usuario, total_designaciones: total } : null;
+      setSoloAlbacea(esSoloAlbacea(usuarioConDesig));
 
       if (total === 0 && localStorage.getItem('modo_activo') === 'ALBACEA') {
         const fallbackModo: ModoApp = admin ? 'ADMIN' : 'TITULAR';
@@ -169,8 +181,16 @@ export const AppMenu: React.FC = () => {
 
   const modosDisponibles: { id: ModoApp; label: string }[] = [];
   if (esAdmin) modosDisponibles.push({ id: 'ADMIN', label: 'Admin' });
-  modosDisponibles.push({ id: 'TITULAR', label: 'Mi Baúl' });
+  if (!soloAlbacea) modosDisponibles.push({ id: 'TITULAR', label: 'Mi Baúl' });
   if (tieneDesignaciones) modosDisponibles.push({ id: 'ALBACEA', label: 'Albacea' });
+
+  const handleIniciarComoTitular = async () => {
+    const u = usuarioGuardado();
+    habilitarModoTitular(u?.id);
+    setSoloAlbacea(false);
+    setModo('TITULAR');
+    await navegarYcerrar('/dashboard');
+  };
 
   const estiloItemCompacto = { '--min-height': '36px', fontSize: '0.86rem' } as React.CSSProperties;
 
@@ -528,6 +548,20 @@ export const AppMenu: React.FC = () => {
                 <IonIcon slot="start" icon={documentAttachOutline} />
                 <IonLabel>Solicitar Apertura</IonLabel>
               </IonItem>
+
+              {soloAlbacea && (
+                <div style={{ padding: '10px 8px 4px' }}>
+                  <button
+                    type="button"
+                    className="be-btn be-btn-outline be-btn-block"
+                    style={{ padding: '8px 10px', fontSize: '0.78rem' }}
+                    onClick={handleIniciarComoTitular}
+                  >
+                    <IonIcon icon={sparklesOutline} />
+                    Iniciar como Titular
+                  </button>
+                </div>
+              )}
             </>
           )}
         </IonList>

@@ -13,6 +13,7 @@ import {
   pulseOutline,
 } from 'ionicons/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { esSoloAlbacea, usuarioGuardado } from '../services/auth.service';
 
 /**
  * Barra de navegación inferior exclusiva para pantallas móviles (< 768px).
@@ -22,9 +23,10 @@ export const MobileBottomNav: React.FC = () => {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   const rol = localStorage.getItem('user_rol');
-  const modo = localStorage.getItem('modo_activo') || (rol === 'ADMIN' ? 'ADMIN' : 'TITULAR');
+  const soloAlbacea = esSoloAlbacea(usuarioGuardado());
+  const modo = localStorage.getItem('modo_activo') || (rol === 'ADMIN' ? 'ADMIN' : soloAlbacea ? 'ALBACEA' : 'TITULAR');
   const enModoAdmin = rol === 'ADMIN' && (modo === 'ADMIN' || pathname === '/admin');
-  const enModoAlbacea = !enModoAdmin && (modo === 'ALBACEA' || pathname === '/guia' || pathname === '/apertura');
+  const enModoAlbacea = !enModoAdmin && (soloAlbacea || modo === 'ALBACEA' || pathname === '/guia' || pathname === '/apertura');
 
   const itemsAdmin = [
     { path: '/admin?tab=resumen', label: 'Resumen', icon: analyticsOutline },
@@ -45,7 +47,9 @@ export const MobileBottomNav: React.FC = () => {
   const itemsAlbacea = [
     { path: '/guia', label: 'Panel', icon: helpCircleOutline },
     { path: '/apertura', label: 'Apertura', icon: documentAttachOutline },
-    { path: '/dashboard', label: 'Mi Baúl', icon: swapHorizontalOutline, switchToTitular: true },
+    ...(!soloAlbacea
+      ? [{ path: '/dashboard', label: 'Mi Baúl', icon: swapHorizontalOutline, switchToTitular: true }]
+      : []),
     { path: '/configuracion', label: 'Ajustes', icon: settingsOutline },
   ];
 

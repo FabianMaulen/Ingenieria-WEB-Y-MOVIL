@@ -26,6 +26,7 @@ import { descargarKitEmergenciaPdf } from '../services/boveda.service';
 import {
   activarBovedaPersonal,
   completarRutUsuario,
+  esSoloAlbacea,
   obtenerPerfil,
   usuarioGuardado,
 } from '../services/auth.service';
@@ -80,6 +81,11 @@ export const Dashboard: React.FC = () => {
 
   useIonViewWillEnter(() => {
     const u = usuarioGuardado();
+    if (esSoloAlbacea(u)) {
+      localStorage.setItem('modo_activo', 'ALBACEA');
+      navigate('/guia', { replace: true });
+      return;
+    }
     setNombreTitular(u?.nombre || localStorage.getItem('user_nombre') || 'Usuario');
     setRequiereRut(Boolean(u && (!u.rut || u.requiere_rut)));
     if (u?.correo_verificado !== undefined) setCorreoVerificado(Boolean(u.correo_verificado));
@@ -101,6 +107,11 @@ export const Dashboard: React.FC = () => {
       setRutPendiente('');
       setToastMsg(res.mensaje || 'RUT guardado correctamente.');
       setShowToast(true);
+      if (esSoloAlbacea(usuarioGuardado())) {
+        localStorage.setItem('modo_activo', 'ALBACEA');
+        navigate('/guia', { replace: true });
+        return;
+      }
       await cargarDatosDashboard();
     } catch (error) {
       setToastMsg(mensajeError(error));
@@ -124,6 +135,11 @@ export const Dashboard: React.FC = () => {
         ]);
 
       if (perfilActual) {
+        if (esSoloAlbacea(perfilActual)) {
+          localStorage.setItem('modo_activo', 'ALBACEA');
+          navigate('/guia', { replace: true });
+          return;
+        }
         setNombreTitular(perfilActual.nombre || 'Usuario');
         setCorreoUsuario(perfilActual.correo || '');
         setRequiereRut(Boolean(!perfilActual.rut || perfilActual.requiere_rut));

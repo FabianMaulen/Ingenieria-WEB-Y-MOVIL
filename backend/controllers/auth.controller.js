@@ -199,7 +199,7 @@ exports.login = async (req, res) => {
                WHEN estado_validacion = 'INVITADO' THEN 'PENDIENTE'
                ELSE estado_validacion
              END
-         WHERE rut_albacea = $2 AND id_usuario_invitado IS NULL`,
+         WHERE UPPER(rut_albacea) = UPPER($2) AND id_usuario_invitado IS NULL`,
         [user.id_usuario, user.rut]
       );
     }
@@ -897,12 +897,17 @@ exports.completarRut = async (req, res) => {
            nombre_albacea = $2,
            email_albacea = $3,
            estado_validacion = CASE WHEN estado_validacion = 'INVITADO' THEN 'PENDIENTE' ELSE estado_validacion END
-       WHERE rut_albacea = $4 AND id_usuario_invitado IS NULL
+       WHERE UPPER(rut_albacea) = UPPER($4) AND id_usuario_invitado IS NULL
        RETURNING id_directorio`,
       [req.user.id, rows[0].nombre, rows[0].correo, rutNormalizado]
     );
 
     const cant = vinculadas.rowCount || 0;
+    const desigTotalRes = await db.query(
+      'SELECT COUNT(*)::int AS total FROM DIRECTORIO_ALBACEAS WHERE id_usuario_invitado = $1',
+      [req.user.id]
+    );
+    const totalDesignaciones = Number(desigTotalRes.rows[0]?.total) || 0;
     await registrarAuditoria(`Completó su RUT chileno (${rutNormalizado}) en cuenta OAuth`, obtenerIp(req), req.user.id);
 
     const mensaje =
@@ -914,6 +919,8 @@ exports.completarRut = async (req, res) => {
       ...rows[0],
       requiere_rut: false,
       designaciones_vinculadas: cant,
+      total_designaciones: totalDesignaciones,
+      es_albacea: totalDesignaciones > 0,
     });
   } catch (e) {
     if (e.code === '23505') {

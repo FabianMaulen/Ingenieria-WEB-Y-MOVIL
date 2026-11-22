@@ -26,7 +26,7 @@ import {
 } from 'ionicons/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { alternarTema, obtenerTemaOscuro } from '../utils/theme';
-import { obtenerPerfil, obtenerToken, Usuario, usuarioGuardado } from '../services/auth.service';
+import { esSoloAlbacea, obtenerPerfil, obtenerToken, Usuario, usuarioGuardado } from '../services/auth.service';
 
 interface HeaderBarProps {
   title?: string;
@@ -58,6 +58,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({ title, showBack }) => {
     pathname.startsWith('/admin') ||
     perfil?.rol === 'ADMIN' ||
     localStorage.getItem('modo_activo') === 'ADMIN';
+  const ocultarSugerencias = esAdmin || esSoloAlbacea(perfil);
 
   const sincronizarPerfil = useCallback(async (refrescarServidor = false) => {
     const local = usuarioGuardado();
@@ -249,7 +250,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({ title, showBack }) => {
         <IonTitle style={{ fontSize: '1.02rem', fontWeight: 700 }}>{tituloMostrar}</IonTitle>
 
         <IonButtons slot="end">
-          {!esAdmin && obtenerToken() && (
+          {!ocultarSugerencias && obtenerToken() && (
             <IonButton
               onClick={handleAbrirSugerencias}
               title="Sugerencias para completar tu Baúl"

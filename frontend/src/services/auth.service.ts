@@ -43,9 +43,48 @@ export interface PreferenciasPayload {
 
 export const AUTH_TOKEN_KEY = 'auth_token';
 
+const claveTitularIniciado = (idUsuario?: number) =>
+  idUsuario ? `titular_iniciado_${idUsuario}` : 'titular_iniciado';
+
+export const tieneModoTitularHabilitado = (usuario: Usuario | null): boolean => {
+  if (!usuario) return true;
+  if (usuario.rol === 'ADMIN') return true;
+  if (usuario.boveda_activa === true) return true;
+  if ((usuario.total_designaciones || 0) === 0) return true;
+  const tieneRegistrosPropios =
+    (usuario.total_polizas || 0) +
+      (usuario.total_inventario || 0) +
+      (usuario.total_albaceas || 0) +
+      (usuario.total_mensajes || 0) >
+    0;
+  if (tieneRegistrosPropios) return true;
+  return localStorage.getItem(claveTitularIniciado(usuario.id)) === '1';
+};
+
+export const esSoloAlbacea = (usuario: Usuario | null): boolean => {
+  if (!usuario || usuario.rol === 'ADMIN') return false;
+  return (
+    usuario.boveda_activa === false &&
+    (usuario.total_designaciones || 0) > 0 &&
+    !tieneModoTitularHabilitado(usuario)
+  );
+};
+
+export const habilitarModoTitular = (idUsuario?: number) => {
+  const u = usuarioGuardado();
+  const id = idUsuario ?? u?.id;
+  if (id) {
+    localStorage.setItem(claveTitularIniciado(id), '1');
+  }
+  sessionStorage.setItem('be_onboarding_paso', '0');
+  localStorage.setItem('modo_activo', 'TITULAR');
+  window.dispatchEvent(new Event('auth-updated'));
+  window.dispatchEvent(new Event('modo-cambiado'));
+};
+
 export const modoInicialUsuario = (usuario: Usuario): ModoApp => {
   if (usuario.rol === 'ADMIN') return 'ADMIN';
-  if (usuario.boveda_activa === false && (usuario.total_designaciones || 0) > 0) {
+  if (esSoloAlbacea(usuario)) {
     return 'ALBACEA';
   }
   return 'TITULAR';
@@ -200,16 +239,17 @@ export const iniciarSesionConGoogle = async (code: string, state: string): Promi
 };
 
 export const completarRutUsuario = async (rut: string) => {
-  const res = await api.put<ApiResponse<Usuario & { designaciones_vinculadas?: number }>>(
-    '/auth/completar-rut',
-    { rut }
-  );
+  const res = await api.put<
+    ApiResponse<Usuario & { designaciones_vinculadas?: number; total_designaciones?: number }>
+  >('/auth/completar-rut', { rut });
   const actual = usuarioGuardado();
   if (actual && res.data.data) {
     const actualizado: Usuario = {
       ...actual,
       rut: res.data.data.rut,
       requiere_rut: false,
+      total_designaciones: res.data.data.total_designaciones ?? actual.total_designaciones,
+      es_albacea: res.data.data.es_albacea ?? actual.es_albacea,
     };
     localStorage.setItem('usuario', JSON.stringify(actualizado));
     window.dispatchEvent(new Event('auth-updated'));

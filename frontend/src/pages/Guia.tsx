@@ -37,7 +37,11 @@ import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { VaultLoader } from '../components/VaultLoader';
 import { mensajeError } from '../services/api';
-import { obtenerPerfil, usuarioGuardado } from '../services/auth.service';
+import {
+  habilitarModoTitular,
+  obtenerPerfil,
+  usuarioGuardado,
+} from '../services/auth.service';
 import { descargarDocumentoPoliza } from '../services/polizas.service';
 import { descargarAdjuntoMensaje } from '../services/mensajes.service';
 import {
@@ -213,11 +217,11 @@ export const Guia: React.FC = () => {
                 className="be-btn be-btn-outline"
                 style={{ padding: '7px 14px', fontSize: '0.8rem' }}
                 onClick={() => {
-                  localStorage.setItem('modo_activo', 'TITULAR');
+                  habilitarModoTitular(usuarioGuardado()?.id);
                   navigate('/dashboard');
                 }}
               >
-                Crear mi propia bóveda
+                Iniciar como Titular · Crear mi bóveda
               </button>
             </div>
           )}

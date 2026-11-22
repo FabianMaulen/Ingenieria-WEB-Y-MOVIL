@@ -4,6 +4,7 @@ import { IonRouterOutlet, IonSplitPane } from '@ionic/react';
 import { AppMenu } from '../components/AppMenu';
 import { AsistenteWidget } from '../components/AsistenteWidget';
 import { RutaProtegida } from './RutaProtegida';
+import { rutaInicialUsuario, usuarioGuardado } from '../services/auth.service';
 
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
@@ -53,7 +54,15 @@ const AppShellProtegido: React.FC = () => (
             </RutaProtegida>
           }
         />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to={usuarioGuardado() ? rutaInicialUsuario(usuarioGuardado()!) : '/dashboard'}
+              replace
+            />
+          }
+        />
       </Routes>
     </IonRouterOutlet>
 
