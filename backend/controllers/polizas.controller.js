@@ -1,6 +1,67 @@
+const multer = require('multer');
 const db = require('../db');
 const { enviarRespuesta } = require('../utils/respuesta');
 const { parsearIdEntero, parsearPaginacion } = require('../utils/validadores');
+const { extraerDatosPoliza } = require('../services/gemini.service');
+
+const MIME_PERMITIDOS = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+
+const uploadPoliza = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) =>
+    MIME_PERMITIDOS.includes(file.mimetype) ? cb(null, true) : cb(new Error('FORMATO_POLIZA')),
+}).single('archivo');
+
+exports.subirArchivoPoliza = (req, res, next) => {
+  uploadPoliza(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return enviarRespuesta(res, 400, 'El archivo supera el tamaño máximo de 5 MB.', null);
+    }
+    if (err.message === 'FORMATO_POLIZA') {
+      return enviarRespuesta(res, 400, 'Formato no permitido. Sube un archivo PDF, JPG, PNG o WEBP.', null);
+    }
+    return enviarRespuesta(res, 400, 'No se pudo procesar el archivo subido.', null);
+  });
+};
+
+// POST /api/polizas/extraer (multipart: campo "archivo")
+exports.extraerDesdeArchivo = async (req, res) => {
+  try {
+    if (!req.file) {
+      return enviarRespuesta(res, 400, 'Debes adjuntar el archivo de tu póliza (PDF o imagen).', null);
+    }
+
+    const extraido = await extraerDatosPoliza({
+      buffer: req.file.buffer,
+      mimetype: req.file.mimetype,
+    });
+
+    return enviarRespuesta(
+      res,
+      200,
+      'Datos extraídos correctamente. Revisa los campos antes de guardar tu póliza.',
+      extraido
+    );
+  } catch (error) {
+    if (error.message === 'GEMINI_NO_CONFIGURADO') {
+      return enviarRespuesta(
+        res,
+        503,
+        'El servicio de extracción con IA no está configurado (falta GEMINI_API_KEY en el servidor).',
+        null
+      );
+    }
+    console.error('Error al extraer póliza con Gemini:', error);
+    return enviarRespuesta(
+      res,
+      502,
+      'No pudimos leer automáticamente ese documento. Puedes completar los campos de forma manual.',
+      null
+    );
+  }
+};
 
 // GET /api/polizas?limit=20&offset=0
 exports.listar = async (req, res) => {

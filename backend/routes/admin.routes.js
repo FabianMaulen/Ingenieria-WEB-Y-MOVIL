@@ -10,5 +10,7 @@ router.get('/usuarios', adminController.listarUsuarios);
 router.get('/auditoria', adminController.listarAuditoria);
 router.get('/solicitudes', adminController.listarSolicitudes);
 router.put('/solicitudes/:id/estado', adminController.actualizarEstadoSolicitud);
+router.get('/reportes-familiares', adminController.listarReportesFamiliares);
+router.put('/reportes-familiares/:id/estado', adminController.actualizarEstadoReporteFamiliar);
 
 module.exports = router;

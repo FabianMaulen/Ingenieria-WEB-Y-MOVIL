@@ -82,3 +82,33 @@ export const actualizarEstadoSolicitudAdmin = async (
   const res = await api.put<ApiResponse<any>>(`/admin/solicitudes/${id}/estado`, { estado_solicitud });
   return res.data;
 };
+
+export interface ReporteFamiliarAdmin {
+  id_reporte: number;
+  rut_titular_consultado: string;
+  nombre_titular: string | null;
+  nombre_familiar: string;
+  rut_familiar: string;
+  correo_familiar: string;
+  parentesco: string;
+  certificado_archivo: string;
+  hash_documento: string;
+  folio_extraido: string | null;
+  estado_reporte: 'RECIBIDO' | 'EN_REVISION' | 'VALIDADO' | 'RECHAZADO';
+  fecha_reporte: string;
+}
+
+export const listarReportesFamiliaresAdmin = async (): Promise<ReporteFamiliarAdmin[]> => {
+  const res = await api.get<ApiResponse<ReporteFamiliarAdmin[]>>('/admin/reportes-familiares');
+  return res.data.data || [];
+};
+
+export const actualizarEstadoReporteFamiliarAdmin = async (
+  id: number,
+  estado_reporte: 'RECIBIDO' | 'EN_REVISION' | 'VALIDADO' | 'RECHAZADO'
+) => {
+  const res = await api.put<ApiResponse<any>>(`/admin/reportes-familiares/${id}/estado`, {
+    estado_reporte,
+  });
+  return res.data;
+};

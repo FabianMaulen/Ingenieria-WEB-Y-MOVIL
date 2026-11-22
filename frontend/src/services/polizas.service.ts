@@ -38,3 +38,21 @@ export const actualizarPoliza = async (id: number, p: PolizaInput): Promise<Poli
 export const eliminarPoliza = async (id: number): Promise<void> => {
   await api.delete(`/polizas/${id}`);
 };
+
+export interface PolizaExtraidaIA {
+  tipo_seguro: string;
+  aseguradora: string;
+  numero_poliza: string;
+  monto_referencial: number;
+  moneda_detectada?: string;
+  observaciones?: string;
+}
+
+export const extraerPolizaConIA = async (archivo: File): Promise<PolizaExtraidaIA> => {
+  const form = new FormData();
+  form.append('archivo', archivo);
+  const res = await api.post<ApiResponse<PolizaExtraidaIA>>('/polizas/extraer', form, {
+    timeout: 30000,
+  });
+  return res.data.data;
+};

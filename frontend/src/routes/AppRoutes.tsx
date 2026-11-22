@@ -2,12 +2,14 @@ import React from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import { IonRouterOutlet, IonSplitPane } from '@ionic/react';
 import { AppMenu } from '../components/AppMenu';
+import { AsistenteWidget } from '../components/AsistenteWidget';
 import { RutaProtegida } from './RutaProtegida';
 
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
 import { ForgotPassword } from '../pages/ForgotPassword';
 import { GoogleCallback } from '../pages/GoogleCallback';
+import { ConsultaFamiliar } from '../pages/ConsultaFamiliar';
 import { Dashboard } from '../pages/Dashboard';
 import { Polizas } from '../pages/Polizas';
 import { Albaceas } from '../pages/Albaceas';
@@ -53,6 +55,8 @@ const AppShellProtegido: React.FC = () => (
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </IonRouterOutlet>
+
+    <AsistenteWidget />
   </IonSplitPane>
 );
 
@@ -64,6 +68,7 @@ export const AppRoutes: React.FC = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/recuperar" element={<ForgotPassword />} />
       <Route path="/auth/google/callback" element={<GoogleCallback />} />
+      <Route path="/consulta-familiar" element={<ConsultaFamiliar />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* Rutas Privadas protegidas con RutaProtegida */}

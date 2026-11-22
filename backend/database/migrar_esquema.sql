@@ -122,6 +122,25 @@ END $$;
 ALTER TABLE USUARIO DROP CONSTRAINT IF EXISTS chk_usuario_rut;
 ALTER TABLE USUARIO ADD CONSTRAINT chk_usuario_rut CHECK (rut IS NULL OR rut ~ '^[0-9]{7,8}-[0-9K]$');
 
+-- 6c. Reportes de contingencia enviados por familiares externos
+CREATE TABLE IF NOT EXISTS REPORTE_FAMILIAR (
+  id_reporte SERIAL PRIMARY KEY,
+  rut_titular_consultado VARCHAR(12) NOT NULL
+    CONSTRAINT chk_reporte_rut_titular CHECK (rut_titular_consultado ~ '^[0-9]{7,8}-[0-9K]$'),
+  id_titular_encontrado INT NULL REFERENCES USUARIO(id_usuario) ON DELETE SET NULL,
+  nombre_familiar VARCHAR(150) NOT NULL,
+  rut_familiar VARCHAR(12) NOT NULL
+    CONSTRAINT chk_reporte_rut_familiar CHECK (rut_familiar ~ '^[0-9]{7,8}-[0-9K]$'),
+  correo_familiar VARCHAR(150) NOT NULL,
+  parentesco VARCHAR(50) NOT NULL,
+  certificado_archivo VARCHAR(120) NOT NULL,
+  hash_documento VARCHAR(255) NOT NULL,
+  folio_extraido VARCHAR(100) NULL,
+  estado_reporte VARCHAR(30) NOT NULL DEFAULT 'RECIBIDO'
+    CONSTRAINT chk_estado_reporte CHECK (estado_reporte IN ('RECIBIDO', 'EN_REVISION', 'VALIDADO', 'RECHAZADO')),
+  fecha_reporte TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 -- 7. Índices recomendados
 CREATE INDEX IF NOT EXISTS idx_directorio_titular ON DIRECTORIO_ALBACEAS(id_titular);
 CREATE INDEX IF NOT EXISTS idx_directorio_rut ON DIRECTORIO_ALBACEAS(rut_albacea);

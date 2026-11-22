@@ -197,3 +197,64 @@ exports.actualizarEstadoSolicitud = async (req, res) => {
     return enviarRespuesta(res, 500, 'Error al actualizar el estado de la solicitud.', null);
   }
 };
+
+// GET /api/admin/reportes-familiares
+exports.listarReportesFamiliares = async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT r.id_reporte, r.rut_titular_consultado, r.nombre_familiar, r.rut_familiar,
+              r.correo_familiar, r.parentesco, r.certificado_archivo, r.hash_documento,
+              r.folio_extraido, r.estado_reporte, r.fecha_reporte,
+              t.nombre_usuario AS nombre_titular
+       FROM REPORTE_FAMILIAR r
+       LEFT JOIN USUARIO t ON t.id_usuario = r.id_titular_encontrado
+       ORDER BY r.fecha_reporte DESC`
+    );
+
+    return enviarRespuesta(res, 200, 'Reportes familiares obtenidos correctamente.', rows, {
+      portal_registro_civil: URL_VERIFICACION_REGISTRO_CIVIL,
+    });
+  } catch (error) {
+    console.error('Error en admin.listarReportesFamiliares:', error);
+    return enviarRespuesta(res, 500, 'Error al listar reportes familiares.', null);
+  }
+};
+
+// PUT /api/admin/reportes-familiares/:id/estado
+exports.actualizarEstadoReporteFamiliar = async (req, res) => {
+  try {
+    const id = parsearIdEntero(req.params.id);
+    if (!id) {
+      return enviarRespuesta(res, 400, 'El identificador de reporte debe ser un entero positivo válido.', null);
+    }
+
+    const { estado_reporte } = req.body || {};
+    const nuevoEstado = String(estado_reporte || '').trim().toUpperCase();
+    if (!['RECIBIDO', 'EN_REVISION', 'VALIDADO', 'RECHAZADO'].includes(nuevoEstado)) {
+      return enviarRespuesta(res, 400, 'Estado inválido para reporte familiar.', null);
+    }
+
+    const { rows } = await db.query(
+      `UPDATE REPORTE_FAMILIAR
+       SET estado_reporte = $1
+       WHERE id_reporte = $2
+       RETURNING id_reporte, estado_reporte`,
+      [nuevoEstado, id]
+    );
+
+    if (!rows[0]) {
+      return enviarRespuesta(res, 404, 'Reporte familiar no encontrado.', null);
+    }
+
+    await registrarAuditoria(
+      `[ADMIN] Actualizó reporte familiar #${id} a estado ${nuevoEstado}`,
+      obtenerIp(req),
+      req.user.id
+    );
+
+    return enviarRespuesta(res, 200, `Reporte familiar #${id} actualizado a ${nuevoEstado}.`, rows[0]);
+  } catch (error) {
+    console.error('Error en admin.actualizarEstadoReporteFamiliar:', error);
+    return enviarRespuesta(res, 500, 'Error al actualizar el reporte familiar.', null);
+  }
+};

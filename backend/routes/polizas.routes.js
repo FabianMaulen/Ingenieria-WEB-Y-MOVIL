@@ -5,6 +5,9 @@ const polizasController = require('../controllers/polizas.controller');
 // Modelo dual: todo usuario autenticado puede gestionar sus propias pólizas
 router.use(verificarToken);
 
+// Extracción asistida por IA (antes de /:id para evitar colisión de ruta)
+router.post('/extraer', polizasController.subirArchivoPoliza, polizasController.extraerDesdeArchivo);
+
 router.get('/', polizasController.listar);
 router.get('/:id', polizasController.obtener);
 router.post('/', polizasController.crear);

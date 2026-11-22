@@ -16,11 +16,12 @@ import {
   shieldCheckmarkOutline,
   trashOutline,
   locationOutline,
+  sparklesOutline,
 } from 'ionicons/icons';
 import { HeaderBar } from '../components/HeaderBar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { VaultLoader } from '../components/VaultLoader';
-import { listarPolizas, crearPoliza, eliminarPoliza, Poliza } from '../services/polizas.service';
+import { listarPolizas, crearPoliza, eliminarPoliza, extraerPolizaConIA, Poliza } from '../services/polizas.service';
 import { mensajeError } from '../services/api';
 
 export const Polizas: React.FC = () => {
@@ -28,6 +29,7 @@ export const Polizas: React.FC = () => {
   const [cargando, setCargando] = useState(true);
   const [mostrandoForm, setMostrandoForm] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [extrayendoIA, setExtrayendoIA] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [idEliminar, setIdEliminar] = useState<number | null>(null);
@@ -53,6 +55,33 @@ export const Polizas: React.FC = () => {
   useIonViewWillEnter(() => {
     cargarDatos();
   });
+
+  const handleExtraerConIA = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErrorMsg('');
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('El archivo de póliza no puede superar los 5 MB.');
+      e.target.value = '';
+      return;
+    }
+
+    try {
+      setExtrayendoIA(true);
+      const datos = await extraerPolizaConIA(file);
+      if (datos.tipo_seguro) setTipoSeguro(datos.tipo_seguro);
+      if (datos.aseguradora) setAseguradora(datos.aseguradora);
+      if (datos.numero_poliza) setNumeroPoliza(datos.numero_poliza);
+      if (datos.monto_referencial > 0) setMontoReferencial(String(datos.monto_referencial));
+      setToastMsg(datos.observaciones || 'Campos completados automáticamente con IA. Revísalos antes de guardar.');
+    } catch (error) {
+      setErrorMsg(mensajeError(error));
+    } finally {
+      setExtrayendoIA(false);
+      e.target.value = '';
+    }
+  };
 
   const handleAgregar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,9 +155,35 @@ export const Polizas: React.FC = () => {
 
           {mostrandoForm && (
             <form onSubmit={handleAgregar} className="be-card">
-              <h3 style={{ margin: '0 0 18px 0', fontSize: '1.05rem', fontWeight: 700, color: 'var(--be-text)' }}>
-                Registrar póliza de seguro
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--be-text)' }}>
+                  Registrar póliza de seguro
+                </h3>
+
+                <label
+                  className="be-btn be-btn-outline"
+                  style={{ padding: '8px 12px', fontSize: '0.78rem', cursor: extrayendoIA ? 'wait' : 'pointer' }}
+                >
+                  {extrayendoIA ? (
+                    <>
+                      <IonSpinner name="crescent" style={{ width: '15px', height: '15px' }} />
+                      Leyendo documento...
+                    </>
+                  ) : (
+                    <>
+                      <IonIcon icon={sparklesOutline} />
+                      Autocompletar desde PDF / Foto (IA)
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept=".pdf,image/jpeg,image/png,image/webp"
+                    onChange={handleExtraerConIA}
+                    disabled={extrayendoIA}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
 
               <div className="be-field">
                 <label className="be-label">Tipo de seguro *</label>

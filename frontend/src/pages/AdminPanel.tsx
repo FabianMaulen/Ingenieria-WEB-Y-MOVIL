@@ -30,14 +30,17 @@ import {
   listarAuditoriaAdmin,
   listarSolicitudesAdmin,
   actualizarEstadoSolicitudAdmin,
+  listarReportesFamiliaresAdmin,
+  actualizarEstadoReporteFamiliarAdmin,
   ResumenAdmin,
   UsuarioAdmin,
   EventoAuditoria,
   SolicitudAdmin,
+  ReporteFamiliarAdmin,
 } from '../services/admin.service';
 import { dinero, fechaHora } from '../services/utils/formato';
 
-type TabAdmin = 'resumen' | 'solicitudes' | 'auditoria' | 'usuarios';
+type TabAdmin = 'resumen' | 'solicitudes' | 'reportes' | 'auditoria' | 'usuarios';
 
 export const AdminPanel: React.FC = () => {
   const [tab, setTab] = useState<TabAdmin>('resumen');
@@ -46,6 +49,7 @@ export const AdminPanel: React.FC = () => {
   const [usuarios, setUsuarios] = useState<UsuarioAdmin[]>([]);
   const [auditoria, setAuditoria] = useState<EventoAuditoria[]>([]);
   const [solicitudes, setSolicitudes] = useState<SolicitudAdmin[]>([]);
+  const [reportes, setReportes] = useState<ReporteFamiliarAdmin[]>([]);
   const [portalRC, setPortalRC] = useState(
     'https://www.registrocivil.cl/OficinaInternet/verificacion/verificacioncertificado.srcei'
   );
@@ -56,17 +60,19 @@ export const AdminPanel: React.FC = () => {
   const cargarTodo = async () => {
     try {
       setCargando(true);
-      const [r, u, a, s] = await Promise.all([
+      const [r, u, a, s, rep] = await Promise.all([
         obtenerResumenAdmin(),
         listarUsuariosAdmin(),
         listarAuditoriaAdmin(),
         listarSolicitudesAdmin(),
+        listarReportesFamiliaresAdmin().catch(() => []),
       ]);
       setResumen(r);
       setUsuarios(u);
       setAuditoria(a);
       setSolicitudes(s.solicitudes);
       setPortalRC(s.portalRegistroCivil);
+      setReportes(rep);
     } catch (error) {
       setToastColor('danger');
       setToastMsg(mensajeError(error));
@@ -85,6 +91,24 @@ export const AdminPanel: React.FC = () => {
       const res = await actualizarEstadoSolicitudAdmin(id, estado);
       setToastColor(estado === 'APROBADA' ? 'success' : 'warning');
       setToastMsg(res.mensaje || 'Estado actualizado.');
+      await cargarTodo();
+    } catch (error) {
+      setToastColor('danger');
+      setToastMsg(mensajeError(error));
+    } finally {
+      setProcesandoId(null);
+    }
+  };
+
+  const handleCambiarEstadoReporte = async (
+    id: number,
+    estado: 'EN_REVISION' | 'VALIDADO' | 'RECHAZADO'
+  ) => {
+    try {
+      setProcesandoId(id);
+      const res = await actualizarEstadoReporteFamiliarAdmin(id, estado);
+      setToastColor(estado === 'VALIDADO' ? 'success' : 'warning');
+      setToastMsg(res.mensaje || 'Estado de reporte actualizado.');
       await cargarTodo();
     } catch (error) {
       setToastColor('danger');
@@ -121,6 +145,11 @@ export const AdminPanel: React.FC = () => {
               <IonSegmentButton value="solicitudes">
                 <IonLabel style={{ fontSize: '0.8rem', fontWeight: 700 }}>
                   Solicitudes ({solicitudes.length})
+                </IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="reportes">
+                <IonLabel style={{ fontSize: '0.8rem', fontWeight: 700 }}>
+                  Familiares ({reportes.length})
                 </IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="auditoria">
@@ -284,6 +313,86 @@ export const AdminPanel: React.FC = () => {
                               onClick={() => handleCambiarEstado(sol.id_solicitud, 'CANCELADA')}
                             >
                               <IonIcon icon={closeCircleOutline} /> Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* 2b. REPORTES FAMILIARES EXTERNOS */}
+              {tab === 'reportes' && (
+                <div>
+                  {reportes.length === 0 ? (
+                    <div className="be-empty-state">
+                      <p style={{ margin: 0 }}>No existen reportes de familiares externos registrados.</p>
+                    </div>
+                  ) : (
+                    reportes.map((rep) => (
+                      <div key={rep.id_reporte} className="be-card" style={{ padding: '18px 20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+                          <div>
+                            <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 700 }}>
+                              Reporte #{rep.id_reporte} · Titular: {rep.nombre_titular || 'Registrado'} ({rep.rut_titular_consultado})
+                            </h4>
+                            <p style={{ margin: '0 0 4px 0', fontSize: '0.83rem', color: 'var(--be-text-muted)' }}>
+                              Familiar: <strong>{rep.nombre_familiar}</strong> ({rep.rut_familiar}, {rep.parentesco}) · {rep.correo_familiar}
+                            </p>
+                            {rep.folio_extraido && (
+                              <p style={{ margin: '0 0 4px 0', fontSize: '0.8rem', color: 'var(--be-primary)', fontWeight: 600 }}>
+                                Folio detectado (IA): {rep.folio_extraido}
+                              </p>
+                            )}
+                            <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--be-text-muted)', wordBreak: 'break-all' }}>
+                              SHA-256: <code>{rep.hash_documento}</code>
+                            </p>
+                          </div>
+
+                          <span
+                            className={
+                              rep.estado_reporte === 'VALIDADO'
+                                ? 'be-badge be-badge-success'
+                                : rep.estado_reporte === 'RECHAZADO'
+                                ? 'be-badge be-badge-danger'
+                                : 'be-badge be-badge-warning'
+                            }
+                          >
+                            {rep.estado_reporte}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <a
+                            href={portalRC}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="be-btn be-btn-outline"
+                            style={{ padding: '8px 12px', fontSize: '0.8rem', textDecoration: 'none' }}
+                          >
+                            <IonIcon icon={openOutline} />
+                            Verificar en Registro Civil
+                          </a>
+
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              type="button"
+                              className="be-btn be-btn-primary"
+                              style={{ padding: '8px 12px', fontSize: '0.8rem' }}
+                              disabled={procesandoId === rep.id_reporte || rep.estado_reporte === 'VALIDADO'}
+                              onClick={() => handleCambiarEstadoReporte(rep.id_reporte, 'VALIDADO')}
+                            >
+                              <IonIcon icon={checkmarkCircleOutline} /> Validar
+                            </button>
+                            <button
+                              type="button"
+                              className="be-btn be-btn-danger"
+                              style={{ padding: '8px 12px', fontSize: '0.8rem' }}
+                              disabled={procesandoId === rep.id_reporte || rep.estado_reporte === 'RECHAZADO'}
+                              onClick={() => handleCambiarEstadoReporte(rep.id_reporte, 'RECHAZADO')}
+                            >
+                              <IonIcon icon={closeCircleOutline} /> Rechazar
                             </button>
                           </div>
                         </div>

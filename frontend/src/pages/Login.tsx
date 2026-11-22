@@ -329,22 +329,43 @@ export const Login: React.FC = () => {
                   color: 'var(--be-text-muted)',
                 }}
               >
-                ¿Aún no tienes tu bóveda personal?{' '}
-                <button
-                  type="button"
-                  onClick={() => navigate('/register')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--be-primary)',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontSize: '0.88rem',
-                    padding: 0,
-                  }}
-                >
-                  Crear cuenta gratis
-                </button>
+                <div>
+                  ¿Aún no tienes tu bóveda personal?{' '}
+                  <button
+                    type="button"
+                    onClick={() => navigate('/register')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--be-primary)',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      fontSize: '0.88rem',
+                      padding: 0,
+                    }}
+                  >
+                    Crear cuenta gratis
+                  </button>
+                </div>
+
+                <div style={{ marginTop: '10px', fontSize: '0.82rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/consulta-familiar')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--be-accent)',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontSize: '0.82rem',
+                      padding: 0,
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    ¿Buscas el baúl de un familiar fallecido? Consultar por RUT
+                  </button>
+                </div>
               </div>
             </div>
           </div>

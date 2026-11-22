@@ -127,6 +127,28 @@ CREATE TABLE IF NOT EXISTS RESET_PASSWORD_TOKEN (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- ============================================================================
+-- 9. REPORTE_FAMILIAR
+-- Reportes de contingencia enviados por familiares aún no registrados en la app.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS REPORTE_FAMILIAR (
+  id_reporte SERIAL PRIMARY KEY,
+  rut_titular_consultado VARCHAR(12) NOT NULL
+    CONSTRAINT chk_reporte_rut_titular CHECK (rut_titular_consultado ~ '^[0-9]{7,8}-[0-9K]$'),
+  id_titular_encontrado INT NULL REFERENCES USUARIO(id_usuario) ON DELETE SET NULL,
+  nombre_familiar VARCHAR(150) NOT NULL,
+  rut_familiar VARCHAR(12) NOT NULL
+    CONSTRAINT chk_reporte_rut_familiar CHECK (rut_familiar ~ '^[0-9]{7,8}-[0-9K]$'),
+  correo_familiar VARCHAR(150) NOT NULL,
+  parentesco VARCHAR(50) NOT NULL,
+  certificado_archivo VARCHAR(120) NOT NULL,
+  hash_documento VARCHAR(255) NOT NULL,
+  folio_extraido VARCHAR(100) NULL,
+  estado_reporte VARCHAR(30) NOT NULL DEFAULT 'RECIBIDO'
+    CONSTRAINT chk_estado_reporte CHECK (estado_reporte IN ('RECIBIDO', 'EN_REVISION', 'VALIDADO', 'RECHAZADO')),
+  fecha_reporte TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 -- Índices recomendados para consultas frecuentes
 CREATE INDEX IF NOT EXISTS idx_directorio_titular ON DIRECTORIO_ALBACEAS(id_titular);
 CREATE INDEX IF NOT EXISTS idx_directorio_rut ON DIRECTORIO_ALBACEAS(rut_albacea);
